@@ -131,6 +131,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         )}
                     </motion.div>
 
+                    deneme
+
                     {/* Navigation Links */}
                     <motion.nav
                         className="flex-grow mt-6 px-3 sm:px-4 space-y-2 overflow-y-auto custom-scrollbar"
