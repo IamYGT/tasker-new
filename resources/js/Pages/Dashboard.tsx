@@ -1,0 +1,155 @@
+import React from 'react';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Head } from '@inertiajs/react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Users, DollarSign, TrendingUp, Calendar } from 'lucide-react';
+import { useTranslation } from '@/Contexts/TranslationContext';
+
+const data = [
+    { name: 'Oca', value: 400 },
+    { name: 'Şub', value: 300 },
+    { name: 'Mar', value: 600 },
+    { name: 'Nis', value: 800 },
+    { name: 'May', value: 500 },
+    { name: 'Haz', value: 700 },
+];
+
+interface StatCardProps {
+    title: string;
+    value: string;
+    icon: React.ElementType;
+    change: string;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, change }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="bg-light-surface dark:bg-dark-surface rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary">{t(title)}</h3>
+                <Icon className="w-6 h-6 text-light-primary dark:text-dark-primary" />
+            </div>
+            <div className="text-3xl font-bold text-light-text dark:text-dark-text mb-2">{value}</div>
+            <div className={`text-sm ${change.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
+                {change}
+            </div>
+        </div>
+    );
+};
+
+export default function Dashboard() {
+    const { t } = useTranslation();
+
+    return (
+        <AuthenticatedLayout
+            header={
+                <h2 className="text-2xl font-bold leading-tight text-gray-800 dark:text-gray-200 transition-colors duration-300">
+                    {t('dashboard')}
+                </h2>
+            }
+        >
+            <Head title={t('dashboard')} />
+
+            <div className="py-12 bg-light-background dark:bg-dark-background transition-colors duration-300 min-h-screen">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                        <StatCard
+                            title="total_customers"
+                            value="10,482"
+                            icon={Users}
+                            change="+2.5%"
+                        />
+                        <StatCard
+                            title="total_sales"
+                            value="₺45,231.89"
+                            icon={DollarSign}
+                            change="+15.2%"
+                        />
+                        <StatCard
+                            title="active_projects"
+                            value="23"
+                            icon={TrendingUp}
+                            change="+4"
+                        />
+                        <StatCard
+                            title="planned_events"
+                            value="7"
+                            icon={Calendar}
+                            change="-2"
+                        />
+                    </div>
+
+                    <div className="mt-8 bg-light-surface dark:bg-dark-surface rounded-xl shadow-lg p-6 transition-all duration-300">
+                        <h3 className="text-xl font-semibold text-light-text dark:text-dark-text mb-6">
+                            {t('monthly_sales_chart')}
+                        </h3>
+                        <div className="h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={data}>
+                                    <XAxis dataKey="name" stroke="currentColor" />
+                                    <YAxis stroke="currentColor" />
+                                    <Tooltip 
+                                        contentStyle={{ 
+                                            backgroundColor: 'var(--color-light-surface)',
+                                            color: 'var(--color-light-text)',
+                                            border: '1px solid var(--color-light-primary)',
+                                            borderRadius: '8px'
+                                        }} 
+                                    />
+                                    <Bar dataKey="value" fill="var(--color-light-primary)" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 grid gap-6 md:grid-cols-2">
+                        <div className="bg-light-surface dark:bg-dark-surface rounded-xl shadow-lg p-6 transition-all duration-300">
+                            <h3 className="text-xl font-semibold text-light-text dark:text-dark-text mb-4">
+                                {t('recent_activities')}
+                            </h3>
+                            <ul className="space-y-4">
+                                <li className="flex items-center">
+                                    <span className="w-2 h-2 bg-light-primary dark:bg-dark-primary rounded-full mr-2"></span>
+                                    <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">{t('new_customer_registration', { name: 'Ahmet Yılmaz' })}</span>
+                                    <span className="ml-auto text-xs text-light-text-secondary dark:text-dark-text-secondary">{t('hours_ago', { hours: 2 })}</span>
+                                </li>
+                                <li className="flex items-center">
+                                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">{t('project_completed', { project: t('website_renewal') })}</span>
+                                    <span className="ml-auto text-xs text-light-text-secondary dark:text-dark-text-secondary">{t('yesterday')}</span>
+                                </li>
+                                <li className="flex items-center">
+                                    <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                                    <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">{t('new_order_received', { order: '#1234' })}</span>
+                                    <span className="ml-auto text-xs text-light-text-secondary dark:text-dark-text-secondary">{t('days_ago', { days: 3 })}</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div className="bg-light-surface dark:bg-dark-surface rounded-xl shadow-lg p-6 transition-all duration-300">
+                            <h3 className="text-xl font-semibold text-light-text dark:text-dark-text mb-4">
+                                {t('upcoming_tasks')}   
+                            </h3>
+                            <ul className="space-y-4">
+                                <li className="flex items-center">
+                                    <input type="checkbox" className="mr-2 rounded text-light-primary dark:text-dark-primary focus:ring-light-primary dark:focus:ring-dark-primary" />
+                                    <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">{t('prepare_client_meeting')}</span>
+                                    <span className="ml-auto text-xs text-light-text-secondary dark:text-dark-text-secondary">{t('today')}</span>
+                                </li>
+                                <li className="flex items-center">
+                                    <input type="checkbox" className="mr-2 rounded text-light-primary dark:text-dark-primary focus:ring-light-primary dark:focus:ring-dark-primary" />
+                                    <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">{t('send_project_proposal')}</span>
+                                    <span className="ml-auto text-xs text-light-text-secondary dark:text-dark-text-secondary">{t('tomorrow')}</span>
+                                </li>
+                                <li className="flex items-center">
+                                    <input type="checkbox" className="mr-2 rounded text-light-primary dark:text-dark-primary focus:ring-light-primary dark:focus:ring-dark-primary" />
+                                    <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">{t('team_evaluation_meeting')}</span>
+                                    <span className="ml-auto text-xs text-light-text-secondary dark:text-dark-text-secondary">{t('days_later', { days: 3 })}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </AuthenticatedLayout>
+    );
+}
