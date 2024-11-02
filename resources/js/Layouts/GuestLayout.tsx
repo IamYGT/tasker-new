@@ -11,10 +11,10 @@ import { useTranslation } from '@/Contexts/TranslationContext';
 interface GuestLayoutProps extends PropsWithChildren {
     languages: any;
     secili_dil: any;
-    showNotification?: (message: string, type: 'success' | 'error') => void;
+
 }
 
-export default function Guest({ children, languages, secili_dil, showNotification }: GuestLayoutProps) {
+export default function Guest({ children, languages, secili_dil }: GuestLayoutProps) {
     const { t } = useTranslation();
     const [darkMode, setDarkMode] = useState(getTheme());
     const [isMobile, setIsMobile] = useState(false);
@@ -54,16 +54,6 @@ export default function Guest({ children, languages, secili_dil, showNotificatio
         });
     };
 
-    const showNotificationMessage = (message: string, type: 'success' | 'error') => {
-        setNotification({ message, type });
-        setTimeout(() => setNotification(null), 5000); // 5 saniye sonra bildirimi kaldır
-    };
-
-    useEffect(() => {
-        if (showNotification) {
-            showNotification = showNotificationMessage;
-        }
-    }, [showNotification]);
 
     return (
         <div className={`flex min-h-screen flex-col ${darkMode ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900' : 'bg-gradient-to-br from-blue-100 via-blue-200 to-indigo-300'} transition-all duration-500 ease-in-out`}>
@@ -91,9 +81,8 @@ export default function Guest({ children, languages, secili_dil, showNotificatio
                         initial={{ opacity: 0, y: -50 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -50 }}
-                        className={`fixed top-4 right-4 p-4 rounded-md shadow-lg ${
-                            notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-                        } text-white`}
+                        className={`fixed top-4 right-4 p-4 rounded-md shadow-lg ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+                            } text-white`}
                     >
                         {notification.message}
                     </motion.div>
@@ -108,7 +97,10 @@ export default function Guest({ children, languages, secili_dil, showNotificatio
                         transition={{ duration: 0.5, delay: 0.2 }}
                     >
                         <div className="flex justify-center mb-6">
-                            <ApplicationLogo className={`h-12 w-12 sm:h-20 sm:w-20 fill-current ${darkMode ? 'text-gray-300' : 'text-gray-500'}`} />
+                            <ApplicationLogo 
+                                mode={darkMode ? 'dark' : 'light'}
+                                className="w-20 h-20 sm:w-36 sm:h-36 object-contain" 
+                            />
                         </div>
                     </motion.div>
 

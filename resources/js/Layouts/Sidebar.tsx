@@ -99,17 +99,20 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                             >
-                                <ApplicationLogo className={`h-8 w-8 sm:h-10 sm:w-10 ${isMobile || !collapsed ? 'mr-3 sm:mr-4' : ''}`} />
+                                <ApplicationLogo 
+                                    mode={darkMode ? 'dark' : 'light'}
+                                    className={`h-8 w-8 sm:h-10 sm:w-10 ${isMobile || !collapsed ? 'mr-3 sm:mr-4' : ''}`} 
+                                />
                             </motion.div>
                             {(!collapsed || isMobile) && (
                                 <motion.span
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -10 }}
-                                    transition={{ duration: 0.05 }} // Hızlandırıldı
+                                    transition={{ duration: 0.05 }}
                                     className="font-semibold text-lg sm:text-xl"
                                 >
-                                    {t('sidebar.logoText')}
+                                    {import.meta.env.VITE_APP_NAME}
                                 </motion.span>
                             )}
                         </motion.div>
@@ -130,8 +133,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                             </motion.button>
                         )}
                     </motion.div>
-
-                    deneme
 
                     {/* Navigation Links */}
                     <motion.nav

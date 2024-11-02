@@ -13,6 +13,7 @@ use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\DB;
 
 class NewPasswordController extends Controller
 {
@@ -21,9 +22,21 @@ class NewPasswordController extends Controller
      */
     public function create(Request $request): Response
     {
+        $token = $request->route('token');
+        
+        // Token ile eşleşen e-posta adresini bulalım
+        $email = DB::table('password_reset_tokens')
+            ->where('token', $token)
+            ->value('email');
+
+        if (!$email) {
+            return redirect()->route('password.request')
+                ->with('error', 'Geçersiz veya süresi dolmuş şifre sıfırlama bağlantısı.');
+        }
+
         return Inertia::render('Auth/ResetPassword', [
-            'email' => $request->email,
-            'token' => $request->route('token'),
+            'email' => $email,
+            'token' => $token,
         ]);
     }
 

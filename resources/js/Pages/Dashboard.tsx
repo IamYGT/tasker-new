@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Users, DollarSign, TrendingUp, Calendar } from 'lucide-react';
 import { useTranslation } from '@/Contexts/TranslationContext';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const data = [
     { name: 'Oca', value: 400 },
@@ -37,8 +39,27 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, change })
     );
 };
 
-export default function Dashboard() {
+interface DashboardProps {
+    showWelcomeToast?: boolean;
+}
+
+export default function Dashboard({ showWelcomeToast }: DashboardProps) {
     const { t } = useTranslation();
+
+    useEffect(() => {
+        if (showWelcomeToast) {
+            toast.success(t('dashboard.welcomeMessage'), {
+                position: "top-center",
+                autoClose: 10000, // 10 saniye açık kalması için değiştirildi
+                hideProgressBar: true,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: false,
+                theme: "colored",
+                icon: () => "🎉",
+            });
+        }
+    }, [showWelcomeToast, t]);
 
     return (
         <AuthenticatedLayout
@@ -50,7 +71,7 @@ export default function Dashboard() {
         >
             <Head title={t('dashboard')} />
 
-            <div className="py-12 bg-light-background dark:bg-dark-background transition-colors duration-300 min-h-screen">
+            <div className="py-12 transition-colors duration-300 min-h-screen">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                         <StatCard
@@ -79,7 +100,7 @@ export default function Dashboard() {
                         />
                     </div>
 
-                    <div className="mt-8 bg-light-surface dark:bg-dark-surface rounded-xl shadow-lg p-6 transition-all duration-300">
+                    <div className="mt-8 rounded-xl shadow-lg p-6 transition-all duration-300">
                         <h3 className="text-xl font-semibold text-light-text dark:text-dark-text mb-6">
                             {t('monthly_sales_chart')}
                         </h3>
@@ -88,13 +109,13 @@ export default function Dashboard() {
                                 <BarChart data={data}>
                                     <XAxis dataKey="name" stroke="currentColor" />
                                     <YAxis stroke="currentColor" />
-                                    <Tooltip 
-                                        contentStyle={{ 
+                                    <Tooltip
+                                        contentStyle={{
                                             backgroundColor: 'var(--color-light-surface)',
                                             color: 'var(--color-light-text)',
                                             border: '1px solid var(--color-light-primary)',
                                             borderRadius: '8px'
-                                        }} 
+                                        }}
                                     />
                                     <Bar dataKey="value" fill="var(--color-light-primary)" />
                                 </BarChart>
@@ -103,7 +124,7 @@ export default function Dashboard() {
                     </div>
 
                     <div className="mt-8 grid gap-6 md:grid-cols-2">
-                        <div className="bg-light-surface dark:bg-dark-surface rounded-xl shadow-lg p-6 transition-all duration-300">
+                        <div className="rounded-xl shadow-lg p-6 transition-all duration-300">
                             <h3 className="text-xl font-semibold text-light-text dark:text-dark-text mb-4">
                                 {t('recent_activities')}
                             </h3>
@@ -125,9 +146,9 @@ export default function Dashboard() {
                                 </li>
                             </ul>
                         </div>
-                        <div className="bg-light-surface dark:bg-dark-surface rounded-xl shadow-lg p-6 transition-all duration-300">
+                        <div className="rounded-xl shadow-lg p-6 transition-all duration-300">
                             <h3 className="text-xl font-semibold text-light-text dark:text-dark-text mb-4">
-                                {t('upcoming_tasks')}   
+                                {t('upcoming_tasks')}
                             </h3>
                             <ul className="space-y-4">
                                 <li className="flex items-center">
@@ -152,4 +173,4 @@ export default function Dashboard() {
             </div>
         </AuthenticatedLayout>
     );
-}
+} 

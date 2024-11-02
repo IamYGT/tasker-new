@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\LanguageWord;
+use Illuminate\Support\Facades\App;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -29,7 +31,21 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        try {
+            $request->authenticate();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $user = \App\Models\User::where('email', $request->email)->first();
+            
+            if (!$user) {
+                return back()->withErrors([
+                    'email' => $this->getTranslation('login.invalidEmail'),
+                ])->onlyInput('email');
+            } else {
+                return back()->withErrors([
+                    'password' => $this->getTranslation('login.invalidPassword'),
+                ])->onlyInput('email');
+            }
+        }
 
         $request->session()->regenerate();
 
@@ -48,5 +64,15 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    private function getTranslation(string $key): string
+    {
+        $locale = App::getLocale();
+        $translation = LanguageWord::where('kod', $locale)
+            ->where('anahtar', $key)
+            ->first();
+
+        return $translation ? $translation->deger : $key;
     }
 }
