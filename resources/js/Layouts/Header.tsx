@@ -15,6 +15,7 @@ import ThemeToggle from './ThemeToggle';
 import LanguageSelector from './LanguageSelector';
 import useOnClickOutside from './useOnClickOutside';
 import { useTranslation } from '@/Contexts/TranslationContext';
+import { User } from '@/types';
 
 interface Language {
     dil_id: number;
@@ -28,11 +29,7 @@ interface HeaderProps {
     darkMode: boolean;
     toggleDarkMode: () => void;
     auth: {
-        user: {
-            name: string;
-            email: string;
-            avatar?: string | null;
-        };
+        user: User;
     };
     languages: Language[];
     secili_dil: Language;
@@ -129,6 +126,13 @@ const Header: React.FC<HeaderProps> = ({
             setLanguageDropdownOpen(false);
         }
     }, [dropdownOpen]);
+
+    // Kullanıcı bilgilerinin var olduğundan emin olalım
+    const user = auth?.user;
+
+    if (!user) {
+        return null; // veya bir loading state gösterebilirsiniz
+    }
 
     return (
         <header

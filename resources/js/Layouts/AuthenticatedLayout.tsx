@@ -5,14 +5,18 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import LogoutModal from './LogoutModal';
 import { motion } from 'framer-motion';
+import { User } from '@/types';
 
 interface AuthenticatedProps {
-    header?: React.ReactNode;
+    auth: {
+        user: User;
+    };
+    header: React.ReactNode;
     children: React.ReactNode;
 }
 
-export default function AuthenticatedLayout({ header, children }: AuthenticatedProps) {
-    const { auth, languages, secili_dil } = usePage().props as any;
+export default function AuthenticatedLayout({ auth, header, children }: AuthenticatedProps) {
+    const { languages, secili_dil } = usePage().props as any;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [darkMode, setDarkMode] = useState(getTheme());
@@ -113,7 +117,7 @@ export default function AuthenticatedLayout({ header, children }: AuthenticatedP
                     toggleCollapse={toggleCollapse}
                     isMobile={isMobile}
                     setShowLogoutModal={setShowLogoutModal}
-                    onLanguageChange={handleLanguageChange} // Yeni prop eklendi
+                    onLanguageChange={handleLanguageChange}
                 />
 
                 <main className={`flex-1 overflow-x-hidden overflow-y-auto p-6 sm:p-8 lg:p-10 backdrop-filter backdrop-blur-md ${darkMode ? 'text-gray-100' : 'text-gray-900'} transition-all duration-500 ease-in-out`}>

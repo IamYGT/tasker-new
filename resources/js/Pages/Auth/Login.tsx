@@ -11,6 +11,7 @@ import {
     FaGithub,
     FaSpinner,
     FaSignInAlt,
+    FaFacebook,
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import GuestLayout from '@/Layouts/GuestLayout';
@@ -309,7 +310,7 @@ const Login: React.FC<LoginProps> = ({
                                 </div>
                             </div>
 
-                            <div className="mt-6 grid grid-cols-2 gap-3">
+                            <div className="mt-6 grid grid-cols-3 gap-3">
                                 {/* Google Login */}
                                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                                     <a
@@ -343,10 +344,22 @@ const Login: React.FC<LoginProps> = ({
                                     </a>
                                 </motion.div>
 
+                                {/* Facebook Login */}
+                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                    <a
+                                        href={route('auth.facebook')}
+                                        className="w-full inline-flex justify-center py-2 px-4 rounded-md shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition duration-200"
+                                        aria-label="Facebook ile giriş yap"
+                                    >
+                                        <span className="sr-only">Facebook ile giriş yap</span>
+                                        <FaFacebook className="w-5 h-5 text-[#1877F2]" />
+                                    </a>
+                                </motion.div>
+
                                 {/* GitHub Login */}
                                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                                     <a
-                                        href="#"
+                                        href={route('auth.github')}
                                         className="w-full inline-flex justify-center py-2 px-4 rounded-md shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition duration-200"
                                         aria-label="GitHub ile giriş yap"
                                     >

@@ -5,13 +5,22 @@ export interface User {
     id: number;
     name: string;
     email: string;
-    email_verified_at?: string;
+    email_verified_at?: string | null;
+    avatar?: string | null;
+    google_id?: string | null;
+    facebook_id?: string | null;
+    github_id?: string | null;
+    last_login_at?: string | null;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface Auth {
+    user: User;
 }
 
 export interface CustomPageProps {
-    auth: {
-        user: User;
-    };
+    auth: Auth;
     ziggy: Config & { location: string };
     translations: Record<string, string>;
     locale: string;

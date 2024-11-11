@@ -7,6 +7,8 @@ use Inertia\Inertia;
 use App\Http\Controllers\LanguageController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\Auth\FacebookController;
+use App\Http\Controllers\Auth\GitHubController;
 
 // Dil değiştirme route'u
 
@@ -33,6 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/profile/set-password', [ProfileController::class, 'setPassword'])->name('profile.set-password');
 });
 
 Route::match(['get', 'post'], '/test', function () {
@@ -42,6 +45,16 @@ Route::match(['get', 'post'], '/test', function () {
 Route::controller(GoogleController::class)->group(function () {
     Route::get('auth/google', 'redirectToGoogle')->name('auth.google');
     Route::get('auth/google/callback', 'handleGoogleCallback')->name('auth.google.callback');
+});
+
+Route::controller(FacebookController::class)->group(function () {
+    Route::get('auth/facebook', 'redirectToFacebook')->name('auth.facebook');
+    Route::get('auth/facebook/callback', 'handleFacebookCallback')->name('auth.facebook.callback');
+});
+
+Route::controller(GitHubController::class)->group(function () {
+    Route::get('auth/github', 'redirectToGithub')->name('auth.github');
+    Route::get('auth/github/callback', 'handleGithubCallback')->name('auth.github.callback');
 });
 
 

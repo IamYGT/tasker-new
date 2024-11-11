@@ -6,6 +6,7 @@ import { Users, DollarSign, TrendingUp, Calendar } from 'lucide-react';
 import { useTranslation } from '@/Contexts/TranslationContext';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { PageProps } from '@/types';
 
 const data = [
     { name: 'Oca', value: 400 },
@@ -39,11 +40,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, change })
     );
 };
 
-interface DashboardProps {
-    showWelcomeToast?: boolean;
-}
-
-export default function Dashboard({ showWelcomeToast }: DashboardProps) {
+export default function Dashboard({ auth, showWelcomeToast }: PageProps) {
     const { t } = useTranslation();
 
     useEffect(() => {
@@ -63,6 +60,7 @@ export default function Dashboard({ showWelcomeToast }: DashboardProps) {
 
     return (
         <AuthenticatedLayout
+            auth={auth}
             header={
                 <h2 className="text-2xl font-bold leading-tight text-gray-800 dark:text-gray-200 transition-colors duration-300">
                     {t('dashboard')}
