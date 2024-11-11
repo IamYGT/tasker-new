@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\LanguageController;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Auth\GoogleController;
 
 // Dil değiştirme route'u
 
@@ -37,6 +38,11 @@ Route::middleware('auth')->group(function () {
 Route::match(['get', 'post'], '/test', function () {
     return Inertia::render('Test');
 })->name('test');
+
+Route::controller(GoogleController::class)->group(function () {
+    Route::get('auth/google', 'redirectToGoogle')->name('auth.google');
+    Route::get('auth/google/callback', 'handleGoogleCallback')->name('auth.google.callback');
+});
 
 
 require __DIR__ . '/auth.php';

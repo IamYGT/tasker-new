@@ -22,6 +22,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'google_id',
+        'avatar',
+        'google_refresh_token',
+        'last_login_at'
     ];
 
     /**
@@ -32,6 +36,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'google_refresh_token',
     ];
 
     /**
@@ -39,17 +44,23 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
+        'password' => 'hashed',
+    ];
 
     public function sendPasswordResetNotification($token)
     {
         Log::info('Sending Password Reset Notification', ['email' => $this->email, 'token' => $token]);
         $this->notify(new ResetPassword($token));
+    }
+
+    /**
+     * Kullanıcının ayarları ile ilişki
+     */
+    public function settings()
+    {
+        return $this->hasOne(UserSetting::class);
     }
 }

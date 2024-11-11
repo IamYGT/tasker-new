@@ -58,6 +58,13 @@ const Login: React.FC<LoginProps> = ({
         }
     }, [showResetSuccessToast, t]);
 
+    useEffect(() => {
+        const error = route().params.error;
+        if (error) {
+            toast.error(error);
+        }
+    }, []);
+
     const handleError = (errors: any) => {
         if (errors.email) {
             toast.error(errors.email, {
@@ -306,7 +313,7 @@ const Login: React.FC<LoginProps> = ({
                                 {/* Google Login */}
                                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                                     <a
-                                        href="#"
+                                        href={route('auth.google')}
                                         className="w-full inline-flex justify-center py-2 px-4 rounded-md shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition duration-200"
                                         aria-label="Google ile giriş yap"
                                     >

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Route;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,20 +25,32 @@ class AppServiceProvider extends ServiceProvider
         $this->configureBladeDirectives();
         $this->shareLanguages();
         $this->setApplicationLocale();
+        
+        // Inertia paylaşımları
         Inertia::share([
             'locale' => function () {
                 return App::getLocale();
             },
             'translations' => function () {
                 $locale = App::getLocale();
-                $translations = cache()->remember("translations_{$locale}", now()->addHours(24), function () use ($locale) {
+                return cache()->remember("translations_{$locale}", now()->addHours(24), function () use ($locale) {
                     return collect(trans('*', [], $locale))->flatMap(function ($item, $key) {
                         return collect($item)->flatMap(function ($value, $nestedKey) use ($key) {
                             return ["{$key}.{$nestedKey}" => $value];
                         });
                     })->toArray();
                 });
-                return $translations;
+            },
+            'ziggy' => function () {
+                return [
+                    'url' => config('app.url'),
+                    'port' => null,
+                    'defaults' => [],
+                    'routes' => collect(Route::getRoutes()->getRoutesByName())
+                        ->filter(function ($route) {
+                            return in_array('web', $route->middleware());
+                        })->toArray(),
+                ];
             },
         ]);
     }
