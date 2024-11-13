@@ -28,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureBladeDirectives();
         $this->shareLanguages();
         $this->setApplicationLocale();
-        
+
         // Session kontrolü
         $this->app->bind('session.handler', function ($app) {
             return new \Illuminate\Session\DatabaseSessionHandler(
@@ -41,13 +41,13 @@ class AppServiceProvider extends ServiceProvider
 
         // Inertia paylaşımları
         Inertia::share([
-            'locale' => fn () => app()->getLocale(),
+            'locale' => fn() => app()->getLocale(),
             'translations' => function () {
                 try {
                     $locale = app()->getLocale();
                     return cache()->remember("translations_{$locale}", now()->addHours(24), function () use ($locale) {
                         $translations = [];
-                        foreach (glob(lang_path($locale.'/*.php')) as $file) {
+                        foreach (glob(lang_path($locale . '/*.php')) as $file) {
                             $name = basename($file, '.php');
                             $translations[$name] = require $file;
                         }
@@ -67,7 +67,7 @@ class AppServiceProvider extends ServiceProvider
                     $user = Auth::user();
                     return $user ? [
                         'id' => $user->id,
-                        'name' => $user->name, 
+                        'name' => $user->name,
                         'email' => $user->email
                     ] : null;
                 }
@@ -75,13 +75,16 @@ class AppServiceProvider extends ServiceProvider
             },
         ]);
 
-        if (config('app.debug')) {
+        // SQL loglarını sadece local'de ve belirli durumlarda etkinleştir
+        if (config('app.debug') && config('app.env') === 'local' && config('logging.sql_queries', false)) {
             DB::listen(function ($query) {
-                Log::info('SQL Query:', [
-                    'sql' => $query->sql,
-                    'bindings' => $query->bindings,
-                    'time' => $query->time
-                ]);
+                if ($query->time > 1000) { // Sadece 1 saniyeden uzun süren sorguları logla
+                    Log::warning('Slow SQL Query:', [
+                        'sql' => $query->sql,
+                        'bindings' => $query->bindings,
+                        'time' => $query->time
+                    ]);
+                }
             });
         }
     }

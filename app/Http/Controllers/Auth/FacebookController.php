@@ -25,13 +25,9 @@ class FacebookController extends Controller
                     ->with('info', 'Zaten giriş yapmış durumdasınız.');
             }
 
-            $facebook = Socialite::driver('facebook');
-            
-            // State'i kaydet
-            $state = Str::random(40);
-            session(['facebook_auth_state' => $state]);
-
-            return $facebook->scopes(['email', 'public_profile'])
+            return Socialite::driver('facebook')
+                ->stateless()
+                ->scopes(['email', 'public_profile'])
                 ->with(['auth_type' => 'rerequest'])
                 ->redirect();
 
@@ -51,19 +47,9 @@ class FacebookController extends Controller
         try {
             Log::info('Facebook callback başladı');
 
-            $savedState = session('facebook_auth_state');
-            $currentState = request('state');
-
-            if (empty($savedState) || $savedState !== $currentState) {
-                Log::warning('Facebook callback state uyuşmazlığı');
-                session()->forget('facebook_auth_state');
-                return redirect()->route('login')
-                    ->with('error', 'Güvenlik doğrulaması başarısız oldu. Lütfen tekrar deneyin.');
-            }
-
-            session()->forget('facebook_auth_state');
-
-            $facebookUser = Socialite::driver('facebook')->user();
+            $facebookUser = Socialite::driver('facebook')
+                ->stateless()
+                ->user();
             
             Log::info('Facebook kullanıcı bilgileri alındı:', [
                 'name' => $facebookUser->getName(),
@@ -71,7 +57,7 @@ class FacebookController extends Controller
                 'id' => $facebookUser->getId()
             ]);
 
-            if (empty($facebookUser->email)) {
+            if (empty($facebookUser->getEmail())) {
                 throw ValidationException::withMessages([
                     'email' => ['Facebook hesabınızdan email bilgisi alınamadı.']
                 ]);
@@ -79,20 +65,20 @@ class FacebookController extends Controller
 
             return DB::transaction(function () use ($facebookUser) {
                 // Önce email ile kullanıcıyı ara
-                $user = User::where('email', $facebookUser->email)->first();
+                $user = User::where('email', $facebookUser->getEmail())->first();
 
                 // Eğer email ile kullanıcı bulunduysa
                 if ($user) {
                     // Facebook ID'si henüz bağlı değilse, bağla
                     if (!$user->facebook_id) {
                         $user->update([
-                            'facebook_id' => $facebookUser->id,
+                            'facebook_id' => $facebookUser->getId(),
                             'last_login_at' => now()
                         ]);
                         
                         Log::info('Mevcut kullanıcıya Facebook bağlantısı eklendi:', [
                             'user_id' => $user->id,
-                            'facebook_id' => $facebookUser->id
+                            'facebook_id' => $facebookUser->getId()
                         ]);
                     }
 
@@ -102,7 +88,7 @@ class FacebookController extends Controller
                 }
 
                 // Facebook ID ile kullanıcı ara
-                $user = User::where('facebook_id', $facebookUser->id)->first();
+                $user = User::where('facebook_id', $facebookUser->getId())->first();
 
                 if ($user) {
                     $user->update([
@@ -116,10 +102,10 @@ class FacebookController extends Controller
 
                 // Yeni kullanıcı oluştur
                 $newUser = User::create([
-                    'name' => $facebookUser->name,
-                    'email' => $facebookUser->email,
-                    'facebook_id' => $facebookUser->id,
-                    'avatar' => $facebookUser->avatar,
+                    'name' => $facebookUser->getName(),
+                    'email' => $facebookUser->getEmail(),
+                    'facebook_id' => $facebookUser->getId(),
+                    'avatar' => $facebookUser->getAvatar(),
                     'password' => Hash::make(Str::random(32)),
                     'email_verified_at' => now(),
                     'last_login_at' => now(),

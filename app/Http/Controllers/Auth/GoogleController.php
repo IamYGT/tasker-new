@@ -30,10 +30,16 @@ class GoogleController extends Controller
             }
 
             return Socialite::driver('google')
+                ->scopes([
+                    'email',
+                    'profile',
+                    'openid'
+                ])
                 ->with([
-                    'scope' => ['openid', 'email', 'profile'],
-                    'prompt' => 'select_account consent',
-                    'access_type' => 'offline'
+                    'prompt' => 'select_account',
+                    'access_type' => 'offline',
+                    'include_granted_scopes' => 'true',
+                    'response_type' => 'code'
                 ])
                 ->redirect();
 
@@ -55,8 +61,8 @@ class GoogleController extends Controller
     {
         try {
             Log::info('Google callback başladı');
-
-            $googleUser = Socialite::driver('google')->user();
+            $googleUser = Socialite::driver('google')
+                ->user();
             
             Log::info('Google kullanıcı bilgileri alındı:', [
                 'name' => $googleUser->name,
