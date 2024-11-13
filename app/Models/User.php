@@ -28,7 +28,9 @@ class User extends Authenticatable
         'avatar',
         'google_refresh_token',
         'last_login_at',
-        'social_login'
+        'social_login',
+        'last_social_login',
+        'social_registration',
     ];
 
     /**
@@ -51,7 +53,8 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'last_login_at' => 'datetime',
         'password' => 'hashed',
-        'social_login' => 'boolean'
+        'social_login' => 'boolean',
+        'social_registration' => 'boolean',
     ];
 
     public function sendPasswordResetNotification($token)

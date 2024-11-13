@@ -9,16 +9,15 @@ return new class extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('github_id')->nullable()->after('facebook_id');
-            $table->index('github_id');
+            $table->string('last_social_login')->nullable();
+            $table->boolean('social_registration')->default(false);
         });
     }
 
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropIndex(['github_id']);
-            $table->dropColumn('github_id');
+            $table->dropColumn(['last_social_login', 'social_registration']);
         });
     }
 }; 
