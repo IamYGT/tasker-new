@@ -11,6 +11,7 @@ export interface User {
     facebook_id?: string | null;
     github_id?: string | null;
     last_login_at?: string | null;
+    social_login: boolean;
     created_at?: string;
     updated_at?: string;
 }

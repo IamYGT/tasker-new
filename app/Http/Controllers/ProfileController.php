@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
 {
@@ -18,10 +19,35 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
-        return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
-            'status' => session('status'),
-        ]);
+        try {
+            $user = $request->user();
+            
+            if (!$user) {
+                return redirect()->route('login');
+            }
+
+            $sessionData = [
+                'mustVerifyEmail' => $user instanceof MustVerifyEmail,
+                'status' => session('status'),
+                'socialLogin' => (bool)$user->social_login,
+                'hasPassword' => !empty($user->password),
+                'connectedAccounts' => [],
+            ];
+
+            session(['profile_data' => $sessionData]);
+
+            return Inertia::render('Profile/Edit', $sessionData);
+
+        } catch (\Exception $e) {
+            Log::error('Profile edit error:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $request->user()?->id
+            ]);
+            
+            return redirect()->route('dashboard')
+                ->with('error', 'Profil sayfası yüklenirken bir hata oluştu.');
+        }
     }
 
     /**

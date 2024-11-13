@@ -27,7 +27,8 @@ class User extends Authenticatable
         'github_id',
         'avatar',
         'google_refresh_token',
-        'last_login_at'
+        'last_login_at',
+        'social_login'
     ];
 
     /**
@@ -50,6 +51,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'last_login_at' => 'datetime',
         'password' => 'hashed',
+        'social_login' => 'boolean'
     ];
 
     public function sendPasswordResetNotification($token)

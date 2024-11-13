@@ -31,10 +31,9 @@ class FacebookController extends Controller
             $state = Str::random(40);
             session(['facebook_auth_state' => $state]);
 
-            return $facebook->with([
-                'auth_type' => 'rerequest',
-                'scope' => ['email', 'public_profile']
-            ])->redirect();
+            return $facebook->scopes(['email', 'public_profile'])
+                ->with(['auth_type' => 'rerequest'])
+                ->redirect();
 
         } catch (Exception $e) {
             Log::error('Facebook yönlendirme hatası:', [
@@ -123,7 +122,8 @@ class FacebookController extends Controller
                     'avatar' => $facebookUser->avatar,
                     'password' => Hash::make(Str::random(32)),
                     'email_verified_at' => now(),
-                    'last_login_at' => now()
+                    'last_login_at' => now(),
+                    'social_login' => true
                 ]);
 
                 Log::info('Yeni Facebook kullanıcısı oluşturuldu:', ['user_id' => $newUser->id]);

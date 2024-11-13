@@ -2,7 +2,7 @@ import { FormEventHandler, useState } from 'react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { Transition } from '@headlessui/react';
 import { useTranslation } from '@/Contexts/TranslationContext';
-import { PageProps } from '@/types';
+import type { User } from '@/types';
 
 // Components
 import InputError from '@/Components/InputError';
@@ -27,15 +27,20 @@ interface PasswordData extends Record<string, string> {
 }
 
 export default function UpdateProfileInformation({
-    mustVerifyEmail,
+    mustVerifyEmail = false,
     status,
     className = '',
-    socialLogin,
-    hasPassword,
+    socialLogin = false,
+    hasPassword = false,
 }: UpdateProfileInformationProps) {
     const { t } = useTranslation();
-    const user = usePage<{ auth: { user: any } }>().props.auth.user;
+    const user = usePage<{ auth: { user: User } }>().props.auth.user;
     
+    // Prop kontrolü
+    if (!user) {
+        return null; // veya loading component'i
+    }
+
     // State
     const [showPasswordForm, setShowPasswordForm] = useState(false);
     const [passwordData, setPasswordData] = useState<PasswordData>({
@@ -139,7 +144,7 @@ export default function UpdateProfileInformation({
             </form>
 
             {/* Password Setup Section */}
-            {socialLogin && !hasPassword && (
+            {Boolean(socialLogin) && !Boolean(hasPassword) && (
                 <div className="mt-6">
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
                         <div className="flex">

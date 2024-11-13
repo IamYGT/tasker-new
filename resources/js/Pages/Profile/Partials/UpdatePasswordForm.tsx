@@ -9,9 +9,13 @@ import { useTranslation } from '@/Contexts/TranslationContext';
 
 export default function UpdatePasswordForm({
     className = '',
+    socialLogin = false,
 }: {
     className?: string;
+    socialLogin?: boolean;
 }) {
+    console.log('socialLogin value:', socialLogin);
+
     const { t } = useTranslation();
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
@@ -63,29 +67,31 @@ export default function UpdatePasswordForm({
             </header>
 
             <form onSubmit={updatePassword} className="mt-6 space-y-6">
-                <div>
-                    <InputLabel
-                        htmlFor="current_password"
-                        value={t('current_password')}
-                    />
+                {!socialLogin && (
+                    <div>
+                        <InputLabel
+                            htmlFor="current_password"
+                            value={t('current_password')}
+                        />
 
-                    <TextInput
-                        id="current_password"
-                        ref={currentPasswordInput}
-                        value={data.current_password}
-                        onChange={(e) =>
-                            setData('current_password', e.target.value)
-                        }
-                        type="password"
-                        className="mt-1 block w-full"
-                        autoComplete="current-password"
-                    />
+                        <TextInput
+                            id="current_password"
+                            ref={currentPasswordInput}
+                            value={data.current_password}
+                            onChange={(e) =>
+                                setData('current_password', e.target.value)
+                            }
+                            type="password"
+                            className="mt-1 block w-full"
+                            autoComplete="current-password"
+                        />
 
-                    <InputError
-                        message={errors.current_password ? t(errors.current_password) : ''}
-                        className="mt-2"
-                    />
-                </div>
+                        <InputError
+                            message={errors.current_password ? t(errors.current_password) : ''}
+                            className="mt-2"
+                        />
+                    </div>
+                )}
 
                 <div>
                     <InputLabel htmlFor="password" value={t('new_password')} />

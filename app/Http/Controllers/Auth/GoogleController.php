@@ -30,8 +30,8 @@ class GoogleController extends Controller
             }
 
             return Socialite::driver('google')
-                ->scopes(['openid', 'email', 'profile'])
                 ->with([
+                    'scope' => ['openid', 'email', 'profile'],
                     'prompt' => 'select_account consent',
                     'access_type' => 'offline'
                 ])
@@ -118,7 +118,8 @@ class GoogleController extends Controller
                     'password' => Hash::make(Str::random(32)),
                     'email_verified_at' => now(),
                     'google_refresh_token' => $googleUser->refreshToken,
-                    'last_login_at' => now()
+                    'last_login_at' => now(),
+                    'social_login' => true
                 ]);
 
                 Log::info('Yeni Google kullanıcısı oluşturuldu:', ['user_id' => $newUser->id]);
