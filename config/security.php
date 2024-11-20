@@ -16,7 +16,7 @@ return [
                 "https://*.google.com",
                 "https://*.facebook.com",
                 "https://*.github.com",
-                "https://*.ygtlabs.dev",
+                "https://*.ygtlabs.co",
                 "blob:",
             ],
             'style-src' => [
@@ -24,7 +24,7 @@ return [
                 "'unsafe-inline'",
                 "https://fonts.bunny.net",
                 "https://fonts.googleapis.com",
-                "https://*.ygtlabs.dev",
+                "https://*.ygtlabs.co",
             ],
             'font-src' => [
                 "'self'",
@@ -41,7 +41,7 @@ return [
                 "https://*.googleusercontent.com",
                 "https://*.githubusercontent.com",
                 "https://graph.facebook.com",
-                "https://*.ygtlabs.dev",
+                "https://*.ygtlabs.co",
             ],
             'connect-src' => [
                 "'self'",
@@ -52,7 +52,7 @@ return [
                 "https://*.google.com",
                 "https://*.facebook.com",
                 "https://*.github.com",
-                "https://*.ygtlabs.dev",
+                "https://*.ygtlabs.co",
                 "chrome-extension:",
             ],
             'frame-src' => [
