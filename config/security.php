@@ -1,5 +1,8 @@
 <?php
 
+$mainDomain = env('MAIN_DOMAIN', 'ygtlabs.co');
+$allowedDomains = env('ALLOWED_DOMAINS', "*.$mainDomain");
+
 return [
     'headers' => [
         'Content-Security-Policy' => [
@@ -16,7 +19,7 @@ return [
                 "https://*.google.com",
                 "https://*.facebook.com",
                 "https://*.github.com",
-                "https://*.ygtlabs.co",
+                "https://$allowedDomains",
                 "blob:",
             ],
             'style-src' => [
@@ -24,7 +27,7 @@ return [
                 "'unsafe-inline'",
                 "https://fonts.bunny.net",
                 "https://fonts.googleapis.com",
-                "https://*.ygtlabs.co",
+                "https://$allowedDomains",
             ],
             'font-src' => [
                 "'self'",
@@ -41,7 +44,7 @@ return [
                 "https://*.googleusercontent.com",
                 "https://*.githubusercontent.com",
                 "https://graph.facebook.com",
-                "https://*.ygtlabs.co",
+                "https://$allowedDomains",
             ],
             'connect-src' => [
                 "'self'",
@@ -52,7 +55,7 @@ return [
                 "https://*.google.com",
                 "https://*.facebook.com",
                 "https://*.github.com",
-                "https://*.ygtlabs.co",
+                "https://$allowedDomains",
                 "chrome-extension:",
             ],
             'frame-src' => [

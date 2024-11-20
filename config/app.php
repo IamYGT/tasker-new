@@ -1,5 +1,8 @@
 <?php
 
+$mainDomain = env('MAIN_DOMAIN', 'ygtlabs.co');
+$appSubdomain = env('APP_SUBDOMAIN', 'transactify');
+
 return [
 
     /*
@@ -13,7 +16,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'YGT Labs'),
 
     /*
     |--------------------------------------------------------------------------
@@ -52,7 +55,7 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    'url' => env('APP_URL', "https://$appSubdomain.$mainDomain"),
 
     /*
     |--------------------------------------------------------------------------
@@ -121,6 +124,13 @@ return [
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
+    ],
+
+    'domains' => [
+        'main' => $mainDomain,
+        'app' => $appSubdomain,
+        'full' => "$appSubdomain.$mainDomain",
+        'allowed' => "*.$mainDomain",
     ],
 
 ];
