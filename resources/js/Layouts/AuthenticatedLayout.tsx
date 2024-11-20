@@ -7,15 +7,19 @@ import LogoutModal from './LogoutModal';
 import { motion } from 'framer-motion';
 import { User } from '@/types';
 
-interface AuthenticatedProps {
+interface Props {
     auth: {
-        user: User;
+        user: {
+            roles: Array<{
+                name: string;
+            }>;
+        };
     };
-    header: React.ReactNode;
     children: React.ReactNode;
+    header?: React.ReactNode;
 }
 
-export default function AuthenticatedLayout({ auth, header, children }: AuthenticatedProps) {
+export default function Authenticated({ auth, header, children }: Props) {
     const { languages, secili_dil } = usePage().props as any;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
@@ -78,6 +82,8 @@ export default function AuthenticatedLayout({ auth, header, children }: Authenti
         });
     };
 
+    const isAdmin = auth?.user?.roles?.some(role => role.name === 'admin') ?? false;
+
     return (
         <div className={`flex h-screen ${darkMode ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900' : 'bg-gradient-to-br from-blue-100 via-blue-200 to-indigo-300'} transition-all duration-500 ease-in-out animate-gradient`}>
             {isLoading && (
@@ -100,6 +106,7 @@ export default function AuthenticatedLayout({ auth, header, children }: Authenti
                 darkMode={darkMode}
                 setShowLogoutModal={setShowLogoutModal}
                 collapsed={isMobile ? false : collapsed}
+                isAdmin={isAdmin}
             />
 
             <div className="flex-1 flex flex-col overflow-hidden">
@@ -108,7 +115,7 @@ export default function AuthenticatedLayout({ auth, header, children }: Authenti
                     setSidebarOpen={setSidebarOpen}
                     darkMode={darkMode}
                     toggleDarkMode={toggleDarkMode}
-                    auth={auth}
+                    auth={{user: auth?.user as User}}
                     languages={languages}
                     secili_dil={secili_dil}
                     header={header}

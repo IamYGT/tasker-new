@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\FacebookController;
 use App\Http\Controllers\Auth\GitHubController;
+use App\Http\Controllers\UserController;
 
 // Dil değiştirme route'u
 
@@ -36,6 +37,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::post('/profile/set-password', [ProfileController::class, 'setPassword'])->name('profile.set-password');
+    Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
 });
 
 Route::match(['get', 'post'], '/test', function () {
@@ -57,5 +60,15 @@ Route::controller(GitHubController::class)->group(function () {
     Route::get('auth/github/callback', 'handleGithubCallback')->name('auth.github.callback');
 });
 
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])
+        ->name('users.reset-password');
+});
 
 require __DIR__ . '/auth.php';

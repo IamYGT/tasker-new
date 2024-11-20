@@ -1,32 +1,45 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 import { useTranslation } from '@/Contexts/TranslationContext';
-import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaGithub, FaSpinner, FaUserPlus, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaSpinner, FaUserPlus, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
-import GuestLayout from '@/Layouts/GuestLayout';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import InputError from '@/Components/InputError';
-import { router } from '@inertiajs/react'; // Inertia'yı import ediyoruz
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
-interface RegisterProps {
+interface CreateUserProps {
+    auth: any;
     languages: any;
     secili_dil: any;
-    registrationSuccess?: boolean; // Bu prop'u ekliyoruz
 }
 
+interface FormData {
+    name: string;
+    email: string;
+    password: string;
+    password_confirmation: string;
+}
 
-export default function Register({ languages, secili_dil }: RegisterProps) {
+type FormField = keyof FormData;
+
+interface InputProps {
+    name: FormField;
+    icon: React.ReactNode;
+    type: string;
+    placeholder: string;
+    showPasswordToggle?: boolean;
+}
+
+export default function CreateUser({ auth, languages, secili_dil }: CreateUserProps) {
     const { t } = useTranslation();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [passwordStrength, setPasswordStrength] = useState(0);
     const [isValidEmail, setIsValidEmail] = useState(false);
     const [passwordsMatch, setPasswordsMatch] = useState(true);
-    const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm<FormData>({
         name: '',
         email: '',
         password: '',
@@ -57,45 +70,19 @@ export default function Register({ languages, secili_dil }: RegisterProps) {
         setPasswordsMatch(data.password === data.password_confirmation);
     }, [data.password, data.password_confirmation, checkPasswordStrength]);
 
-
-
-    useEffect(() => {
-        if (registrationSuccess) {
-            const timer = setTimeout(() => {
-                router.visit(route('dashboard'));
-            }, 2000);
-
-            return () => clearTimeout(timer);
-        }
-    }, [registrationSuccess]);
-
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         if (passwordsMatch && isValidEmail && passwordStrength >= 3) {
-            post(route('kayit_oldu'), {
-                preserveState: true,
-                preserveScroll: true,
+            post(route('users.store'), {
                 onSuccess: () => {
-                    // Toast mesajını burada göstermiyoruz, çünkü dashboard'da göstereceğiz
+                    toast.success(t('users.createSuccess'));
+                    router.visit(route('users.index'));
                 },
-                onError: (errors) => {
-                    toast.error(t('register.errorMessage'), {
-                        position: "top-right",
-                        autoClose: 5000,
-                        hideProgressBar: false,
-                        closeOnClick: true,
-                        pauseOnHover: true,
-                        draggable: true,
-                    });
+                onError: () => {
+                    toast.error(t('users.createError'));
                 },
             });
         }
-    };
-
-    const inputVariants = {
-        focus: { scale: 1.02, boxShadow: '0px 0px 8px rgba(59, 130, 246, 0.5)', transition: { duration: 0.2 } },
-        blur: { scale: 1, boxShadow: 'none', transition: { duration: 0.2 } },
-        tap: { scale: 0.98, transition: { duration: 0.1 } }
     };
 
     const buttonVariants = {
@@ -125,7 +112,7 @@ export default function Register({ languages, secili_dil }: RegisterProps) {
                     {[0, 1, 2, 3, 4].map((level) => (
                         <motion.div
                             key={level}
-                            className={`h-2 w-1/5 mr-1 rounded-full`}
+                            className="h-2 w-1/5 mr-1 rounded-full"
                             initial={{ scaleX: 0 }}
                             animate={{
                                 scaleX: passwordStrength > level ? 1 : 0,
@@ -148,23 +135,14 @@ export default function Register({ languages, secili_dil }: RegisterProps) {
         );
     };
 
-    const renderInput = (
-        name: 'name' | 'email' | 'password' | 'password_confirmation',
-        icon: React.ReactNode,
-        type: string,
-        placeholder: string,
-        showPasswordToggle = false
-    ) => (
+    const renderInput = ({ name, icon, type, placeholder, showPasswordToggle = false }: InputProps) => (
         <motion.div
-            variants={inputVariants}
-            initial="blur"
             whileFocus="focus"
-            whileTap="tap"
             animate="blur"
             className="mb-4"
         >
             <label htmlFor={name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t(`register.${name}`)}
+                {t(`users.${name}`)}
             </label>
             <div className="relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -181,11 +159,12 @@ export default function Register({ languages, secili_dil }: RegisterProps) {
                             setPasswordStrength(checkPasswordStrength(e.target.value));
                         }
                     }}
-                    className={`block w-full pl-10 pr-${showPasswordToggle ? '10' : '3'} py-2 sm:text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 dark:bg-gray-700 dark:text-white bg-white text-gray-900 border-gray-300 dark:border-gray-600 transition duration-200 ${name === 'password_confirmation' && !passwordsMatch && data.password_confirmation
-                        ? 'border-red-500 dark:border-red-700'
-                        : ''
-                        }`}
-                    placeholder={t(`register.${placeholder}`)}
+                    className={`block w-full pl-10 pr-${showPasswordToggle ? '10' : '3'} py-2 sm:text-sm rounded-md 
+                        focus:ring-blue-500 focus:border-blue-500 
+                        dark:focus:ring-blue-400 dark:focus:border-blue-400 
+                        dark:bg-gray-700 dark:text-white bg-white text-gray-900 
+                        border-gray-300 dark:border-gray-600 transition duration-200
+                        ${name === 'password_confirmation' && !passwordsMatch && data.password_confirmation ? 'border-red-500' : ''}`}
                     required
                 />
                 {showPasswordToggle && (
@@ -195,9 +174,11 @@ export default function Register({ languages, secili_dil }: RegisterProps) {
                             whileTap={{ scale: 0.9 }}
                             type="button"
                             onClick={() => name === 'password' ? setShowPassword(!showPassword) : setShowConfirmPassword(!showConfirmPassword)}
-                            className="text-gray-400 hover:text-gray-500 focus:outline-none focus:text-gray-500 dark:text-gray-300 dark:hover:text-gray-200 dark:focus:text-gray-200"
+                            className="text-gray-400 hover:text-gray-500 focus:outline-none"
                         >
-                            {(name === 'password' ? showPassword : showConfirmPassword) ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                            {(name === 'password' ? showPassword : showConfirmPassword) ? 
+                                <FaEyeSlash className="h-5 w-5" /> : 
+                                <FaEye className="h-5 w-5" />}
                         </motion.button>
                     </div>
                 )}
@@ -214,98 +195,89 @@ export default function Register({ languages, secili_dil }: RegisterProps) {
             <InputError message={errors[name]} className="mt-2" />
             {name === 'password' && data.password && renderPasswordStrengthBar()}
             {name === 'password_confirmation' && !passwordsMatch && data.password_confirmation && (
-                <p className="text-xs mt-1 text-red-500">{t('register.passwordsDontMatch')}</p>
+                <p className="text-xs mt-1 text-red-500">{t('users.passwordsDontMatch')}</p>
             )}
         </motion.div>
     );
 
     return (
-        <GuestLayout languages={languages} secili_dil={secili_dil}>
-            <Head title={t('register.title')} />
+        <AuthenticatedLayout auth={auth} header={<h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{t('users.createNew')}</h2>}>
+            <Head title={t('users.createNew')} />
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="w-full max-w-md mx-auto"
+                className="py-12"
             >
-                <div className="bg-white dark:bg-gray-800 shadow-2xl rounded-3xl overflow-hidden backdrop-filter backdrop-blur-lg bg-opacity-30 dark:bg-opacity-30 border border-gray-200 dark:border-gray-700 border-opacity-20">
-                    <div className="border-b border-gray-200 dark:border-gray-700 border-opacity-20 p-8 sm:p-10">
-                        <AnimatePresence>
+                <div className="max-w-2xl mx-auto sm:px-6 lg:px-8">
+                    <div className="bg-white dark:bg-gray-800 shadow-2xl rounded-3xl overflow-hidden backdrop-filter backdrop-blur-lg bg-opacity-30 dark:bg-opacity-30 border border-gray-200 dark:border-gray-700">
+                        <div className="p-8">
                             <motion.h2
-                                key="welcome-text"
                                 initial={{ opacity: 0, y: -20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 20 }}
-                                transition={{ duration: 0.5 }}
                                 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-8 text-center"
                             >
-                                {t('register.addNewUser')}
+                                {t('users.createNew')}
                             </motion.h2>
-                        </AnimatePresence>
 
-                        <form onSubmit={submit} className="space-y-6">
-                            {renderInput('name', <FaUser className="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />, 'text', 'namePlaceholder')}
-                            {renderInput('email', <FaEnvelope className="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />, 'email', 'emailPlaceholder')}
-                            {renderInput('password', <FaLock className="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />, 'password', 'passwordPlaceholder', true)}
-                            {renderInput('password_confirmation', <FaLock className="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />, 'password', 'confirmPasswordPlaceholder', true)}
+                            <form onSubmit={submit} className="space-y-6">
+                                {renderInput({
+                                    name: 'name',
+                                    icon: <FaUser className="h-5 w-5 text-gray-400" />,
+                                    type: 'text',
+                                    placeholder: 'name'
+                                })}
+                                {renderInput({
+                                    name: 'email',
+                                    icon: <FaEnvelope className="h-5 w-5 text-gray-400" />,
+                                    type: 'email',
+                                    placeholder: 'email'
+                                })}
+                                {renderInput({
+                                    name: 'password',
+                                    icon: <FaLock className="h-5 w-5 text-gray-400" />,
+                                    type: 'password',
+                                    placeholder: 'password',
+                                    showPasswordToggle: true
+                                })}
+                                {renderInput({
+                                    name: 'password_confirmation',
+                                    icon: <FaLock className="h-5 w-5 text-gray-400" />,
+                                    type: 'password',
+                                    placeholder: 'confirmPassword',
+                                    showPasswordToggle: true
+                                })}
 
-                            <div>
                                 <motion.button
                                     variants={buttonVariants}
                                     initial="idle"
                                     whileHover="hover"
                                     whileTap="tap"
                                     type="submit"
-                                    disabled={processing || !isValidEmail || passwordStrength < 3 || !passwordsMatch || registrationSuccess}
+                                    disabled={processing || !isValidEmail || passwordStrength < 3 || !passwordsMatch}
                                     className={`
                                         w-full flex justify-center items-center py-3 px-4 
-                                        text-sm font-medium 
-                                        text-white
-                                        rounded-lg
+                                        text-sm font-medium text-white rounded-lg
                                         transition-all duration-200 ease-in-out
-                                        ${registrationSuccess
-                                            ? 'bg-green-500 hover:bg-green-600'
-                                            : processing || !isValidEmail || passwordStrength < 3 || !passwordsMatch
-                                                ? 'bg-gray-400 cursor-not-allowed'
-                                                : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
+                                        ${processing || !isValidEmail || passwordStrength < 3 || !passwordsMatch
+                                            ? 'bg-gray-400 cursor-not-allowed'
+                                            : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
                                         }
                                     `}
                                 >
                                     {processing ? (
                                         <FaSpinner className="h-5 w-5 mr-3 animate-spin" />
-                                    ) : registrationSuccess ? (
-                                        <FaCheckCircle className="h-5 w-5 mr-3" />
                                     ) : (
                                         <FaUserPlus className="h-5 w-5 mr-3" />
                                     )}
-                                    {registrationSuccess ? t('register.successRedirecting') : t('register.register')}
+                                    {t('users.create')}
                                 </motion.button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
-
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4, duration: 0.5 }}
-                        className="px-4 py-6 bg-light-background dark:bg-dark-surface sm:px-10"
-                    >
-                        <p className="text-sm leading-6 text-light-text-secondary dark:text-dark-text-secondary">
-                            {t('register.termsAgreement')}{' '}
-                            <a href="#" className="font-medium text-light-primary hover:text-light-accent dark:text-dark-primary dark:hover:text-dark-accent">
-                                {t('register.termsOfService')}
-                            </a>{' '}
-                            {t('register.and')}{' '}
-                            <a href="#" className="font-medium text-light-primary hover:text-light-accent dark:text-dark-primary dark:hover:text-dark-accent">
-                                {t('register.privacyPolicy')}
-                            </a>
-                            .
-                        </p>
-                    </motion.div>
                 </div>
             </motion.div>
-        </GuestLayout>
+        </AuthenticatedLayout>
     );
-}
+} 

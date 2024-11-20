@@ -31,6 +31,7 @@ class User extends Authenticatable
         'social_login',
         'last_social_login',
         'social_registration',
+        'role_id',
     ];
 
     /**
@@ -69,5 +70,44 @@ class User extends Authenticatable
     public function settings()
     {
         return $this->hasOne(UserSetting::class);
+    }
+
+    /**
+     * Roles ilişkisini ekleyelim
+     */
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_user');
+    }
+
+    /**
+     * Role kontrol metodları
+     */
+    public function hasRole($role)
+    {
+        return $this->roles()->where('name', $role)->exists();
+    }
+
+    public function hasAnyRole($roles)
+    {
+        return $this->roles()->whereIn('name', $roles)->exists();
+    }
+
+    public function assignRole($role)
+    {
+        try {
+            if (is_string($role)) {
+                $role = Role::where('name', $role)->firstOrFail();
+            }
+            $this->roles()->syncWithoutDetaching($role);
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Rol atama hatası:', [
+                'user_id' => $this->id,
+                'role' => $role,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
     }
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import NavLink from './NavLink';
-import { MdDashboard, MdPerson, MdLogout, MdClose } from 'react-icons/md';
+import { MdDashboard, MdPerson, MdLogout, MdClose, MdPersonAdd, MdGroup, MdSettings } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
@@ -13,6 +13,7 @@ interface SidebarProps {
     darkMode: boolean;
     setShowLogoutModal: (show: boolean) => void;
     collapsed: boolean;
+    isAdmin: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -20,7 +21,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     setSidebarOpen,
     darkMode,
     setShowLogoutModal,
-    collapsed
+    collapsed,
+    isAdmin,
 }) => {
     const { t } = useTranslation();
     const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 1024);
@@ -136,39 +138,83 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                     {/* Navigation Links */}
                     <motion.nav
-                        className="flex-grow mt-6 px-3 sm:px-4 space-y-2 overflow-y-auto custom-scrollbar"
+                        className="flex-grow mt-6 px-3 sm:px-4 space-y-1 overflow-y-auto custom-scrollbar"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ duration: 0.1, delay: 0.05 }} // Hızlandırıldı
+                        transition={{ duration: 0.1, delay: 0.05 }}
                     >
-                        <Tippy content={collapsed && !isMobile ? t('sidebar.dashboard') : ""} disabled={!collapsed || isMobile} placement="right">
-                            <div>
-                                <NavLink
-                                    href={route('dashboard')}
-                                    active={route().current('dashboard')}
-                                    darkMode={darkMode}
-                                    collapsed={isMobile ? false : collapsed}
-                                    icon={<MdDashboard className="w-5 h-5 sm:w-6 sm:h-6" />}
-                                    isMobile={isMobile}
-                                >
-                                    {t('sidebar.dashboard')}
-                                </NavLink>
+                        {/* Ana Menü */}
+                        <div className="space-y-2 mb-6">
+                            <Tippy content={collapsed && !isMobile ? t('sidebar.dashboard') : ""} disabled={!collapsed || isMobile} placement="right">
+                                <div>
+                                    <NavLink
+                                        href={route('dashboard')}
+                                        active={route().current('dashboard')}
+                                        darkMode={darkMode}
+                                        collapsed={isMobile ? false : collapsed}
+                                        icon={<MdDashboard className="w-5 h-5 sm:w-6 sm:h-6" />}
+                                        isMobile={isMobile}
+                                    >
+                                        {t('sidebar.dashboard')}
+                                    </NavLink>
+                                </div>
+                            </Tippy>
+                        </div>
+
+                        {/* Kullanıcı Yönetimi Bölümü - Sadece adminler görebilir */}
+                        {isAdmin && (
+                            <div className="space-y-2 mt-6">
+                                <div className={`${collapsed && !isMobile ? 'border-b border-gray-600 dark:border-gray-400 my-2' : 'px-3 py-2 text-xs font-semibold uppercase tracking-wider ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}`}>
+                                    {!collapsed && t('sidebar.userManagement')}
+                                </div>
+
+                                <Tippy content={collapsed && !isMobile ? t('sidebar.userList') : ""} disabled={!collapsed || isMobile} placement="right">
+                                    <div>
+                                        <NavLink
+                                            href={route('users.index')}
+                                            active={route().current('users.*')}
+                                            darkMode={darkMode}
+                                            collapsed={isMobile ? false : collapsed}
+                                            icon={<MdGroup className="w-5 h-5 sm:w-6 sm:h-6" />}
+                                            isMobile={isMobile}
+                                        >
+                                            {t('sidebar.userList')}
+                                        </NavLink>
+                                    </div>
+                                </Tippy>
                             </div>
-                        </Tippy>
-                        <Tippy content={collapsed && !isMobile ? t('sidebar.profile') : ""} disabled={!collapsed || isMobile} placement="right">
-                            <div>
-                                <NavLink
-                                    href={route('profile.edit')}
-                                    active={route().current('profile.edit')}
-                                    darkMode={darkMode}
-                                    collapsed={isMobile ? false : collapsed}
-                                    icon={<MdPerson className="w-5 h-5 sm:w-6 sm:h-6" />}
-                                    isMobile={isMobile}
-                                >
-                                    {t('sidebar.profile')}
-                                </NavLink>
+                        )}
+
+                        {/* Ayarlar Bölümü */}
+                        <div className="space-y-2 mt-6">
+                            {/* Başlık - Collapsed durumunda border olarak göster */}
+                            <div 
+                                className={`
+                                    ${collapsed && !isMobile 
+                                        ? 'border-b border-gray-600 dark:border-gray-400 my-2' 
+                                        : 'px-3 py-2 text-xs font-semibold uppercase tracking-wider ' + 
+                                          (darkMode ? 'text-gray-400' : 'text-gray-500')
+                                    }
+                                `}
+                            >
+                                {!collapsed && t('sidebar.settings')}
                             </div>
-                        </Tippy>
+
+                            <Tippy content={collapsed && !isMobile ? t('sidebar.profile') : ""} disabled={!collapsed || isMobile} placement="right">
+                                <div>
+                                    <NavLink
+                                        href={route('profile.edit')}
+                                        active={route().current('profile.edit')}
+                                        darkMode={darkMode}
+                                        collapsed={isMobile ? false : collapsed}
+                                        icon={<MdPerson className="w-5 h-5 sm:w-6 sm:h-6" />}
+                                        isMobile={isMobile}
+                                    >
+                                        {t('sidebar.profile')}
+                                    </NavLink>
+                                </div>
+                            </Tippy>
+                        </div>
                     </motion.nav>
 
                     {/* Logout Button */}

@@ -14,6 +14,7 @@ export interface User {
     social_login: boolean;
     created_at?: string;
     updated_at?: string;
+    roles: Role[];
 }
 
 export interface Auth {

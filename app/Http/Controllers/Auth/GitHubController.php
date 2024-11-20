@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-
+use App\Models\Role;
 class GitHubController extends Controller
 {
     public function redirectToGithub()
@@ -91,16 +91,26 @@ class GitHubController extends Controller
                 }
 
                 // Yeni kullanıcı oluştur
-                $newUser = User::create([
-                    'name' => $githubUser->getName() ?? 'GitHub User',
-                    'email' => $githubUser->getEmail(),
-                    'github_id' => $githubUser->getId(),
-                    'avatar' => $githubUser->getAvatar(),
-                    'password' => Hash::make(Str::random(32)),
-                    'email_verified_at' => now(),
-                    'last_login_at' => now(),
-                    'social_login' => true
-                ]);
+                $newUser = DB::transaction(function () use ($githubUser) {
+                    $user = User::create([
+                        'name' => $githubUser->getName() ?? 'GitHub User',
+                        'email' => $githubUser->getEmail(),
+                        'github_id' => $githubUser->getId(),
+                        'avatar' => $githubUser->getAvatar(),
+                        'password' => Hash::make(Str::random(32)),
+                        'email_verified_at' => now(),
+                        'last_login_at' => now(),
+                        'social_login' => true
+                    ]);
+
+                    // Varsayılan kullanıcı rolünü ata
+                    $userRole = Role::where('name', 'user')->first();
+                    if ($userRole) {
+                        $user->assignRole($userRole);
+                    }
+
+                    return $user;
+                });
 
                 $newUser->settings()->create([
                     'language' => app()->getLocale(),

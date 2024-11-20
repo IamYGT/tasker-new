@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Global middleware'ler
         $middleware->use([
             ContentSecurityPolicy::class,
+           
         ]);
 
         // Web middleware grubu
@@ -27,6 +28,13 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->append(LocaleMiddleware::class);
         $middleware->encryptCookies(except: ['language', 'locale']);
+
+        // Role middleware'ini ekleyelim
+        $middleware->alias([
+            'role' => \App\Http\Middleware\CheckRole::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+          
+        ]);
 
         // API middleware grubu (gerekirse)
         $middleware->api(append: [

@@ -14,11 +14,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
 
-    Route::get('register', [RegisteredUserController::class, 'create'])
-        ->name('register');
-
-    Route::post('register', [RegisteredUserController::class, 'store'])->name('kayit_oldu');
-
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
@@ -61,4 +56,10 @@ Route::middleware('auth')->group(function () {
 
     Route::post('profile/set-password', [ProfileController::class, 'setInitialPassword'])
         ->name('profile.set-password');
+
+    Route::get('register', [RegisteredUserController::class, 'create'])
+        ->name('register');
+
+    Route::post('register', [RegisteredUserController::class, 'store'])
+        ->name('kayit_oldu');
 });
