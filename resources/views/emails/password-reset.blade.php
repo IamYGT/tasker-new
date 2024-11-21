@@ -1,14 +1,10 @@
-@component('mail::message')
-# Şifreniz Sıfırlandı
+<x-mail::message>
+# {{ translate('users.hello') }} {{ $user->name }},
 
-Yeni şifreniz: **{{ $newPassword }}**
+{{ translate('users.passwordResetByAdmin') }}
 
-Güvenliğiniz için lütfen giriş yaptıktan sonra şifrenizi değiştirin.
+{{ translate('users.passwordResetWarning') }}
 
-@component('mail::button', ['url' => route('login')])
-Giriş Yap
-@endcomponent
-
-Teşekkürler,<br>
+{{ translate('users.regards') }},<br>
 {{ config('app.name') }}
-@endcomponent 
+</x-mail::message> 

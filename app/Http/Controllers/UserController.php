@@ -9,7 +9,7 @@ use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\PasswordReset;
+use App\Mail\PasswordResetNotification;
 use Illuminate\Support\Facades\Log;
 use App\Models\Role;
 use App\Helpers\Helpers;
@@ -111,14 +111,14 @@ class UserController extends Controller
             ->with('success', 'Kullanıcı başarıyla silindi.');
     }
 
-    public function resetPassword(User $user)
+    public function autoResetPassword(User $user) 
     {
         try {
             $newPassword = Str::random(10);
             $user->password = bcrypt($newPassword);
             $user->save();
 
-            Mail::to($user->email)->send(new PasswordReset($newPassword));
+            Mail::to($user->email)->send(new PasswordResetNotification($user));
 
             return back()->with('success', 'Kullanıcı şifresi başarıyla sıfırlandı ve mail gönderildi.');
         } catch (\Exception $e) {
@@ -128,5 +128,43 @@ class UserController extends Controller
             ]);
             return back()->with('error', 'Şifre sıfırlanırken bir hata oluştu.');
         }
+    }
+
+    public function resetPasswordForm(User $user)
+    {
+        return Inertia::render('Users/ResetPassword', [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ]
+        ]);
+    }
+
+    public function resetPassword(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'password' => ['required', 'min:8', 'confirmed'],
+        ]);
+
+        $user->update([
+            'password' => Hash::make($validated['password'])
+        ]);
+
+        try {
+            Mail::to($user->email)->send(new PasswordResetNotification($user));
+        } catch (\Exception $e) {
+            // E-posta gönderilemese bile şifre değişikliği başarılı
+            Log::error('Şifre sıfırlama e-postası gönderilemedi: ' . $e->getMessage());
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'message' => translate('users.resetPasswordSuccess')
+            ]);
+        }
+
+        return redirect()->route('users.index')
+            ->with('success', translate('users.resetPasswordSuccess'));
     }
 } 

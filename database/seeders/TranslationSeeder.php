@@ -16,21 +16,8 @@ class TranslationSeeder extends Seeder
                 'en' => 'Your password has been updated successfully!',
                 'key' => 'password_updated_successfully'
             ],
-            [
-                'tr' => 'Kullanıcı Yönetimi',
-                'en' => 'User Management',
-                'key' => 'sidebar.userManagement'
-            ],
-            [
-                'tr' => 'Kullanıcı Listesi',
-                'en' => 'User List',
-                'key' => 'sidebar.userList'
-            ],
-            [
-                'tr' => 'Kullanıcı Ekle',
-                'en' => 'Add User',
-                'key' => 'sidebar.addUser'
-            ],
+      
+   
         ];
 
         foreach ($translations as $translation) {

@@ -38,19 +38,6 @@ export default function Index({ auth, users, languages, secili_dil }: Props) {
         }
     };
 
-    const handleResetPassword = (userId: number) => {
-        if (confirm(t('users.confirmResetPassword'))) {
-            router.post(route('users.reset-password', userId), {}, {
-                onSuccess: () => {
-                    toast.success(t('users.resetPasswordSuccess'));
-                },
-                onError: () => {
-                    toast.error(t('users.resetPasswordError'));
-                }
-            });
-        }
-    };
-
     return (
         <AuthenticatedLayout
             auth={auth}
@@ -121,12 +108,13 @@ export default function Index({ auth, users, languages, secili_dil }: Props) {
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <div className="flex justify-end space-x-3">
                                                         <Tippy content={t('users.resetPassword')}>
-                                                            <button
-                                                                onClick={() => handleResetPassword(user.id)}
+                                                            <Link
+                                                                href={route('users.reset-password-form', { user: user.id })}
                                                                 className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 transition-colors duration-150"
+                                                                preserveScroll
                                                             >
                                                                 <FaKey className="w-5 h-5" />
-                                                            </button>
+                                                            </Link>
                                                         </Tippy>
                                                         <Tippy content={t('users.edit')}>
                                                             <Link
