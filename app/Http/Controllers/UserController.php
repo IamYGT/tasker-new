@@ -47,7 +47,7 @@ class UserController extends Controller
             $user->roles()->sync([$userRole->id]);
         }
 
-        return redirect()->route('users.index')
+        return redirect()->route('admin.users.index')
             ->with('success', translate('users.createSuccess'));
     }
 
@@ -99,7 +99,7 @@ class UserController extends Controller
 
         $user->roles()->sync([$validated['role']]);
 
-        return redirect()->route('users.index')
+        return redirect()->route('admin.users.index')
             ->with('success', translate('users.updateSuccess'));
     }
 
@@ -107,7 +107,7 @@ class UserController extends Controller
     {
         $user->delete();
 
-        return redirect()->route('users.index')
+        return redirect()->route('admin.users.index')
             ->with('success', 'Kullanıcı başarıyla silindi.');
     }
 
@@ -164,7 +164,7 @@ class UserController extends Controller
             ]);
         }
 
-        return redirect()->route('users.index')
+        return redirect()->route('admin.users.index')
             ->with('success', translate('users.resetPasswordSuccess'));
     }
 } 

@@ -30,7 +30,7 @@ export default function Index({ auth, users, languages, secili_dil }: Props) {
 
     const handleDelete = (userId: number) => {
         if (confirm(t('users.confirmDelete'))) {
-            router.delete(route('users.destroy', userId), {
+            router.delete(route('admin.users.destroy', userId), {
                 onSuccess: () => {
                     toast.success(t('users.deleteSuccess'));
                 },
@@ -55,7 +55,7 @@ export default function Index({ auth, users, languages, secili_dil }: Props) {
                         <div className="p-6">
                             <div className="mb-6 flex justify-end">
                                 <Link
-                                    href={route('users.create')}
+                                    href={route('admin.users.create')}
                                     className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                 >
                                     <FaUserPlus className="mr-2" />
@@ -109,7 +109,7 @@ export default function Index({ auth, users, languages, secili_dil }: Props) {
                                                     <div className="flex justify-end space-x-3">
                                                         <Tippy content={t('users.resetPassword')}>
                                                             <Link
-                                                                href={route('users.reset-password-form', { user: user.id })}
+                                                                href={route('admin.users.reset-password-form', { user: user.id })}
                                                                 className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 transition-colors duration-150"
                                                                 preserveScroll
                                                             >
@@ -118,7 +118,7 @@ export default function Index({ auth, users, languages, secili_dil }: Props) {
                                                         </Tippy>
                                                         <Tippy content={t('users.edit')}>
                                                             <Link
-                                                                href={route('users.edit', user.id)}
+                                                                href={route('admin.users.edit', user.id)}
                                                                 className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors duration-150"
                                                             >
                                                                 <FaEdit className="w-5 h-5" />

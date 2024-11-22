@@ -49,11 +49,11 @@ export default function ResetPassword({ auth, user, languages, secili_dil }: Res
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         if (passwordsMatch && passwordStrength >= 3) {
-            post(route('users.reset-password.update', { user: user.id }), {
+            post(route('admin.users.reset-password.update', { user: user.id }), {
                 preserveScroll: true,
                 onSuccess: () => {
                     toast.success(t('users.resetPasswordSuccess'));
-                    router.visit(route('users.index'));
+                    router.visit(route('admin.users.index'));
                 },
                 onError: () => {
                     toast.error(t('users.resetPasswordError'));
@@ -191,7 +191,7 @@ export default function ResetPassword({ auth, user, languages, secili_dil }: Res
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                         type="button"
-                                        onClick={() => window.location.href = route('users.index')}
+                                        onClick={() => router.visit(route('admin.users.index'))}
                                         className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                     >
                                         {t('common.cancel')}

@@ -10,14 +10,33 @@ class TranslationSeeder extends Seeder
     public function run()
     {
         $translations = [
-            // Şifre güncelleme formu çevirileri
+            // Genel çeviriler
             [
-                'tr' => 'Şifreniz başarıyla güncellendi!',
-                'en' => 'Your password has been updated successfully!',
-                'key' => 'password_updated_successfully'
+                'tr' => 'Gösterge Paneli',
+                'en' => 'Dashboard',
+                'key' => 'sidebar.dashboard'
             ],
-      
-   
+            // Admin sayfaları çevirileri
+            [
+                'tr' => 'Ödemeler',
+                'en' => 'Payments',
+                'key' => 'admin.payments.title'
+            ],
+            [
+                'tr' => 'Roller',
+                'en' => 'Roles',
+                'key' => 'admin.roles.title'
+            ],
+            [
+                'tr' => 'Ayarlar',
+                'en' => 'Settings',
+                'key' => 'admin.settings.title'
+            ],
+            [
+                'tr' => 'Sistem Logları',
+                'en' => 'System Logs',
+                'key' => 'admin.logs.title'
+            ]
         ];
 
         foreach ($translations as $translation) {

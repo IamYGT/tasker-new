@@ -171,8 +171,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 <Tippy content={collapsed && !isMobile ? t('sidebar.userList') : ""} disabled={!collapsed || isMobile} placement="right">
                                     <div>
                                         <NavLink
-                                            href={route('users.index')}
-                                            active={route().current('users.*')}
+                                            href={route('admin.users.index')}
+                                            active={route().current('admin.users.*')}
                                             darkMode={darkMode}
                                             collapsed={isMobile ? false : collapsed}
                                             icon={<MdGroup className="w-5 h-5 sm:w-6 sm:h-6" />}

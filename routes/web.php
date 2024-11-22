@@ -58,7 +58,8 @@ Route::controller(GitHubController::class)->group(function () {
     Route::get('auth/github/callback', 'handleGithubCallback')->name('auth.github.callback');
 });
 
-Route::middleware(['auth', 'admin'])->group(function () {
+// Admin route grubu
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::controller(UserController::class)->group(function () {
         Route::get('/users', 'index')->name('users.index');
         Route::get('/users/create', 'create')->name('users.create');
