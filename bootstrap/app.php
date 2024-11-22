@@ -5,7 +5,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\LocaleMiddleware;
-use App\Http\Middleware\ContentSecurityPolicy;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,28 +13,32 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Global middleware'ler
         $middleware->use([
-            ContentSecurityPolicy::class,
+          
         ]);
         
+        // Web middleware grubu
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        // Locale middleware
         $middleware->append(LocaleMiddleware::class);
+        
+        // Cookie şifreleme ayarları
         $middleware->encryptCookies(except: ['language', 'locale']);
 
-        // Role middleware'ini ekleyelim
+        // Middleware alias'ları
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
-          
         ]);
 
-        // API middleware grubu (gerekirse)
+        // API middleware grubu
         $middleware->api(append: [
-            // API middleware'leri
+            // API middleware'leri buraya eklenebilir
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
