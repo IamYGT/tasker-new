@@ -101,39 +101,47 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | Admin Routes
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['role:admin'])
-        ->prefix('admin')
-        ->name('admin.')
-        ->group(function () {
-            // Dashboard
-            Route::get('/dashboard', [AdminDashboardController::class, 'index'])
-                ->name('dashboard');
-            
-            // Resource Routes
-            Route::resources([
-                'users' => UserController::class,
-                'transactions' => AdminTransactionController::class,
-                'tickets' => AdminTicketController::class,
-                'logs' => AdminLogController::class,
-            ]);
+    Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])
+            ->name('dashboard');
+        
+        // Resource Routes - transactions hariç diğer resource'lar
+        Route::resources([
+            'users' => UserController::class,
+            'tickets' => AdminTicketController::class,
+            'logs' => AdminLogController::class,
+        ]);
 
-            // Status Update Routes
-            Route::put('transactions/{transaction}/status', [AdminTransactionController::class, 'updateStatus'])
+        // Transactions Routes - manuel tanımlama
+        Route::group(['prefix' => 'transactions'], function () {
+            Route::get('/', [AdminTransactionController::class, 'index'])
+                ->name('transactions.index');
+            Route::get('/{transaction}', [AdminTransactionController::class, 'show'])
+                ->name('transactions.show');
+            Route::get('/{transaction}/edit', [AdminTransactionController::class, 'edit'])
+                ->name('transactions.edit');
+            Route::put('/{transaction}', [AdminTransactionController::class, 'update'])
+                ->name('transactions.update');
+            Route::put('/{transaction}/status', [AdminTransactionController::class, 'updateStatus'])
                 ->name('transactions.update-status');
-            Route::put('tickets/{ticket}/status', [AdminTicketController::class, 'updateStatus'])
-                ->name('tickets.update-status');
-
-            // Password Reset Routes
-            Route::get('/users/{user}/reset-password', [UserController::class, 'resetPasswordForm'])
-                ->name('users.reset-password-form');
-            Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])
-                ->name('users.reset-password.update');
-
-            // Withdrawal Routes
-            Route::resource('withdrawals', AdminWithdrawalController::class);
-            Route::put('withdrawals/{withdrawal}/status', [AdminWithdrawalController::class, 'updateStatus'])
-                ->name('withdrawals.update-status');
         });
+
+        // Status Update Routes - transactions hariç
+        Route::put('tickets/{ticket}/status', [AdminTicketController::class, 'updateStatus'])
+            ->name('tickets.update-status');
+
+        // Password Reset Routes
+        Route::get('/users/{user}/reset-password', [UserController::class, 'resetPasswordForm'])
+            ->name('users.reset-password-form');
+        Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])
+            ->name('users.reset-password.update');
+
+        // Withdrawal Routes
+        Route::resource('withdrawals', AdminWithdrawalController::class);
+        Route::put('withdrawals/{withdrawal}/status', [AdminWithdrawalController::class, 'updateStatus'])
+            ->name('withdrawals.update-status');
+    });
 });
 
 /*

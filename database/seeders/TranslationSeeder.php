@@ -16,121 +16,118 @@ class TranslationSeeder extends Seeder
                 'en' => 'Dashboard',
                 'key' => 'sidebar.dashboard'
             ],
+         
+            // Logo ve Marka
             [
-                'tr' => 'Aktif',
-                'en' => 'Active',
-                'key' => 'users.active'
+                'tr' => 'YGT Labs',
+                'en' => 'YGT Labs',
+                'key' => 'brand.name'
+            ],
+
+            // Sidebar
+            [
+                'tr' => 'Kullanıcı Yönetimi',
+                'en' => 'User Management',
+                'key' => 'sidebar.userManagement'
             ],
             [
-                'tr' => 'Pasif',
-                'en' => 'Inactive',
-                'key' => 'users.inactive'
+                'tr' => 'İşlemler',
+                'en' => 'Transactions',
+                'key' => 'sidebar.transactions'
             ],
             [
-                'tr' => 'Kullanıcı durumu başarıyla güncellendi',
-                'en' => 'User status updated successfully',
-                'key' => 'users.statusUpdateSuccess'
+                'tr' => 'Destek Talepleri',
+                'en' => 'Support Tickets',
+                'key' => 'sidebar.supportTickets'
             ],
             [
-                'tr' => 'Hesap Durumu',
-                'en' => 'Account Status',
-                'key' => 'users.accountStatus'
+                'tr' => 'Ayarlar',
+                'en' => 'Settings',
+                'key' => 'sidebar.settings'
             ],
             [
-                'tr' => 'Kullanıcının sisteme erişim durumunu kontrol edin',
-                'en' => 'Control user\'s access to the system',
-                'key' => 'users.accountStatusDescription'
+                'tr' => 'Profil',
+                'en' => 'Profile',
+                'key' => 'sidebar.profile'
             ],
             [
-                'tr' => 'Aktif',
-                'en' => 'Active',
-                'key' => 'users.statusActive'
+                'tr' => 'Çıkış Yap',
+                'en' => 'Logout',
+                'key' => 'sidebar.logout'
+            ],
+
+            // Dil Seçimi
+            [
+                'tr' => 'Türkçe',
+                'en' => 'Turkish',
+                'key' => 'language.turkish'
+            ],
+
+            // İşlem Detay Sayfası
+            [
+                'tr' => 'Geri',
+                'en' => 'Back',
+                'key' => 'common.back'
             ],
             [
-                'tr' => 'Pasif',
-                'en' => 'Inactive',
-                'key' => 'users.statusInactive'
+                'tr' => 'İşlem Detayları',
+                'en' => 'Transaction Details',
+                'key' => 'transaction.details'
             ],
             [
-                'tr' => 'Kullanıcı sisteme giriş yapabilir ve tüm özellikleri kullanabilir.',
-                'en' => 'User can log in and use all features.',
-                'key' => 'users.activeAccountMessage'
+                'tr' => 'İşlem detaylarını görüntüle ve yönet',
+                'en' => 'View and manage transaction details',
+                'key' => 'transaction.viewDescription'
             ],
             [
-                'tr' => 'Kullanıcı sisteme giriş yapamaz ve özellikleri kullanamaz.',
-                'en' => 'User cannot log in and use features.',
-                'key' => 'users.inactiveAccountMessage'
-            ],
-            // Admin Dashboard
-            [
-                'tr' => 'Admin Paneli',
-                'en' => 'Admin Dashboard',
-                'key' => 'admin.dashboard'
+                'tr' => 'Düzenle',
+                'en' => 'Edit',
+                'key' => 'common.edit'
             ],
             [
-                'tr' => 'Toplam Kullanıcılar',
-                'en' => 'Total Users',
-                'key' => 'admin.totalUsers'
+                'tr' => 'İptal Edildi',
+                'en' => 'Cancelled',
+                'key' => 'status.cancelled'
             ],
             [
-                'tr' => 'Aktif Kullanıcılar',
-                'en' => 'Active Users',
-                'key' => 'admin.activeUsers'
+                'tr' => 'Para Yatırma',
+                'en' => 'Deposit',
+                'key' => 'transaction.deposit'
             ],
             [
-                'tr' => 'Toplam İşlemler',
-                'en' => 'Total Transactions',
-                'key' => 'admin.totalTransactions'
+                'tr' => 'Kullanıcı Detayları',
+                'en' => 'User Details',
+                'key' => 'transaction.userDetails'
             ],
             [
-                'tr' => 'Bekleyen',
+                'tr' => 'Ödeme Detayları',
+                'en' => 'Payment Details',
+                'key' => 'transaction.paymentDetails'
+            ],
+            [
+                'tr' => 'Tutar',
+                'en' => 'Amount',
+                'key' => 'transaction.amount'
+            ],
+            [
+                'tr' => 'Referans No',
+                'en' => 'Reference No',
+                'key' => 'transaction.referenceId'
+            ],
+            [
+                'tr' => 'Tarih',
+                'en' => 'Date',
+                'key' => 'transaction.date'
+            ],
+            [
+                'tr' => 'İşlem Durumu',
+                'en' => 'Transaction Status',
+                'key' => 'transaction.status'
+            ],
+            [
+                'tr' => 'Beklemede',
                 'en' => 'Pending',
-                'key' => 'admin.pending'
-            ],
-            [
-                'tr' => 'Toplam Destek Talepleri',
-                'en' => 'Total Tickets',
-                'key' => 'admin.totalTickets'
-            ],
-            [
-                'tr' => 'Açık',
-                'en' => 'Open',
-                'key' => 'admin.open'
-            ],
-            [
-                'tr' => 'Toplam Para Çekme',
-                'en' => 'Total Withdrawals',
-                'key' => 'admin.totalWithdrawals'
-            ],
-            [
-                'tr' => 'Son Aktiviteler',
-                'en' => 'Recent Activity',
-                'key' => 'admin.recentActivity'
-            ],
-            [
-                'tr' => 'Hızlı İşlemler',
-                'en' => 'Quick Actions',
-                'key' => 'admin.quickActions'
-            ],
-            [
-                'tr' => 'Kullanıcıları Yönet',
-                'en' => 'Manage Users',
-                'key' => 'admin.manageUsers'
-            ],
-            [
-                'tr' => 'İşlemleri Yönet',
-                'en' => 'Manage Transactions',
-                'key' => 'admin.manageTransactions'
-            ],
-            [
-                'tr' => 'Destek Taleplerini Yönet',
-                'en' => 'Manage Tickets',
-                'key' => 'admin.manageTickets'
-            ],
-            [
-                'tr' => 'Logları Görüntüle',
-                'en' => 'View Logs',
-                'key' => 'admin.viewLogs'
+                'key' => 'status.pending'
             ],
             [
                 'tr' => 'Tamamlandı',
@@ -138,64 +135,19 @@ class TranslationSeeder extends Seeder
                 'key' => 'status.completed'
             ],
             [
-                'tr' => 'Bekliyor',
-                'en' => 'Pending',
-                'key' => 'status.pending'
+                'tr' => 'Para Çekme',
+                'en' => 'Withdrawal',
+                'key' => 'transaction.withdrawal'
             ],
             [
-                'tr' => 'Para Çekme İşlemleri',
-                'en' => 'Withdrawal Transactions',
-                'key' => 'admin.withdrawals'
+                'tr' => 'Transfer',
+                'en' => 'Transfer',
+                'key' => 'transaction.transfer'
             ],
             [
-                'tr' => 'Para Çekme Talebi',
-                'en' => 'Withdrawal Request',
-                'key' => 'withdrawal.request.title'
-            ],
-            [
-                'tr' => 'Miktar',
-                'en' => 'Amount',
-                'key' => 'withdrawal.request.amount'
-            ],
-            [
-                'tr' => 'Banka Hesabı',
-                'en' => 'Bank Account',
-                'key' => 'withdrawal.request.bankAccount'
-            ],
-            [
-                'tr' => 'Gönder',
-                'en' => 'Submit',
-                'key' => 'withdrawal.request.submit'
-            ],
-            [
-                'tr' => 'Para çekme talebi başarıyla oluşturuldu',
-                'en' => 'Withdrawal request created successfully',
-                'key' => 'withdrawal.requestCreated'
-            ],
-            [
-                'tr' => 'Para çekme durumu güncellendi',
-                'en' => 'Withdrawal status updated',
-                'key' => 'withdrawal.statusUpdated'
-            ],
-            [
-                'tr' => 'Onaylandı',
-                'en' => 'Approved',
-                'key' => 'withdrawal.status.approved'
-            ],
-            [
-                'tr' => 'Reddedildi',
-                'en' => 'Rejected',
-                'key' => 'withdrawal.status.rejected'
-            ],
-            [
-                'tr' => 'İşlem Başarılı',
-                'en' => 'Transaction Successful',
-                'key' => 'transaction.success'
-            ],
-            [
-                'tr' => 'İşlem Başarısız',
-                'en' => 'Transaction Failed',
-                'key' => 'transaction.failed'
+                'tr' => 'Notlar',
+                'en' => 'Notes',
+                'key' => 'transaction.notes'
             ],
         ];
 

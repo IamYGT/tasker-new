@@ -25,7 +25,7 @@ class UserController extends Controller
 
     public function create()
     {
-        return Inertia::render('Users/Create');
+        return Inertia::render('Admin/Users/Create');
     }
 
     public function store(Request $request)
@@ -53,7 +53,7 @@ class UserController extends Controller
 
     public function index()
     {
-        return Inertia::render('Users/Index', [
+        return Inertia::render('Admin/Users/Index', [
             'users' => User::with('roles')->get()->map(function ($user) {
                 return [
                     'id' => $user->id,
@@ -73,7 +73,7 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        return Inertia::render('Users/Edit', [
+        return Inertia::render('Admin/Users/Edit', [
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -139,7 +139,7 @@ class UserController extends Controller
 
     public function resetPasswordForm(User $user)
     {
-        return Inertia::render('Users/ResetPassword', [
+        return Inertia::render('Admin/Users/ResetPassword', [
             'user' => $user->only(['id', 'name', 'email'])
         ]);
     }
