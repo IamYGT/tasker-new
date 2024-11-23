@@ -1,75 +1,172 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-use App\Http\Controllers\LanguageController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Auth\GoogleController;
-use App\Http\Controllers\Auth\FacebookController;
-use App\Http\Controllers\Auth\GitHubController;
-use App\Http\Controllers\UserController;
+use Illuminate\Foundation\Application;
+use Inertia\Inertia;
 
-// Dil değiştirme route'u
+// Controllers
+use App\Http\Controllers\{
+    ProfileController,
+    LanguageController,
+    UserController,
+    TransactionController,
+    WithdrawalController,
+    TicketController
+};
 
-Route::get('/language/{lang}', [LanguageController::class, 'switchLanguage'])->name('language.switch');
+// Admin Controllers
+use App\Http\Controllers\Admin\{
+    AdminDashboardController,
+    AdminTransactionController,
+    AdminTicketController,
+    AdminLogController,
+    AdminWithdrawalController
+};
 
+// Auth Controllers
+use App\Http\Controllers\Auth\{
+    GoogleController,
+    FacebookController,
+    GitHubController
+};
 
+/*
+|--------------------------------------------------------------------------
+| Language Switch Route
+|--------------------------------------------------------------------------
+*/
+Route::get('/language/{lang}', [LanguageController::class, 'switchLanguage'])
+    ->name('language.switch');
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+/*
+|--------------------------------------------------------------------------
+| Guest Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware('guest')->group(function () {
+    // Ana sayfa direkt login'e yönlendirilsin
+    Route::get('/', function () {
+        return redirect()->route('login');
+    });
 });
 
-Route::get('/dashboard', function (Request $request) {
-    return Inertia::render('Dashboard', [
-        'showWelcomeToast' => $request->query('showWelcomeToast', false),
-    ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+/*
+|--------------------------------------------------------------------------
+| Authenticated Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Dashboard Route
+    Route::get('/dashboard', function (Request $request) {
+        $user = Auth::user();
+        return $user && $user->hasRole('admin')
+            ? redirect()->route('admin.dashboard')
+            : Inertia::render('Dashboard', [
+                'showWelcomeToast' => $request->query('showWelcomeToast', false),
+            ]);
+    })->name('dashboard');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::post('/profile/set-password', [ProfileController::class, 'setPassword'])->name('profile.set-password');
+    /*
+    |--------------------------------------------------------------------------
+    | User Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['role:user'])->group(function () {
+        // Withdrawal Routes
+        Route::prefix('withdrawal')->name('withdrawal.')->group(function () {
+            Route::get('/request', [WithdrawalController::class, 'create'])->name('request');
+            Route::post('/request', [WithdrawalController::class, 'store'])->name('store');
+        });
+
+        // Transaction Routes
+        Route::prefix('transactions')->name('transactions.')->group(function () {
+            Route::get('/history', [TransactionController::class, 'history'])->name('history');
+            Route::get('/pending', [TransactionController::class, 'pending'])->name('pending');
+        });
+
+        // Ticket Routes
+        Route::prefix('tickets')->name('tickets.')->group(function () {
+            Route::get('/', [TicketController::class, 'index'])->name('index');
+            Route::get('/create', [TicketController::class, 'create'])->name('create');
+            Route::post('/', [TicketController::class, 'store'])->name('store');
+            Route::get('/{ticket}', [TicketController::class, 'show'])->name('show');
+            Route::post('/{ticket}/reply', [TicketController::class, 'reply'])->name('reply');
+        });
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['role:admin'])
+        ->prefix('admin')
+        ->name('admin.')
+        ->group(function () {
+            // Dashboard
+            Route::get('/dashboard', [AdminDashboardController::class, 'index'])
+                ->name('dashboard');
+            
+            // Resource Routes
+            Route::resources([
+                'users' => UserController::class,
+                'transactions' => AdminTransactionController::class,
+                'tickets' => AdminTicketController::class,
+                'logs' => AdminLogController::class,
+            ]);
+
+            // Status Update Routes
+            Route::put('transactions/{transaction}/status', [AdminTransactionController::class, 'updateStatus'])
+                ->name('transactions.update-status');
+            Route::put('tickets/{ticket}/status', [AdminTicketController::class, 'updateStatus'])
+                ->name('tickets.update-status');
+
+            // Password Reset Routes
+            Route::get('/users/{user}/reset-password', [UserController::class, 'resetPasswordForm'])
+                ->name('users.reset-password-form');
+            Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])
+                ->name('users.reset-password.update');
+
+            // Withdrawal Routes
+            Route::resource('withdrawals', AdminWithdrawalController::class);
+            Route::put('withdrawals/{withdrawal}/status', [AdminWithdrawalController::class, 'updateStatus'])
+                ->name('withdrawals.update-status');
+        });
 });
 
-Route::match(['get', 'post'], '/test', function () {
-    return Inertia::render('Test');
-})->name('test');
-
+/*
+|--------------------------------------------------------------------------
+| Social Authentication Routes
+|--------------------------------------------------------------------------
+*/
+// Google Authentication
 Route::controller(GoogleController::class)->group(function () {
     Route::get('auth/google', 'redirectToGoogle')->name('auth.google');
     Route::get('auth/google/callback', 'handleGoogleCallback')->name('auth.google.callback');
 });
 
+// Facebook Authentication
 Route::controller(FacebookController::class)->group(function () {
     Route::get('auth/facebook', 'redirectToFacebook')->name('auth.facebook');
     Route::get('auth/facebook/callback', 'handleFacebookCallback')->name('auth.facebook.callback');
 });
 
+// GitHub Authentication
 Route::controller(GitHubController::class)->group(function () {
     Route::get('auth/github', 'redirectToGithub')->name('auth.github');
     Route::get('auth/github/callback', 'handleGithubCallback')->name('auth.github.callback');
 });
 
-// Admin route grubu
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::controller(UserController::class)->group(function () {
-        Route::get('/users', 'index')->name('users.index');
-        Route::get('/users/create', 'create')->name('users.create');
-        Route::post('/users', 'store')->name('users.store');
-        Route::get('/users/{user}/edit', 'edit')->name('users.edit');
-        Route::put('/users/{user}', 'update')->name('users.update');
-        Route::delete('/users/{user}', 'destroy')->name('users.destroy');
-        Route::get('/users/{user}/reset-password', 'resetPasswordForm')->name('users.reset-password-form');
-        Route::post('/users/{user}/reset-password', 'resetPassword')->name('users.reset-password.update');
-    });
-});
+/*
+|--------------------------------------------------------------------------
+| Test Route
+|--------------------------------------------------------------------------
+*/
+Route::match(['get', 'post'], '/test', function () {
+    return Inertia::render('Test');
+})->name('test');
 
-require __DIR__ . '/auth.php';
+// Auth Routes
+require __DIR__.'/auth.php';

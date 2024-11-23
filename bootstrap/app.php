@@ -1,10 +1,19 @@
 <?php
 
 require_once __DIR__ . '/../app/Helpers/Helpers.php';
+
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\LocaleMiddleware;
+use App\Http\Middleware\{
+    LocaleMiddleware,
+    HandleInertiaRequests,
+    CheckRole,
+    AdminMiddleware,
+    UserMiddleware,
+    RedirectBasedOnRole
+};
+use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,34 +22,34 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Global middleware'ler
-        $middleware->use([
-          
-        ]);
-        
-        // Web middleware grubu
+        // Web Middleware Grubu
         $middleware->web(append: [
-            \App\Http\Middleware\HandleInertiaRequests::class,
-            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            HandleInertiaRequests::class,
+            AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        // Locale middleware
+        // Locale Middleware
         $middleware->append(LocaleMiddleware::class);
         
-        // Cookie şifreleme ayarları
-        $middleware->encryptCookies(except: ['language', 'locale']);
-
-        // Middleware alias'ları
-        $middleware->alias([
-            'role' => \App\Http\Middleware\CheckRole::class,
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+        // Şifrelenmeyecek Cookie'ler
+        $middleware->encryptCookies(except: [
+            'language',
+            'locale'
         ]);
 
-        // API middleware grubu
+        // Middleware Alias Tanımlamaları
+        $middleware->alias([
+            'role' => CheckRole::class,
+            'admin' => AdminMiddleware::class,
+            'user' => UserMiddleware::class,
+            'role.redirect' => RedirectBasedOnRole::class,
+        ]);
+
+        // API Middleware Grubu
         $middleware->api(append: [
-            // API middleware'leri buraya eklenebilir
+            // API middleware'leri
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Exception handler'lar
     })->create();

@@ -1,11 +1,78 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import NavLink from './NavLink';
-import { MdDashboard, MdPerson, MdLogout, MdClose, MdPersonAdd, MdGroup, MdSettings } from 'react-icons/md';
+import { 
+    MdDashboard, MdPerson, MdLogout, MdClose, MdGroup, 
+    MdPayment, MdPending, MdMoneyOff, MdConfirmationNumber,
+    MdDescription, MdAnalytics, MdSettings, MdAccountBalance
+} from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import { useTranslation } from '@/Contexts/TranslationContext';
+
+// Menü öğesi tipi
+interface MenuItem {
+    name: string;
+    route: string;
+    icon: JSX.Element;
+}
+
+// User menü öğeleri
+const userMenuItems: MenuItem[] = [
+    {
+        name: 'sidebar.dashboard',
+        route: 'dashboard',
+        icon: <MdDashboard className="w-5 h-5 sm:w-6 sm:h-6" />
+    },
+    {
+        name: 'sidebar.transactions',
+        route: 'transactions.history',
+        icon: <MdPayment className="w-5 h-5 sm:w-6 sm:h-6" />
+    },
+    {
+        name: 'sidebar.pendingTransactions',
+        route: 'transactions.pending',
+        icon: <MdPending className="w-5 h-5 sm:w-6 sm:h-6" />
+    },
+    {
+        name: 'sidebar.withdrawals',
+        route: 'withdrawal.request',
+        icon: <MdMoneyOff className="w-5 h-5 sm:w-6 sm:h-6" />
+    },
+    {
+        name: 'sidebar.tickets',
+        route: 'tickets.index',
+        icon: <MdConfirmationNumber className="w-5 h-5 sm:w-6 sm:h-6" />
+    }
+];
+
+// Admin menü öğeleri
+const adminMenuItems: MenuItem[] = [
+    {
+        name: 'sidebar.dashboard',
+        route: 'admin.dashboard',
+        icon: <MdDashboard className="w-5 h-5 sm:w-6 sm:h-6" />
+    },
+    {
+        name: 'sidebar.userManagement',
+        route: 'admin.users.index',
+        icon: <MdGroup className="w-5 h-5 sm:w-6 sm:h-6" />
+    },
+    {
+        name: 'sidebar.transactions',
+        route: 'admin.transactions.index',
+        icon: <MdPayment className="w-5 h-5 sm:w-6 sm:h-6" />
+    },
+    {
+        name: 'sidebar.tickets',
+        route: 'admin.tickets.index',
+        icon: <MdConfirmationNumber className="w-5 h-5 sm:w-6 sm:h-6" />
+    },
+   
+   
+   
+];
 
 interface SidebarProps {
     sidebarOpen: boolean;
@@ -60,6 +127,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     const headerClasses = darkMode ? 'bg-gray-900 bg-opacity-70' : 'bg-gray-200 bg-opacity-70';
     const closeButtonClasses = darkMode ? 'text-gray-200 hover:bg-gray-700 focus:ring-gray-500' : 'text-gray-900 hover:bg-gray-300 focus:ring-gray-400';
     const logoutButtonClasses = darkMode ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800' : 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700';
+
+    // Menü öğelerini seç
+    const menuItems = isAdmin ? adminMenuItems : userMenuItems;
 
     return (
         <AnimatePresence>
@@ -143,63 +213,36 @@ const Sidebar: React.FC<SidebarProps> = ({
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.1, delay: 0.05 }}
                     >
-                        {/* Ana Menü */}
-                        <div className="space-y-2 mb-6">
-                            <Tippy content={collapsed && !isMobile ? t('sidebar.dashboard') : ""} disabled={!collapsed || isMobile} placement="right">
-                                <div>
-                                    <NavLink
-                                        href={route('dashboard')}
-                                        active={route().current('dashboard')}
-                                        darkMode={darkMode}
-                                        collapsed={isMobile ? false : collapsed}
-                                        icon={<MdDashboard className="w-5 h-5 sm:w-6 sm:h-6" />}
-                                        isMobile={isMobile}
-                                    >
-                                        {t('sidebar.dashboard')}
-                                    </NavLink>
-                                </div>
-                            </Tippy>
-                        </div>
-
-                        {/* Kullanıcı Yönetimi Bölümü - Sadece adminler görebilir */}
-                        {isAdmin && (
-                            <div className="space-y-2 mt-6">
-                                <div className={`${collapsed && !isMobile ? 'border-b border-gray-600 dark:border-gray-400 my-2' : 'px-3 py-2 text-xs font-semibold uppercase tracking-wider ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}`}>
-                                    {!collapsed && t('sidebar.userManagement')}
-                                </div>
-
-                                <Tippy content={collapsed && !isMobile ? t('sidebar.userList') : ""} disabled={!collapsed || isMobile} placement="right">
+                        {/* Ana Menü Öğeleri */}
+                        <div className="space-y-2">
+                            {menuItems.map((item, index) => (
+                                <Tippy 
+                                    key={index}
+                                    content={collapsed && !isMobile ? t(item.name) : ""}
+                                    disabled={!collapsed || isMobile}
+                                    placement="right"
+                                >
                                     <div>
                                         <NavLink
-                                            href={route('admin.users.index')}
-                                            active={route().current('admin.users.*')}
+                                            href={route(item.route)}
+                                            active={route().current(item.route)}
                                             darkMode={darkMode}
                                             collapsed={isMobile ? false : collapsed}
-                                            icon={<MdGroup className="w-5 h-5 sm:w-6 sm:h-6" />}
+                                            icon={item.icon}
                                             isMobile={isMobile}
                                         >
-                                            {t('sidebar.userList')}
+                                            {t(item.name)}
                                         </NavLink>
                                     </div>
                                 </Tippy>
-                            </div>
-                        )}
+                            ))}
+                        </div>
 
-                        {/* Ayarlar Bölümü */}
+                        {/* Profil Linki - Her iki rol için de görünür */}
                         <div className="space-y-2 mt-6">
-                            {/* Başlık - Collapsed durumunda border olarak göster */}
-                            <div 
-                                className={`
-                                    ${collapsed && !isMobile 
-                                        ? 'border-b border-gray-600 dark:border-gray-400 my-2' 
-                                        : 'px-3 py-2 text-xs font-semibold uppercase tracking-wider ' + 
-                                          (darkMode ? 'text-gray-400' : 'text-gray-500')
-                                    }
-                                `}
-                            >
+                            <div className={`${collapsed && !isMobile ? 'border-b border-gray-600 dark:border-gray-400 my-2' : 'px-3 py-2 text-xs font-semibold uppercase tracking-wider ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}`}>
                                 {!collapsed && t('sidebar.settings')}
                             </div>
-
                             <Tippy content={collapsed && !isMobile ? t('sidebar.profile') : ""} disabled={!collapsed || isMobile} placement="right">
                                 <div>
                                     <NavLink

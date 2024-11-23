@@ -20,7 +20,10 @@ interface LoginProps extends PageProps {
     canResetPassword: boolean;
     languages: any;
     secili_dil: any;
-    showResetSuccessToast?: boolean;
+    flash: {
+        message?: string;
+        type?: 'success' | 'error' | 'warning' | 'info';
+    };
 }
 
 const Login: React.FC<LoginProps> = ({
@@ -28,7 +31,7 @@ const Login: React.FC<LoginProps> = ({
     canResetPassword,
     languages,
     secili_dil,
-    showResetSuccessToast,
+    flash,
 }) => {
     const { t, locale } = useTranslation();
     const [showPassword, setShowPassword] = useState(false);
@@ -44,55 +47,75 @@ const Login: React.FC<LoginProps> = ({
     }, [locale, t]);
 
     useEffect(() => {
-        if (showResetSuccessToast) {
-            toast.success(t('login.passwordResetSuccess'), {
-                position: 'top-right',
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-            });
+        if (flash?.message) {
+            switch (flash.type) {
+                case 'success':
+                    toast.success(flash.message);
+                    break;
+                case 'error':
+                    toast.error(flash.message);
+                    break;
+                case 'warning':
+                    toast.warning(flash.message);
+                    break;
+                case 'info':
+                    toast.info(flash.message);
+                    break;
+                default:
+                    toast(flash.message);
+            }
         }
-    }, [showResetSuccessToast, t]);
-
-    useEffect(() => {
-        const error = route().params.error;
-        if (error) {
-            toast.error(error);
-        }
-    }, []);
+    }, [flash]);
 
     const handleError = (errors: any) => {
-        if (errors.email) {
-            toast.error(errors.email, {
+        Object.keys(errors).forEach((key) => {
+            let message = errors[key];
+            let toastType: 'error' | 'warning' = 'error';
+            
+            // Hata tipine göre toast stilini belirle
+            if (message.includes('deactivated')) {
+                toastType = 'warning';
+            }
+
+            toast[toastType](message, {
                 position: 'top-right',
                 autoClose: 5000,
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,
                 draggable: true,
+                progress: undefined,
             });
-        }
-        if (errors.password) {
-            toast.error(errors.password, {
-                position: 'top-right',
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-            });
-        }
+        });
     };
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const getInputClassName = (fieldName: string) => `
+        block w-full pl-10 pr-10 py-2 sm:text-sm rounded-md 
+        transition duration-200
+        ${errors[fieldName as keyof typeof errors] 
+            ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+            : 'focus:ring-light-primary focus:border-light-primary dark:focus:ring-dark-primary dark:focus:border-dark-primary'}
+        dark:bg-dark-surface dark:text-dark-text bg-light-surface text-light-text 
+        bg-opacity-50 dark:bg-opacity-50
+        border border-transparent
+    `;
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        console.log('Submitting form with data:', data);
+        setIsSubmitting(true);
+        
         post(route('login'), {
-            onError: handleError,
+            onError: (errors) => {
+                setIsSubmitting(false);
+                handleError(errors);
+            },
+            onSuccess: () => {
+                setIsSubmitting(false);
+            },
             onFinish: () => {
-                console.log('Login attempt finished');
+                setIsSubmitting(false);
                 reset('password');
             },
         });
@@ -167,7 +190,7 @@ const Login: React.FC<LoginProps> = ({
                                         name="email"
                                         value={data.email}
                                         onChange={(e) => setData('email', e.target.value)}
-                                        className="block w-full pl-10 pr-3 py-2 sm:text-sm rounded-md focus:ring-light-primary focus:border-light-primary dark:focus:ring-dark-primary dark:focus:border-dark-primary dark:bg-dark-surface dark:text-dark-text bg-light-surface text-light-text bg-opacity-50 dark:bg-opacity-50 border border-transparent transition duration-200"
+                                        className={getInputClassName('email')}
                                         placeholder={t('login.emailPlaceholder')}
                                         required
                                     />
@@ -202,7 +225,7 @@ const Login: React.FC<LoginProps> = ({
                                         name="password"
                                         value={data.password}
                                         onChange={(e) => setData('password', e.target.value)}
-                                        className="block w-full pl-10 pr-10 py-2 sm:text-sm rounded-md focus:ring-light-primary focus:border-light-primary dark:focus:ring-dark-primary dark:focus:border-dark-primary dark:bg-dark-surface dark:text-dark-text bg-light-surface text-light-text bg-opacity-50 dark:bg-opacity-50 border border-transparent transition duration-200"
+                                        className={getInputClassName('password')}
                                         placeholder={t('login.passwordPlaceholder')}
                                         required
                                     />
@@ -296,6 +319,22 @@ const Login: React.FC<LoginProps> = ({
                     </div>
                 </div>
             </motion.div>
+
+            {isSubmitting && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="bg-white p-5 rounded-full"
+                    >
+                        <FaSpinner className="animate-spin h-8 w-8 text-blue-500" />
+                    </motion.div>
+                </div>
+            )}
+
+            <div className="fixed bottom-4 right-4 z-50">
+                {/* Toastify burada render edilecek */}
+            </div>
         </GuestLayout>
     );
 };

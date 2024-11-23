@@ -29,3 +29,8 @@ export interface CustomPageProps {
 }
 
 export type PageProps<T = {}> = InertiaPageProps<CustomPageProps & T>;
+
+export interface Role {
+    id: number;
+    name: string;
+}

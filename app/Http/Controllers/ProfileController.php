@@ -86,4 +86,12 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    public function info()
+    {
+        return Inertia::render('Profile/Info', [
+            'user' => Auth::user(),
+            'settings' => Auth::user()->settings,
+        ]);
+    }
 }

@@ -21,19 +21,13 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
-        return array_merge(parent::share($request), [
+        return [
             'auth' => [
                 'user' => $request->user() ? [
                     'id' => $request->user()->id,
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
-                    'avatar' => $request->user()->avatar,
-                    'roles' => $request->user()->roles->map(function ($role) {
-                        return [
-                            'id' => $role->id,
-                            'name' => $role->name
-                        ];
-                    })
+                    'roles' => $request->user()->roles,
                 ] : null,
             ],
             'ziggy' => fn() => [
@@ -44,7 +38,7 @@ class HandleInertiaRequests extends Middleware
             'secili_dil' => View::shared('secili_dil'),
             'translations' => $this->getTranslations(),
             'locale' => App::getLocale(),
-        ]);
+        ];
     }
 
     private function getTranslations(): array

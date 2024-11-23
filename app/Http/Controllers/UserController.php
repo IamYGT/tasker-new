@@ -78,6 +78,7 @@ class UserController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'is_active' => $user->is_active,
                 'roles' => $user->roles,
             ],
             'availableRoles' => Role::orderBy('name')->get(),
@@ -86,15 +87,21 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        Log::info('Update request data:', $request->all()); // Debug için
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'role' => 'required|exists:roles,id',
+            'is_active' => 'required|boolean',
         ]);
+
+        Log::info('Validated data:', $validated); // Debug için
 
         $user->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'is_active' => $validated['is_active'],
         ]);
 
         $user->roles()->sync([$validated['role']]);
@@ -133,18 +140,14 @@ class UserController extends Controller
     public function resetPasswordForm(User $user)
     {
         return Inertia::render('Users/ResetPassword', [
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-            ]
+            'user' => $user->only(['id', 'name', 'email'])
         ]);
     }
 
     public function resetPassword(Request $request, User $user)
     {
         $validated = $request->validate([
-            'password' => ['required', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
         $user->update([
@@ -166,5 +169,16 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('success', translate('users.resetPasswordSuccess'));
+    }
+
+    public function assignRole(User $user, Request $request)
+    {
+        $request->validate([
+            'role' => 'required|exists:roles,name'
+        ]);
+
+        $user->assignRole($request->role);
+
+        return redirect()->back()->with('success', 'Rol başarıyla atandı.');
     }
 } 

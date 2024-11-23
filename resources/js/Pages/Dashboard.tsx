@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Users, DollarSign, TrendingUp, Calendar } from 'lucide-react';
 import { useTranslation } from '@/Contexts/TranslationContext';
@@ -41,7 +41,11 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, change })
 };
 
 interface PageProps {
-    auth: any;
+    auth: {
+        user: {
+            roles: Array<{ name: string }>;
+        };
+    };
     showWelcomeToast?: boolean;
     languages: any;
     secili_dil: any;
@@ -49,6 +53,12 @@ interface PageProps {
 
 export default function Dashboard({ auth, showWelcomeToast, languages, secili_dil }: PageProps) {
     const { t } = useTranslation();
+    const { flash } = usePage().props;
+    useEffect(() => {
+        if (typeof flash === 'object' && flash !== null && 'error' in flash && typeof flash.error === 'string') {
+            toast.error(flash.error);
+        }
+    }, [flash]);
 
     useEffect(() => {
         if (showWelcomeToast) {
@@ -64,6 +74,13 @@ export default function Dashboard({ auth, showWelcomeToast, languages, secili_di
             });
         }
     }, [showWelcomeToast, t]);
+
+    useEffect(() => {
+        if (auth.user.roles.some(role => role.name === 'admin')) {
+            window.location.href = route('admin.dashboard');
+        }
+    }, [auth.user.roles]);
+
     return (
         <AuthenticatedLayout
             auth={auth}

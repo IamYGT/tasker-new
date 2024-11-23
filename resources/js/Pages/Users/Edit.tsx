@@ -12,6 +12,7 @@ interface User {
     id: number;
     name: string;
     email: string;
+    is_active: boolean;
     roles: Array<{
         id: number;
         name: string;
@@ -37,6 +38,7 @@ export default function EditUser({ auth, user, languages, secili_dil, availableR
         name: user.name,
         email: user.email,
         role: user.roles[0]?.id || '',
+        is_active: user.is_active,
     });
 
     const validateEmail = useCallback((email: string) => {
@@ -180,6 +182,76 @@ export default function EditUser({ auth, user, languages, secili_dil, availableR
                                         ))}
                                     </div>
                                     <InputError message={errors.role} className="mt-2" />
+                                </div>
+
+                                {/* Aktif/Pasif Toggle Switch - Yeni Tasarım */}
+                                <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                                                {t('users.accountStatus')}
+                                            </h3>
+                                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                                {t('users.accountStatusDescription')}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <label className="flex items-center cursor-pointer">
+                                                <div className="relative">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={data.is_active}
+                                                        onChange={(e) => {
+                                                            setData('is_active', e.target.checked);
+                                                            console.log('is_active changed:', e.target.checked); // Debug için
+                                                        }}
+                                                        className="sr-only"
+                                                    />
+                                                    <div className={`
+                                                        w-14 h-7 rounded-full transition-colors duration-300 ease-in-out
+                                                        ${data.is_active ? 'bg-green-500' : 'bg-gray-400'}
+                                                        shadow-inner
+                                                    `}>
+                                                        <div className={`
+                                                            absolute left-0.5 top-0.5 
+                                                            bg-white w-6 h-6 rounded-full 
+                                                            shadow-lg transform transition-transform duration-300 ease-in-out
+                                                            flex items-center justify-center
+                                                            ${data.is_active ? 'translate-x-7' : 'translate-x-0'}
+                                                        `}>
+                                                            {data.is_active ? (
+                                                                <FaCheckCircle className="h-4 w-4 text-green-500" />
+                                                            ) : (
+                                                                <FaTimesCircle className="h-4 w-4 text-gray-400" />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <span className={`
+                                                    ml-3 font-medium text-sm
+                                                    ${data.is_active 
+                                                        ? 'text-green-600 dark:text-green-400' 
+                                                        : 'text-gray-500 dark:text-gray-400'}
+                                                `}>
+                                                    {data.is_active 
+                                                        ? t('users.statusActive') 
+                                                        : t('users.statusInactive')}
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div className="mt-2">
+                                        <div className={`
+                                            text-sm rounded-md p-2
+                                            ${data.is_active 
+                                                ? 'text-green-700 bg-green-50 dark:bg-green-900/20 dark:text-green-400' 
+                                                : 'text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-400'}
+                                        `}>
+                                            {data.is_active 
+                                                ? t('users.activeAccountMessage')
+                                                : t('users.inactiveAccountMessage')}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Gönder Butonu */}

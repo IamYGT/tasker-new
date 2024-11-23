@@ -6,6 +6,7 @@ import Header from './Header';
 import LogoutModal from './LogoutModal';
 import { motion } from 'framer-motion';
 import { User } from '@/types';
+import { useRole } from '@/hooks/useRole';
 
 interface Props {
     auth: {
@@ -30,6 +31,7 @@ export default function Authenticated({ auth, header, children }: Props) {
         const savedCollapsed = localStorage.getItem('sidebarCollapsed');
         return savedCollapsed ? JSON.parse(savedCollapsed) : false;
     });
+    const { isAdmin } = useRole();
 
     useEffect(() => {
         const handleResize = () => {
@@ -82,7 +84,9 @@ export default function Authenticated({ auth, header, children }: Props) {
         });
     };
 
-    const isAdmin = auth?.user?.roles?.some(role => role.name === 'admin') ?? false;
+    const handleDashboardClick = () => {
+        // Dashboard click işlemleri
+    };
 
     return (
         <div className={`flex h-screen ${darkMode ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900' : 'bg-gradient-to-br from-blue-100 via-blue-200 to-indigo-300'} transition-all duration-500 ease-in-out animate-gradient`}>
@@ -106,7 +110,8 @@ export default function Authenticated({ auth, header, children }: Props) {
                 darkMode={darkMode}
                 setShowLogoutModal={setShowLogoutModal}
                 collapsed={isMobile ? false : collapsed}
-                isAdmin={isAdmin}
+                isAdmin={isAdmin()}
+            
             />
 
             <div className="flex-1 flex flex-col overflow-hidden">

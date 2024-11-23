@@ -8,10 +8,42 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property string|null $password
+ * @property string|null $google_id
+ * @property string|null $facebook_id
+ * @property string|null $github_id
+ * @property string|null $avatar
+ * @property string|null $google_refresh_token
+ * @property \DateTime|null $last_login_at
+ * @property bool $social_login
+ * @property string|null $last_social_login
+ * @property bool $social_registration
+ * @property int|null $role_id
+ * @property \DateTime|null $email_verified_at
+ * @property \DateTime $created_at
+ * @property \DateTime $updated_at
+ * 
+ * @property-read Collection|Transaction[] $transactions
+ * @property-read Collection|Ticket[] $tickets
+ * @property-read UserSetting|null $settings
+ * @property-read Collection|Role[] $roles
+ * 
+ * @method HasMany transactions()
+ * @method HasMany tickets()
+ * @method HasOne settings()
+ * @method BelongsToMany roles()
+ */
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -32,6 +64,7 @@ class User extends Authenticatable
         'last_social_login',
         'social_registration',
         'role_id',
+        'is_active',
     ];
 
     /**
@@ -52,10 +85,13 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'last_login_at' => 'datetime',
-        'password' => 'hashed',
+        'is_active' => 'boolean',
         'social_login' => 'boolean',
-        'social_registration' => 'boolean',
+        'social_registration' => 'boolean'
+    ];
+
+    protected $attributes = [
+        'is_active' => true,
     ];
 
     public function sendPasswordResetNotification($token)
@@ -75,9 +111,9 @@ class User extends Authenticatable
     /**
      * Roles ilişkisini ekleyelim
      */
-    public function roles()
+    public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class, 'role_user');
+        return $this->belongsToMany(Role::class);
     }
 
     /**
@@ -95,19 +131,37 @@ class User extends Authenticatable
 
     public function assignRole($role)
     {
-        try {
-            if (is_string($role)) {
-                $role = Role::where('name', $role)->firstOrFail();
-            }
-            $this->roles()->syncWithoutDetaching($role);
-            return true;
-        } catch (\Exception $e) {
-            Log::error('Rol atama hatası:', [
-                'user_id' => $this->id,
-                'role' => $role,
-                'error' => $e->getMessage()
-            ]);
-            return false;
+        if (is_string($role)) {
+            $role = Role::where('name', $role)->firstOrFail();
         }
+        $this->roles()->syncWithoutDetaching($role);
+    }
+
+    public function removeRole($role)
+    {
+        if (is_string($role)) {
+            $role = Role::where('name', $role)->firstOrFail();
+        }
+        $this->roles()->detach($role);
+    }
+
+    /**
+     * Get user's transactions
+     *
+     * @return HasMany<Transaction>
+     */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    /**
+     * Get user's tickets
+     *
+     * @return HasMany<Ticket>
+     */
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
     }
 }

@@ -12,67 +12,80 @@ use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\LanguageWord;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Log;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
     public function create(): Response
     {
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
+            'errors' => session('errors') ? session('errors')->getBag('default')->getMessages() : (object)[],
+            'flash' => [
+                'message' => session('message'),
+                'type' => session('type'),
+            ],
         ]);
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
     public function store(LoginRequest $request): RedirectResponse
     {
         try {
-            $request->authenticate();
-        } catch (\Illuminate\Validation\ValidationException $e) {
             $user = \App\Models\User::where('email', $request->email)->first();
             
             if (!$user) {
-                return back()->withErrors([
-                    'email' => $this->getTranslation('login.invalidEmail'),
-                ])->onlyInput('email');
-            } else {
-                return back()->withErrors([
-                    'password' => $this->getTranslation('login.invalidPassword'),
-                ])->onlyInput('email');
+                return back()
+                    ->with('message', $this->getTranslation('login.invalidEmail'))
+                    ->with('type', 'error')
+                    ->withInput($request->except('password'));
             }
+
+            if (!\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+                return back()
+                    ->with('message', $this->getTranslation('login.invalidPassword'))
+                    ->with('type', 'error')
+                    ->withInput($request->except('password'));
+            }
+
+            if (isset($user->is_active) && $user->is_active === 0) {
+                return back()
+                    ->with('message', $this->getTranslation('login.accountDeactivated'))
+                    ->with('type', 'warning')
+                    ->withInput($request->except('password'));
+            }
+
+            Auth::login($user, $request->boolean('remember'));
+            $request->session()->regenerate();
+
+            return redirect()->intended(route('dashboard'))
+                ->with('message', $this->getTranslation('login.welcomeBack'))
+                ->with('type', 'success');
+
+        } catch (\Exception $e) {
+            Log::error('Login error: ' . $e->getMessage());
+            return back()
+                ->with('message', $this->getTranslation('login.generalError'))
+                ->with('type', 'error')
+                ->withInput($request->except('password'));
         }
-
-        $request->session()->regenerate();
-
-        return redirect()->intended(route('dashboard', absolute: false));
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/')
+            ->with('message', $this->getTranslation('login.loggedOut'))
+            ->with('type', 'success');
     }
 
     private function getTranslation(string $key): string
     {
-        $locale = App::getLocale();
-        $translation = LanguageWord::where('kod', $locale)
+        return LanguageWord::where('kod', App::getLocale())
             ->where('anahtar', $key)
-            ->first();
-
-        return $translation ? $translation->deger : $key;
+            ->first()?->deger ?? $key;
     }
 }
