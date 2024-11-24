@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Head, useForm, router, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useTranslation } from '@/Contexts/TranslationContext';
-import { FaSearch, FaFilter, FaEdit, FaEye, FaSync, FaDownload, FaChartBar, FaCheck, FaClock, FaMoneyBillWave } from 'react-icons/fa';
+import { FaSearch, FaFilter, FaEdit, FaEye, FaSync, FaDownload, FaChartBar, FaCheck, FaClock, FaMoneyBillWave, FaFileAlt, FaFileCsv, FaUser } from 'react-icons/fa';
 import Pagination from '@/Components/Pagination';
 import { motion, AnimatePresence } from 'framer-motion';
 import debounce from 'lodash/debounce';
 import { getTypeColor, getStatusColor, getStatusIcon } from '@/utils/transaction';
 import { Transaction, TransactionType, TransactionStatus, PaginatedData } from '@/types';
+import { Menu, Transition } from '@headlessui/react';
 
 interface Props {
     auth: any;
@@ -103,6 +104,64 @@ export default function Index({ auth, transactions, filters, statuses, types }: 
                 staggerChildren: 0.1
             }
         }
+    };
+
+    const exportData = (format: 'json' | 'csv') => {
+        const data = transactions.data.map(t => ({
+            reference_id: t.reference_id,
+            user: t.user.name,
+            email: t.user.email,
+            type: t.type,
+            amount: t.amount,
+            status: t.status,
+            bank_account: t.bank_account,
+            created_at: new Date(t.created_at).toLocaleDateString('tr-TR'),
+            notes: t.notes
+        }));
+
+        let content: string;
+        let mimeType: string;
+        let fileExtension: string;
+
+        if (format === 'json') {
+            content = JSON.stringify(data, null, 2);
+            mimeType = 'application/json';
+            fileExtension = 'json';
+        } else {
+            // CSV başlıkları için çevirileri kullan
+            const headers = [
+                t('transaction.referenceId'),
+                t('transaction.user'),
+                t('common.email'),
+                t('transaction.type'),
+                t('transaction.amount'),
+                t('transaction.status'),
+                t('transaction.bankAccount'),
+                t('transaction.date'),
+                t('transaction.notes')
+            ];
+            const csvContent = [
+                headers.join(','),
+                ...data.map(item => Object.values(item).map(val => `"${val}"`).join(','))
+            ].join('\n');
+            
+            content = csvContent;
+            mimeType = 'text/csv';
+            fileExtension = 'csv';
+        }
+
+        // Dosya adında da çeviriyi kullan
+        const fileName = `${t('transaction.transactions')}_${new Date().toISOString().split('T')[0]}.${fileExtension}`;
+        
+        const blob = new Blob([content], { type: mimeType });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
     };
 
     return (
@@ -233,13 +292,52 @@ export default function Index({ auth, transactions, filters, statuses, types }: 
                                         </button>
                                     )}
 
-                                    <button
-                                        className="flex items-center px-4 py-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-xl transition-all"
-                                        onClick={() => {/* Export fonksiyonu */}}
-                                    >
-                                        <FaDownload className="mr-2 w-4 h-4" />
-                                        {t('common.export')}
-                                    </button>
+                                    <Menu as="div" className="relative">
+                                        <Menu.Button className="flex items-center px-4 py-2.5 bg-light-primary dark:bg-dark-primary hover:bg-light-primary/90 dark:hover:bg-dark-primary/90 text-white rounded-xl transition-all duration-200 font-medium shadow-sm hover:shadow group">
+                                            <FaDownload className="w-4 h-4 mr-2" />
+                                            {t('common.export')}
+                                        </Menu.Button>
+
+                                        <Transition
+                                            enter="transition duration-100 ease-out"
+                                            enterFrom="transform scale-95 opacity-0"
+                                            enterTo="transform scale-100 opacity-100"
+                                            leave="transition duration-75 ease-out"
+                                            leaveFrom="transform scale-100 opacity-100"
+                                            leaveTo="transform scale-95 opacity-0"
+                                        >
+                                            <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-white dark:bg-gray-700 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
+                                                <div className="p-1">
+                                                    <Menu.Item>
+                                                        {({ active }) => (
+                                                            <button
+                                                                onClick={() => exportData('json')}
+                                                                className={`${
+                                                                    active ? 'bg-gray-100 dark:bg-gray-600' : ''
+                                                                } group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900 dark:text-gray-100`}
+                                                            >
+                                                                <FaFileAlt className="w-4 h-4 mr-2" />
+                                                                JSON
+                                                            </button>
+                                                        )}
+                                                    </Menu.Item>
+                                                    <Menu.Item>
+                                                        {({ active }) => (
+                                                            <button
+                                                                onClick={() => exportData('csv')}
+                                                                className={`${
+                                                                    active ? 'bg-gray-100 dark:bg-gray-600' : ''
+                                                                } group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900 dark:text-gray-100`}
+                                                            >
+                                                                <FaFileCsv className="w-4 h-4 mr-2" />
+                                                                CSV
+                                                            </button>
+                                                        )}
+                                                    </Menu.Item>
+                                                </div>
+                                            </Menu.Items>
+                                        </Transition>
+                                    </Menu>
                                 </div>
                             </div>
 
@@ -311,85 +409,89 @@ export default function Index({ auth, transactions, filters, statuses, types }: 
 
                         {/* Tablo */}
                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left">
-                                <thead className="text-xs uppercase bg-gray-50 dark:bg-gray-700">
+                            <table className="w-full text-sm">
+                                <thead className="text-xs uppercase bg-gray-50 dark:bg-gray-700/50">
                                     <tr>
-                                        <th className="px-6 py-3">{t('transaction.referenceId')}</th>
-                                        <th className="px-6 py-3">{t('transaction.user')}</th>
-                                        <th className="px-6 py-3">{t('transaction.type')}</th>
-                                        <th className="px-6 py-3">{t('transaction.amount')}</th>
-                                        <th className="px-6 py-3">{t('transaction.status')}</th>
-                                        <th className="px-6 py-3">{t('transaction.date')}</th>
-                                        <th className="px-6 py-3">{t('common.actions')}</th>
+                                        <th className="px-4 py-3">{t('transaction.referenceId')}</th>
+                                        <th className="px-4 py-3">{t('transaction.user')}</th>
+                                        <th className="px-4 py-3 hidden md:table-cell">{t('transaction.type')}</th>
+                                        <th className="px-4 py-3">{t('transaction.amount')}</th>
+                                        <th className="px-4 py-3">{t('transaction.status')}</th>
+                                        <th className="px-4 py-3 hidden lg:table-cell">{t('transaction.lastUpdate')}</th>
+                                        <th className="px-4 py-3 w-20">{t('common.actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                    {transactions.data.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={7} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                                                {t('common.noData')}
+                                    {transactions.data.map((transaction) => (
+                                        <tr 
+                                            key={transaction.id}
+                                            className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                                        >
+                                            <td className="px-4 py-3 font-medium">
+                                                <span className="text-xs">{transaction.reference_id}</span>
                                             </td>
-                                        </tr>
-                                    ) : (
-                                        transactions.data.map((transaction) => (
-                                            <tr key={transaction.id} 
-                                                className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                                <td className="px-6 py-4 font-medium">
-                                                    {transaction.reference_id}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="text-gray-900 dark:text-gray-100">
-                                                        {transaction.user.name}
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="hidden sm:flex w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 items-center justify-center">
+                                                        <FaUser className="w-3 h-3 text-gray-500" />
                                                     </div>
-                                                    <div className="text-gray-500 text-xs">
-                                                        {transaction.user.email}
+                                                    <div className="min-w-0">
+                                                        <div className="truncate font-medium">
+                                                            {transaction.user.name}
+                                                        </div>
+                                                        <div className="truncate text-xs text-gray-500">
+                                                            {transaction.user.email}
+                                                        </div>
                                                     </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(transaction.type)}`}>
-                                                        {t(`transaction.${transaction.type}`)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 font-medium">
-                                                    {new Intl.NumberFormat('tr-TR', {
-                                                        style: 'currency',
-                                                        currency: 'TRY'
-                                                    }).format(transaction.amount)}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(transaction.status)}`}>
-                                                        {getStatusIcon(transaction.status)}
-                                                        {t(`status.${transaction.status}`)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-gray-500">
-                                                    {new Date(transaction.created_at).toLocaleDateString('tr-TR', {
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 hidden md:table-cell">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(transaction.type)}`}>
+                                                    {t(`transaction.${transaction.type}`)}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 font-medium">
+                                                {new Intl.NumberFormat('tr-TR', {
+                                                    style: 'currency',
+                                                    currency: 'TRY',
+                                                    minimumFractionDigits: 0,
+                                                    maximumFractionDigits: 0
+                                                }).format(transaction.amount)}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(transaction.status)}`}>
+                                                    {getStatusIcon(transaction.status)}
+                                                    {t(`status.${transaction.status}`)}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 hidden lg:table-cell">
+                                                <span className="text-xs text-gray-500">
+                                                    {new Date(transaction.updated_at).toLocaleDateString('tr-TR', {
                                                         day: 'numeric',
-                                                        month: 'long',
-                                                        year: 'numeric',
+                                                        month: 'short',
                                                         hour: '2-digit',
                                                         minute: '2-digit'
                                                     })}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <Link
-                                                            href={route('admin.transactions.edit', transaction.id)}
-                                                            className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                                                        >
-                                                            <FaEdit className="w-4 h-4" />
-                                                        </Link>
-                                                        <Link
-                                                            href={route('admin.transactions.show', transaction.id)}
-                                                            className="p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300"
-                                                        >
-                                                            <FaEye className="w-4 h-4" />
-                                                        </Link>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex justify-end gap-1">
+                                                    <Link
+                                                        href={route('admin.transactions.show', transaction.id)}
+                                                        className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                                                    >
+                                                        <FaEye className="w-4 h-4" />
+                                                    </Link>
+                                                    <Link
+                                                        href={route('admin.transactions.edit', transaction.id)}
+                                                        className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                                                    >
+                                                        <FaEdit className="w-4 h-4" />
+                                                    </Link>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>

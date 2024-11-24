@@ -4,7 +4,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useTranslation } from '@/Contexts/TranslationContext';
 import { toast } from 'react-toastify';
 import { Transaction, TransactionStatus } from '@/types';
-import { FaArrowLeft, FaSave, FaTimes, FaSpinner } from 'react-icons/fa';
+import { FaArrowLeft, FaSave, FaTimes, FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
 import { getStatusColor, getTypeColor } from '@/utils/transaction';
 
 interface Props {
@@ -198,38 +198,42 @@ export default function Edit({ auth, transaction, statuses }: Props) {
                                             )}
                                         </div>
 
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                                {t('transaction.notes')}
-                                            </label>
-                                            <textarea
-                                                value={data.notes}
-                                                onChange={e => setData('notes', e.target.value)}
-                                                rows={4}
-                                                placeholder={t('transaction.notesPlaceholder')}
-                                                className="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 focus:border-primary-500 focus:ring-primary-500 shadow-sm"
-                                            />
-                                            {errors.notes && (
-                                                <p className="mt-2 text-sm text-red-600">{errors.notes}</p>
-                                            )}
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                    {t('transaction.notes')}
+                                                </label>
+                                                <textarea
+                                                    value={data.notes}
+                                                    onChange={e => setData('notes', e.target.value)}
+                                                    rows={4}
+                                                    className="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700/50 focus:border-primary-500 focus:ring-primary-500 shadow-sm"
+                                                    placeholder={t('transaction.notesPlaceholder')}
+                                                />
+                                                {errors.notes && (
+                                                    <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.notes}</p>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div className="flex justify-end space-x-4 pt-4">
                                             <Link
-                                                href={route('admin.transactions.index')}
-                                                className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                                href={route('admin.transactions.show', transaction.id)}
+                                                className="inline-flex items-center px-5 py-2.5 bg-light-surface dark:bg-dark-surface text-light-secondary dark:text-dark-secondary border border-light-secondary/20 dark:border-dark-secondary/20 hover:bg-light-background dark:hover:bg-dark-background rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow group"
                                             >
+                                                <FaTimes className="w-4 h-4 mr-2 transition-transform group-hover:scale-110" />
                                                 {t('common.cancel')}
                                             </Link>
+                                            
                                             <button
                                                 type="submit"
                                                 disabled={processing}
-                                                className="flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200 disabled:opacity-50 shadow-md hover:shadow-lg"
+                                                className="inline-flex items-center px-5 py-2.5 bg-light-primary dark:bg-dark-primary hover:bg-light-primary/90 dark:hover:bg-dark-primary/90 text-white rounded-lg transition-all duration-200 font-medium disabled:opacity-50 shadow-md hover:shadow-lg disabled:cursor-not-allowed group"
                                             >
                                                 {processing ? (
-                                                    <FaSpinner className="w-5 h-5 mr-2 animate-spin" />
+                                                    <FaSpinner className="w-4 h-4 mr-2 animate-spin" />
                                                 ) : (
-                                                    <FaSave className="w-5 h-5 mr-2" />
+                                                    <FaSave className="w-4 h-4 mr-2 transition-transform group-hover:scale-110" />
                                                 )}
                                                 {t('common.save')}
                                             </button>
@@ -255,17 +259,20 @@ export default function Edit({ auth, transaction, statuses }: Props) {
                         <div className="flex justify-end space-x-4">
                             <button
                                 onClick={() => setIsConfirmOpen(false)}
-                                className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all duration-200"
+                                className="inline-flex items-center px-5 py-2.5 bg-light-surface dark:bg-dark-surface text-light-secondary dark:text-dark-secondary border border-light-secondary/20 dark:border-dark-secondary/20 hover:bg-light-background dark:hover:bg-dark-background rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow group"
                             >
+                                <FaTimes className="w-4 h-4 mr-2 transition-transform group-hover:scale-110" />
                                 {t('common.no')}
                             </button>
+                            
                             <button
                                 onClick={() => {
                                     setIsConfirmOpen(false);
                                     submitForm();
                                 }}
-                                className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                                className="inline-flex items-center px-5 py-2.5 bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-700 text-white rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg group"
                             >
+                                <FaExclamationTriangle className="w-4 h-4 mr-2 transition-transform group-hover:scale-110" />
                                 {t('common.yes')}
                             </button>
                         </div>

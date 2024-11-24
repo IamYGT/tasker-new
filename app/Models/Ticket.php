@@ -2,68 +2,59 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
-/**
- * @property int $id
- * @property int $user_id
- * @property string $subject
- * @property string $status
- * @property string $priority
- * @property \DateTime $created_at
- * @property \DateTime $updated_at
- * 
- * @property-read User $user
- * @property-read Collection|TicketMessage[] $messages
- * @property-read TicketMessage|null $lastMessage
- * 
- * @method BelongsTo user()
- * @method HasMany messages()
- * @method HasOne lastMessage()
- */
 class Ticket extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'user_id',
         'subject',
+        'message',
         'status',
-        'priority'
+        'priority',
+        'category',
+        'last_reply_at',
+        'closed_at',
+        'history'
     ];
 
-    /**
-     * Get the user that owns the ticket
-     *
-     * @return BelongsTo<User>
-     */
+    protected $casts = [
+        'history' => 'array',
+        'last_reply_at' => 'datetime',
+        'closed_at' => 'datetime'
+    ];
+
+    const STATUSES = ['open', 'answered', 'closed'];
+    const PRIORITIES = ['low', 'medium', 'high'];
+    const CATEGORIES = ['general', 'technical', 'billing', 'other'];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Get ticket messages
-     *
-     * @return HasMany<TicketMessage>
-     */
-    public function messages(): HasMany
+    public function replies(): HasMany
     {
         return $this->hasMany(TicketMessage::class);
     }
 
-    /**
-     * Get the latest message
-     *
-     * @return HasOne<TicketMessage>
-     */
-    public function lastMessage(): HasOne
+    public function addToHistory(string $messageKey, string $type = 'info', ?array $params = null): void
     {
-        return $this->hasOne(TicketMessage::class)->latest();
+        $history = $this->history ?? [];
+        
+        $history[] = [
+            'id' => count($history) + 1,
+            'action' => $messageKey,
+            'params' => $params,
+            'type' => $type,
+            'created_at' => now()->toIso8601String(),
+            'user' => [
+                'name' => auth()->user()->name
+            ]
+        ];
+        
+        $this->update(['history' => $history]);
     }
 } 

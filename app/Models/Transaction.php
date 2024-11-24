@@ -34,6 +34,13 @@ class Transaction extends Model
         self::TYPE_TRANSFER,
     ];
 
+    // Status çevirileri
+    const STATUS_TRANSLATIONS = [
+        self::STATUS_PENDING => 'Beklemede',
+        self::STATUS_COMPLETED => 'Tamamlandı',
+        self::STATUS_CANCELLED => 'İptal Edildi'
+    ];
+
     protected $fillable = [
         'user_id',
         'amount',
@@ -41,18 +48,46 @@ class Transaction extends Model
         'status',
         'description',
         'bank_account',
-        'reference_id'
+        'reference_id',
+        'notes',
+        'history'
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'created_at' => 'datetime',
-        'updated_at' => 'datetime'
+        'updated_at' => 'datetime',
+        'history' => 'array'
     ];
 
     // İlişkiler
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    // İşlem geçmişini kaydetmek için yardımcı method
+    public function addToHistory(string $messageKey, string $type = 'info', ?array $params = null): void
+    {
+        $history = $this->history ?? [];
+        
+        // Parametre değerlerini çevir
+        if ($params) {
+            foreach ($params as $key => $value) {
+                if (in_array($key, ['old', 'new'])) {
+                    $params[$key] = translate("status.{$value}");
+                }
+            }
+        }
+
+        $history[] = [
+            'messageKey' => $messageKey, // Çeviri anahtarını sakla
+            'params' => $params, // Parametreleri sakla
+            'type' => $type,
+            'date' => now()->toIso8601String(),
+            'user' => auth()->user()->name ?? null
+        ];
+        
+        $this->update(['history' => $history]);
     }
 } 

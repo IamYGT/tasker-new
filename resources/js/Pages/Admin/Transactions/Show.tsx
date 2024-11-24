@@ -3,14 +3,16 @@ import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useTranslation } from '@/Contexts/TranslationContext';
 import { Transaction } from '@/types';
-import { FaArrowLeft, FaUser, FaCalendar, FaMoneyBillWave, FaCreditCard, FaFileAlt, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaUser, FaCalendar, FaMoneyBillWave, FaCreditCard, FaFileAlt, FaCheckCircle, FaTimesCircle, FaEdit, FaStickyNote, FaHistory, FaExchangeAlt, FaUserEdit, FaChartBar } from 'react-icons/fa';
 import { getStatusColor, getTypeColor, getStatusIcon } from '@/utils/transaction';
 import { motion } from 'framer-motion';
 
 interface HistoryItem {
-    type: 'success' | 'info';
-    message: string;
+    type: 'status_change' | 'notes_update' | 'info';
+    messageKey: string;
+    params?: Record<string, string>;
     date: string;
+    user?: string;
 }
 
 interface Props {
@@ -18,6 +20,19 @@ interface Props {
     transaction: Transaction & {
         history?: HistoryItem[];
     };
+}
+
+interface TransactionStats {
+    totalAmount: number;
+    lastUpdate: string;
+    historyCount: number;
+}
+
+interface StatCardProps {
+    title: string;
+    value: React.ReactNode;
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
 }
 
 export default function Show({ auth, transaction }: Props) {
@@ -38,6 +53,41 @@ export default function Show({ auth, transaction }: Props) {
         }
     };
 
+    const stats: TransactionStats = {
+        totalAmount: transaction.amount,
+        lastUpdate: transaction.updated_at,
+        historyCount: transaction.history?.length || 0,
+    };
+
+    const StatCard = ({ title, value, icon: Icon, color }: StatCardProps) => (
+        <motion.div
+            variants={cardVariants}
+            className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 ${color}`}
+        >
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{title}</p>
+                    <p className="text-2xl font-semibold mt-2">{value}</p>
+                </div>
+                <div className={`p-3 rounded-full ${color.replace('border-l-4', 'bg-opacity-20')}`}>
+                    <Icon className="w-6 h-6" />
+                </div>
+            </div>
+        </motion.div>
+    );
+
+    const renderHistoryMessage = (item: HistoryItem) => {
+        let message = t(item.messageKey);
+        
+        if (item.params) {
+            Object.entries(item.params).forEach(([key, value]) => {
+                message = message.replace(`:${key}`, value);
+            });
+        }
+        
+        return message;
+    };
+
     return (
         <AuthenticatedLayout auth={auth}>
             <Head title={`${t('transaction.details')} - ${transaction.reference_id}`} />
@@ -50,6 +100,8 @@ export default function Show({ auth, transaction }: Props) {
                         variants={containerVariants}
                         className="space-y-6"
                     >
+                       
+
                         {/* Üst Bar */}
                         <motion.div 
                             variants={cardVariants}
@@ -75,8 +127,9 @@ export default function Show({ auth, transaction }: Props) {
                                 </div>
                                 <Link
                                     href={route('admin.transactions.edit', transaction.id)}
-                                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                                    className="inline-flex items-center px-4 py-2.5 bg-light-primary dark:bg-dark-primary hover:bg-light-primary/90 dark:hover:bg-dark-primary/90 text-white rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow-md group"
                                 >
+                                    <FaEdit className="w-4 h-4 mr-2 transition-transform group-hover:scale-110" />
                                     {t('common.edit')}
                                 </Link>
                             </div>
@@ -176,51 +229,111 @@ export default function Show({ auth, transaction }: Props) {
                                         {transaction.history && transaction.history.length > 0 && (
                                             <motion.div 
                                                 variants={cardVariants}
-                                                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6"
+                                                className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-6"
                                             >
-                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                                    <FaHistory className="w-5 h-5 mr-2 text-gray-500" />
                                                     {t('transaction.history')}
                                                 </h3>
-                                                <div className="space-y-4">
-                                                    {transaction.history.map((item: HistoryItem, index: number) => (
-                                                        <div key={index} className="flex items-start space-x-3">
-                                                            <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center ${
-                                                                item.type === 'success' ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-                                                            }`}>
-                                                                {item.type === 'success' ? <FaCheckCircle /> : <FaTimesCircle />}
+                                                <div className="relative">
+                                                    {/* Timeline çizgisi */}
+                                                    <div className="absolute left-4 top-6 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-600" />
+                                                    
+                                                    <div className="space-y-6">
+                                                        {transaction.history.map((item: HistoryItem, index: number) => (
+                                                            <div key={index} className="relative flex items-start pl-8">
+                                                                {/* Timeline noktası */}
+                                                                <div className={`absolute left-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                                                                    item.type === 'status_change' 
+                                                                        ? 'bg-blue-100 dark:bg-blue-900/20' 
+                                                                        : item.type === 'notes_update'
+                                                                        ? 'bg-purple-100 dark:bg-purple-900/20'
+                                                                        : 'bg-gray-100 dark:bg-gray-700/50'
+                                                                }`}>
+                                                                    {getHistoryIcon(item.type)}
+                                                                </div>
+
+                                                                {/* İçerik */}
+                                                                <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm ml-4">
+                                                                    <p className="text-gray-900 dark:text-gray-100 font-medium">
+                                                                        {renderHistoryMessage(item)}
+                                                                    </p>
+                                                                    <div className="flex items-center gap-2 mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                                                        <span>
+                                                                            {new Date(item.date).toLocaleDateString('tr-TR', {
+                                                                                day: 'numeric',
+                                                                                month: 'long',
+                                                                                year: 'numeric',
+                                                                                hour: '2-digit',
+                                                                                minute: '2-digit'
+                                                                            })}
+                                                                        </span>
+                                                                        {item.user && (
+                                                                            <>
+                                                                                <span>•</span>
+                                                                                <span className="flex items-center gap-1">
+                                                                                    <FaUserEdit className="w-3 h-3" />
+                                                                                    {item.user}
+                                                                                </span>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <p className="text-gray-900 dark:text-gray-100 font-medium">
-                                                                    {item.message}
-                                                                </p>
-                                                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                                    {new Date(item.date).toLocaleDateString('tr-TR', {
-                                                                        day: 'numeric',
-                                                                        month: 'long',
-                                                                        year: 'numeric',
-                                                                        hour: '2-digit',
-                                                                        minute: '2-digit'
-                                                                    })}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </motion.div>
                                         )}
 
                                         {/* Notlar */}
-                                        {transaction.notes && (
+                                        {transaction.notes ? (
                                             <motion.div 
                                                 variants={cardVariants}
-                                                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6"
+                                                className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-6"
                                             >
-                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                                    <FaStickyNote className="w-5 h-5 mr-2 text-gray-500" />
                                                     {t('transaction.notes')}
                                                 </h3>
-                                                <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
-                                                    {transaction.notes}
-                                                </p>
+                                                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                                                    <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                                                        {transaction.notes}
+                                                    </p>
+                                                    <div className="mt-4 text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                                                        <FaCalendar className="w-4 h-4 mr-2" />
+                                                        {t('transaction.lastUpdated')}: {' '}
+                                                        {new Date(transaction.updated_at).toLocaleDateString('tr-TR', {
+                                                            day: 'numeric',
+                                                            month: 'long',
+                                                            year: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        ) : (
+                                            <motion.div 
+                                                variants={cardVariants}
+                                                className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-6"
+                                            >
+                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                                    <FaStickyNote className="w-5 h-5 mr-2 text-gray-500" />
+                                                    {t('transaction.notes')}
+                                                </h3>
+                                                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm text-center">
+                                                    <p className="text-gray-500 dark:text-gray-400 italic">
+                                                        {t('transaction.noNotes')}
+                                                    </p>
+                                                    <Link
+                                                        href={route('admin.transactions.edit', transaction.id)}
+                                                        className="inline-flex items-center mt-4 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                                                    >
+                                                        <FaEdit className="w-4 h-4 mr-1" />
+                                                        {t('transaction.addNote')}
+                                                    </Link>
+                                                </div>
                                             </motion.div>
                                         )}
                                     </div>
@@ -249,4 +362,15 @@ const DetailItem = ({ icon, label, value }: { icon: React.ReactNode, label: stri
             </div>
         </div>
     </div>
-); 
+);
+
+const getHistoryIcon = (type: string) => {
+    switch (type) {
+        case 'status_change':
+            return <FaExchangeAlt className="w-4 h-4 text-blue-600 dark:text-blue-400" />;
+        case 'notes_update':
+            return <FaStickyNote className="w-4 h-4 text-purple-600 dark:text-purple-400" />;
+        default:
+            return <FaHistory className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
+    }
+}; 

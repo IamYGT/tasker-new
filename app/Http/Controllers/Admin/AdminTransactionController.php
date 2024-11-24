@@ -69,7 +69,25 @@ class AdminTransactionController extends Controller
             'notes' => 'nullable|string|max:1000'
         ]);
 
+        $oldStatus = $transaction->status;
+        
         $transaction->update($validated);
+
+        // İşlem geçmişine kaydet
+        if ($oldStatus !== $validated['status']) {
+            $transaction->addToHistory(
+                'transaction.statusChangeMessage',
+                'status_change',
+                [
+                    'old' => $oldStatus,
+                    'new' => $validated['status']
+                ]
+            );
+        }
+
+        if ($validated['notes'] && $validated['notes'] !== $transaction->getOriginal('notes')) {
+            $transaction->addToHistory('transaction.notesUpdated', 'notes_update');
+        }
 
         return redirect()
             ->route('admin.transactions.index')

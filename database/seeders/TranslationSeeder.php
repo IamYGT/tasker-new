@@ -16,68 +16,87 @@ class TranslationSeeder extends Seeder
                 'en' => 'Dashboard',
                 'key' => 'sidebar.dashboard'
             ],
-         
-            // Logo ve Marka
-            [
-                'tr' => 'YGT Labs',
-                'en' => 'YGT Labs',
-                'key' => 'brand.name'
-            ],
+       
+        ];
 
-            // Sidebar
+        $translations = array_merge($translations, [
+            // Ticket Detay Sayfası
             [
-                'tr' => 'Kullanıcı Yönetimi',
-                'en' => 'User Management',
-                'key' => 'sidebar.userManagement'
+                'tr' => 'Destek Talebi',
+                'en' => 'Support Ticket',
+                'key' => 'ticket.ticket'
             ],
             [
-                'tr' => 'İşlemler',
-                'en' => 'Transactions',
-                'key' => 'sidebar.transactions'
+                'tr' => 'Yanıtla',
+                'en' => 'Reply',
+                'key' => 'ticket.reply'
             ],
             [
-                'tr' => 'Destek Talepleri',
-                'en' => 'Support Tickets',
-                'key' => 'sidebar.supportTickets'
+                'tr' => 'Yanıtınızı yazın...',
+                'en' => 'Type your reply...',
+                'key' => 'ticket.typeYourReply'
             ],
             [
-                'tr' => 'Ayarlar',
-                'en' => 'Settings',
-                'key' => 'sidebar.settings'
+                'tr' => 'Yanıt Gönder',
+                'en' => 'Send Reply',
+                'key' => 'ticket.sendReply'
             ],
             [
-                'tr' => 'Profil',
-                'en' => 'Profile',
-                'key' => 'sidebar.profile'
+                'tr' => 'Yanıt başarıyla gönderildi',
+                'en' => 'Reply sent successfully',
+                'key' => 'ticket.replySent'
             ],
             [
-                'tr' => 'Çıkış Yap',
-                'en' => 'Logout',
-                'key' => 'sidebar.logout'
-            ],
-
-            // Dil Seçimi
-            [
-                'tr' => 'Türkçe',
-                'en' => 'Turkish',
-                'key' => 'language.turkish'
-            ],
-
-            // İşlem Detay Sayfası
-            [
-                'tr' => 'Geri',
-                'en' => 'Back',
-                'key' => 'common.back'
+                'tr' => 'Kategori',
+                'en' => 'Category',
+                'key' => 'ticket.category'
             ],
             [
-                'tr' => 'İşlem Detayları',
-                'en' => 'Transaction Details',
-                'key' => 'transaction.details'
+                'tr' => 'Öncelik',
+                'en' => 'Priority',
+                'key' => 'ticket.priority'
             ],
             [
-                'tr' => 'İşlem detaylarını görüntüle ve yönet',
-                'en' => 'View and manage transaction details',
-                'key' => 'transaction.viewDescription'
+                'tr' => 'Durum',
+                'en' => 'Status',
+                'key' => 'ticket.status'
+            ],
+            [
+                'tr' => 'Oluşturulma Tarihi',
+                'en' => 'Created At',
+                'key' => 'ticket.createdAt'
+            ],
+            [
+                'tr' => 'Son Yanıt',
+                'en' => 'Last Reply',
+                'key' => 'ticket.lastReply'
+            ],
+            [
+                'tr' => 'Talep Sahibi',
+                'en' => 'Ticket Owner',
+                'key' => 'ticket.owner'
+            ],
+            [
+                'tr' => 'Mesaj',
+                'en' => 'Message',
+                'key' => 'ticket.message'
+            ],
+            [
+                'tr' => 'Yanıtlar',
+                'en' => 'Replies',
+                'key' => 'ticket.replies'
+            ],
+            
+            // Genel Butonlar ve Mesajlar
+            [
+                'tr' => 'İptal',
+                'en' => 'Cancel',
+                'key' => 'common.cancel'
+            ],
+            [
+                'tr' => 'Kaydet',
+                'en' => 'Save',
+                'key' => 'common.save'
             ],
             [
                 'tr' => 'Düzenle',
@@ -85,71 +104,236 @@ class TranslationSeeder extends Seeder
                 'key' => 'common.edit'
             ],
             [
-                'tr' => 'İptal Edildi',
-                'en' => 'Cancelled',
-                'key' => 'status.cancelled'
+                'tr' => 'Sil',
+                'en' => 'Delete',
+                'key' => 'common.delete'
             ],
             [
-                'tr' => 'Para Yatırma',
-                'en' => 'Deposit',
-                'key' => 'transaction.deposit'
+                'tr' => 'Görüntüle',
+                'en' => 'View',
+                'key' => 'common.view'
             ],
             [
-                'tr' => 'Kullanıcı Detayları',
-                'en' => 'User Details',
-                'key' => 'transaction.userDetails'
+                'tr' => 'İşlemler',
+                'en' => 'Actions',
+                'key' => 'common.actions'
             ],
             [
-                'tr' => 'Ödeme Detayları',
-                'en' => 'Payment Details',
-                'key' => 'transaction.paymentDetails'
+                'tr' => 'Başarılı',
+                'en' => 'Success',
+                'key' => 'common.success'
             ],
             [
-                'tr' => 'Tutar',
-                'en' => 'Amount',
-                'key' => 'transaction.amount'
+                'tr' => 'Hata',
+                'en' => 'Error',
+                'key' => 'common.error'
+            ],
+            
+            // Hata Mesajları
+            [
+                'tr' => 'Bir hata oluştu',
+                'en' => 'An error occurred',
+                'key' => 'errors.general'
             ],
             [
-                'tr' => 'Referans No',
-                'en' => 'Reference No',
-                'key' => 'transaction.referenceId'
+                'tr' => 'Bu alan zorunludur',
+                'en' => 'This field is required',
+                'key' => 'errors.required'
             ],
             [
-                'tr' => 'Tarih',
-                'en' => 'Date',
-                'key' => 'transaction.date'
+                'tr' => 'Geçersiz değer',
+                'en' => 'Invalid value',
+                'key' => 'errors.invalid'
+            ],
+
+            // Ticket Durumları
+            [
+                'tr' => 'Açık',
+                'en' => 'Open',
+                'key' => 'ticket.status.open'
             ],
             [
-                'tr' => 'İşlem Durumu',
-                'en' => 'Transaction Status',
-                'key' => 'transaction.status'
+                'tr' => 'Yanıtlandı',
+                'en' => 'Answered',
+                'key' => 'ticket.status.answered'
             ],
             [
-                'tr' => 'Beklemede',
-                'en' => 'Pending',
-                'key' => 'status.pending'
+                'tr' => 'Kapalı',
+                'en' => 'Closed',
+                'key' => 'ticket.status.closed'
+            ],
+
+            // Ticket Öncelikleri
+            [
+                'tr' => 'Düşük',
+                'en' => 'Low',
+                'key' => 'ticket.priority.low'
             ],
             [
-                'tr' => 'Tamamlandı',
-                'en' => 'Completed',
-                'key' => 'status.completed'
+                'tr' => 'Orta',
+                'en' => 'Medium',
+                'key' => 'ticket.priority.medium'
             ],
             [
-                'tr' => 'Para Çekme',
-                'en' => 'Withdrawal',
-                'key' => 'transaction.withdrawal'
+                'tr' => 'Yüksek',
+                'en' => 'High',
+                'key' => 'ticket.priority.high'
+            ],
+
+            // Ticket Kategorileri
+            [
+                'tr' => 'Genel',
+                'en' => 'General',
+                'key' => 'ticket.category.general'
             ],
             [
-                'tr' => 'Transfer',
-                'en' => 'Transfer',
-                'key' => 'transaction.transfer'
+                'tr' => 'Teknik',
+                'en' => 'Technical',
+                'key' => 'ticket.category.technical'
             ],
             [
-                'tr' => 'Notlar',
-                'en' => 'Notes',
-                'key' => 'transaction.notes'
+                'tr' => 'Fatura',
+                'en' => 'Billing',
+                'key' => 'ticket.category.billing'
             ],
-        ];
+            [
+                'tr' => 'Diğer',
+                'en' => 'Other',
+                'key' => 'ticket.category.other'
+            ],
+
+            // Ticket İşlem Mesajları
+            [
+                'tr' => 'Durum güncellendi',
+                'en' => 'Status updated',
+                'key' => 'ticket.statusUpdated'
+            ],
+            [
+                'tr' => 'Yanıt gönderildi',
+                'en' => 'Reply sent',
+                'key' => 'ticket.replySent'
+            ],
+            [
+                'tr' => 'Dosya(lar) eklendi',
+                'en' => 'File(s) attached',
+                'key' => 'ticket.filesAttached'
+            ],
+
+            // Ticket History Mesajları
+            [
+                'tr' => 'durumu {{old}} -> {{new}} olarak değiştirildi',
+                'en' => 'status changed from {{old}} to {{new}}',
+                'key' => 'ticket.statusChanged'
+            ],
+            [
+                'tr' => 'yanıt verdi',
+                'en' => 'replied',
+                'key' => 'ticket.replied'
+            ],
+            [
+                'tr' => 'destek talebi oluşturdu',
+                'en' => 'created ticket',
+                'key' => 'ticket.created'
+            ],
+
+            // Ticket Detay Sayfası
+            [
+                'tr' => 'Detaylar',
+                'en' => 'Details',
+                'key' => 'ticket.details'
+            ],
+            [
+                'tr' => 'Dosya Ekle',
+                'en' => 'Add Files',
+                'key' => 'ticket.addFiles'
+            ],
+            [
+                'tr' => 'Dosyalar',
+                'en' => 'Attachments',
+                'key' => 'ticket.attachments'
+            ],
+            [
+                'tr' => 'Geçmiş',
+                'en' => 'History',
+                'key' => 'ticket.history'
+            ],
+            [
+                'tr' => 'Yanıtınız',
+                'en' => 'Your Reply',
+                'key' => 'ticket.yourReply'
+            ],
+
+            // Ticket Liste Sayfası
+            [
+                'tr' => 'Tüm Durumlar',
+                'en' => 'All Statuses',
+                'key' => 'ticket.allStatuses'
+            ],
+            [
+                'tr' => 'Tüm Öncelikler',
+                'en' => 'All Priorities',
+                'key' => 'ticket.allPriorities'
+            ],
+            [
+                'tr' => 'Tüm Kategoriler',
+                'en' => 'All Categories',
+                'key' => 'ticket.allCategories'
+            ],
+            [
+                'tr' => 'Destek Talebi Bulunamadı',
+                'en' => 'No Tickets Found',
+                'key' => 'ticket.noTickets'
+            ],
+            [
+                'tr' => 'Henüz destek talebi oluşturulmamış veya filtrelere uygun talep bulunamadı.',
+                'en' => 'No tickets have been created yet or no tickets match your filters.',
+                'key' => 'ticket.noTicketsDescription'
+            ],
+
+            // İstatistikler
+            [
+                'tr' => 'Toplam Talepler',
+                'en' => 'Total Tickets',
+                'key' => 'stats.totalTickets'
+            ],
+            [
+                'tr' => 'Açık Talepler',
+                'en' => 'Open Tickets',
+                'key' => 'stats.openTickets'
+            ],
+            [
+                'tr' => 'Yanıtlanan Talepler',
+                'en' => 'Answered Tickets',
+                'key' => 'stats.answeredTickets'
+            ],
+            [
+                'tr' => 'Yüksek Öncelikli',
+                'en' => 'High Priority',
+                'key' => 'stats.highPriority'
+            ],
+
+            // Genel Arayüz
+            [
+                'tr' => 'Filtreler',
+                'en' => 'Filters',
+                'key' => 'common.filters'
+            ],
+            [
+                'tr' => 'Ara',
+                'en' => 'Search',
+                'key' => 'common.search'
+            ],
+            [
+                'tr' => 'Gönderiliyor...',
+                'en' => 'Sending...',
+                'key' => 'common.sending'
+            ],
+            [
+                'tr' => 'Gönder',
+                'en' => 'Send',
+                'key' => 'common.send'
+            ]
+        ]);
 
         foreach ($translations as $translation) {
             // TR için kontrol ve ekleme

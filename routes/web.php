@@ -130,6 +130,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Status Update Routes - transactions hariç
         Route::put('tickets/{ticket}/status', [AdminTicketController::class, 'updateStatus'])
             ->name('tickets.update-status');
+        Route::post('tickets/{ticket}/reply', [AdminTicketController::class, 'reply'])
+            ->name('tickets.reply');
 
         // Password Reset Routes
         Route::get('/users/{user}/reset-password', [UserController::class, 'resetPasswordForm'])
