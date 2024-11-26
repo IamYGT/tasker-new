@@ -51,10 +51,25 @@ class Ticket extends Model
             'type' => $type,
             'created_at' => now()->toIso8601String(),
             'user' => [
-                'name' => auth()->user()->name
+                'name' => request()->user()->name
             ]
         ];
-        
         $this->update(['history' => $history]);
+    }
+
+    public function updateStatus(string $status): void
+    {
+        $oldStatus = $this->status;
+        $this->update([
+            'status' => $status,
+            'last_reply_at' => now()
+        ]);
+
+        if ($oldStatus !== $status) {
+            $this->addToHistory('ticket.statusChanged', 'status', [
+                'from' => $oldStatus,
+                'to' => $status
+            ]);
+        }
     }
 } 

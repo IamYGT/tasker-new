@@ -11,7 +11,8 @@ use App\Http\Middleware\{
     CheckRole,
     AdminMiddleware,
     UserMiddleware,
-    RedirectBasedOnRole
+    RedirectBasedOnRole,
+    StorageAccessMiddleware
 };
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 
@@ -43,6 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => AdminMiddleware::class,
             'user' => UserMiddleware::class,
             'role.redirect' => RedirectBasedOnRole::class,
+            'storage.access' => StorageAccessMiddleware::class
         ]);
 
         // API Middleware Grubu

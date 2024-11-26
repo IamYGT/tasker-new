@@ -57,6 +57,14 @@ return [
             'throw' => false,
         ],
 
+        'ticket-attachments' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public/ticket-attachments'),
+            'url' => env('APP_URL').'/storage/ticket-attachments',
+            'visibility' => 'public',
+            'throw' => true,
+        ],
+
     ],
 
     /*

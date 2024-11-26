@@ -14,6 +14,7 @@ interface StatCardProps {
     icon: IconType;
     color: string;
     textColor: string;
+    onClick?: () => void;
 }
 
 const containerVariants = {
@@ -37,8 +38,11 @@ const cardVariants = {
     }
 };
 
-const StatCard = ({ title, value, icon: Icon, color, textColor }: StatCardProps) => (
-    <div className={`${color} rounded-2xl shadow-sm p-6 ${textColor}`}>
+const StatCard = ({ title, value, icon: Icon, color, textColor, onClick }: StatCardProps) => (
+    <div 
+        className={`${color} rounded-2xl shadow-sm p-6 ${textColor} ${onClick ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+        onClick={onClick}
+    >
         <div className="flex items-center justify-between">
             <div>
                 <p className="text-sm opacity-90">{title}</p>
@@ -76,64 +80,160 @@ interface Props {
         status?: string;
         priority?: string;
         category?: string;
+        sort?: string;
+        direction?: 'asc' | 'desc';
     };
     statuses: string[];
     priorities: string[];
     categories: string[];
+    stats: {
+        total: number;
+        open: number;
+        answered: number;
+        high_priority: number;
+    };
 }
 
-export default function Index({ auth, tickets, filters, statuses, priorities, categories }: Props) {
+type SortDirection = 'asc' | 'desc';
+
+interface SortState {
+    column: string;
+    direction: SortDirection;
+}
+
+export default function Index({ auth, tickets, filters = {}, statuses, priorities, categories, stats }: Props) {
     const { t } = useTranslation();
     const [showFilters, setShowFilters] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [initialLoad, setInitialLoad] = useState(true);
+    
+    const defaultFilters = {
+        search: '',
+        status: '',
+        priority: '',
+        category: '',
+        sort: '',
+        direction: 'asc' as SortDirection,
+        page: '1'
+    };
 
-    const { data, setData } = useForm({
-        search: filters.search || '',
-        status: filters.status || '',
-        priority: filters.priority || '',
-        category: filters.category || '',
+    const { data, setData, reset } = useForm({
+        ...defaultFilters,
+        ...filters
     });
 
-    // handleSearch fonksiyonunu component içine taşıyalım
+    const [sortState, setSortState] = useState<SortState>({
+        column: data.sort || '',
+        direction: (data.direction as SortDirection) || 'asc'
+    });
+
+    // Filtreleri sıfırla ve ilk sayfaya dön
+    const resetFilters = () => {
+        reset();
+        router.get(route('admin.tickets.index'), defaultFilters);
+    };
+
+    // Filtreleri uygula ve ilk sayfaya dön
+    const applyFilters = (newData: typeof data) => {
+        router.get(route('admin.tickets.index'), {
+            ...newData,
+            page: '1' // Her filtre değişiminde ilk sayfaya dön
+        }, {
+            preserveState: true,
+            preserveScroll: false,
+            onBefore: () => setIsLoading(true),
+            onFinish: () => {
+                setIsLoading(false);
+                setShowFilters(false);
+            },
+            onError: () => {
+                setIsLoading(false);
+                resetFilters();
+            }
+        });
+    };
+
+    // Arama değiştiğinde
     const handleSearch = useCallback(
         debounce((query: string) => {
             if (!initialLoad) {
-                setIsLoading(true);
-                router.get(
-                    route('admin.tickets.index'),
-                    { ...data, search: query },
-                    {
-                        preserveState: true,
-                        preserveScroll: true,
-                        onFinish: () => setIsLoading(false),
-                    }
-                );
+                const newData = { ...data, search: query, page: '1' };
+                setData(newData);
+                applyFilters(newData);
             }
         }, 300),
         [data, initialLoad]
     );
 
+    // Filtre değiştiğinde
+    useEffect(() => {
+        if (!initialLoad) {
+            applyFilters(data);
+        }
+    }, [data.status, data.priority, data.category]);
+
+    // Sıralama değiştiğinde
+    const handleSort = useCallback((column: string) => {
+        const newDirection: SortDirection = sortState.column === column && sortState.direction === 'asc' ? 'desc' : 'asc';
+        
+        const newSortState: SortState = {
+            column,
+            direction: newDirection
+        };
+
+        setSortState(newSortState);
+        
+        const newData = {
+            ...data,
+            sort: column,
+            direction: newDirection,
+            page: '1' // Sıralama değiştiğinde ilk sayfaya dön
+        };
+
+        setData(newData);
+        applyFilters(newData);
+    }, [sortState, data]);
+
+    // İstatistik kartlarına tıklandığında
+    const handleStatCardClick = (filterType: 'status' | 'priority', value: string) => {
+        const newData = {
+            ...defaultFilters,
+            [filterType]: value,
+            page: '1'
+        };
+        setData(newData);
+        applyFilters(newData);
+    };
+
+    const SortableHeader = ({ column, children }: { column: string; children: React.ReactNode }) => {
+        const isActive = sortState.column === column;
+        
+        return (
+            <th 
+                scope="col" 
+                className={`px-6 py-4 text-left text-xs font-medium tracking-wider whitespace-nowrap cursor-pointer transition-colors
+                    ${isActive 
+                        ? 'text-indigo-600 dark:text-indigo-400' 
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                    }`}
+                onClick={() => handleSort(column)}
+            >
+                <div className="flex items-center space-x-1">
+                    <span>{children}</span>
+                    {isActive && (
+                        <span className="text-indigo-600 dark:text-indigo-400">
+                            {sortState.direction === 'asc' ? '↑' : '↓'}
+                        </span>
+                    )}
+                </div>
+            </th>
+        );
+    };
+
     // İlk yüklemeyi kontrol etmek için useEffect ekleyelim
     useEffect(() => {
         setInitialLoad(false);
     }, []);
-
-    // Form değişikliklerini izlemek için
-    useEffect(() => {
-        if (!initialLoad) {
-            handleSearch(data.search);
-        }
-    }, [data.status, data.priority, data.category]);
-
-    // İstatistikler
-    const stats = {
-        total: tickets.total,
-        open: tickets.data.filter(t => t.status === 'open').length,
-        answered: tickets.data.filter(t => t.status === 'answered').length,
-        closed: tickets.data.filter(t => t.status === 'closed').length,
-        highPriority: tickets.data.filter(t => t.priority === 'high').length
-    };
 
     return (
         <AuthenticatedLayout auth={auth}>
@@ -141,7 +241,7 @@ export default function Index({ auth, tickets, filters, statuses, priorities, ca
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    {/* İstatistik Kartları - Yeni Tasarım */}
+                    {/* İstatistik Kartları */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                         <StatCard
                             title={t('stats.totalTickets')}
@@ -149,6 +249,7 @@ export default function Index({ auth, tickets, filters, statuses, priorities, ca
                             icon={FaTicketAlt}
                             color="bg-gradient-to-br from-indigo-500 to-purple-600"
                             textColor="text-white"
+                            onClick={resetFilters}
                         />
                         <StatCard
                             title={t('stats.openTickets')}
@@ -156,6 +257,7 @@ export default function Index({ auth, tickets, filters, statuses, priorities, ca
                             icon={FaClock}
                             color="bg-gradient-to-br from-amber-500 to-orange-600"
                             textColor="text-white"
+                            onClick={() => handleStatCardClick('status', 'open')}
                         />
                         <StatCard
                             title={t('stats.answeredTickets')}
@@ -163,15 +265,45 @@ export default function Index({ auth, tickets, filters, statuses, priorities, ca
                             icon={FaCheckCircle}
                             color="bg-gradient-to-br from-emerald-500 to-teal-600"
                             textColor="text-white"
+                            onClick={() => handleStatCardClick('status', 'answered')}
                         />
                         <StatCard
                             title={t('stats.highPriority')}
-                            value={stats.highPriority}
+                            value={stats.high_priority}
                             icon={FaExclamationCircle}
                             color="bg-gradient-to-br from-rose-500 to-red-600"
                             textColor="text-white"
+                            onClick={() => handleStatCardClick('priority', 'high')}
                         />
                     </div>
+
+                    {/* Boş Durum */}
+                    {tickets.data.length === 0 && !isLoading && (
+                        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
+                            <FaTicketAlt className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" />
+                            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                                {t('ticket.noTickets')}
+                            </h3>
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                {t('ticket.noTicketsDescription')}
+                            </p>
+                            <div className="mt-6">
+                                <button
+                                    onClick={resetFilters}
+                                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                >
+                                    {t('common.resetFilters')}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Loading State */}
+                    {isLoading && (
+                        <div className="flex justify-center items-center py-12">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                        </div>
+                    )}
 
                     {/* Ana Kart - Yeni Tasarım */}
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
@@ -298,21 +430,21 @@ export default function Index({ auth, tickets, filters, statuses, priorities, ca
                                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                         <thead>
                                             <tr className="bg-gray-50/50 dark:bg-gray-800/50">
-                                                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                                                <SortableHeader column="subject">
                                                     {t('ticket.subject')}
-                                                </th>
-                                                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
+                                                </SortableHeader>
+                                                <SortableHeader column="user">
                                                     {t('ticket.user')}
-                                                </th>
-                                                <th scope="col" className="px-6 py-4 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                                                </SortableHeader>
+                                                <SortableHeader column="priority">
                                                     {t('ticket.priority')}
-                                                </th>
-                                                <th scope="col" className="px-6 py-4 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                                                </SortableHeader>
+                                                <SortableHeader column="status">
                                                     {t('ticket.status')}
-                                                </th>
-                                                <th scope="col" className="px-6 py-4 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap hidden lg:table-cell">
+                                                </SortableHeader>
+                                                <SortableHeader column="last_reply_at">
                                                     {t('ticket.lastReply')}
-                                                </th>
+                                                </SortableHeader>
                                                 <th scope="col" className="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
                                                     {t('common.actions')}
                                                 </th>
@@ -370,7 +502,13 @@ export default function Index({ auth, tickets, filters, statuses, priorities, ca
                                                                 </span>
                                                             </div>
                                                             <div className="ml-3">
-                                                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                                <div 
+                                                                    className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400"
+                                                                    onClick={() => {
+                                                                        setData('search', ticket.user.name);
+                                                                        router.get(route('admin.tickets.index', { search: ticket.user.name }));
+                                                                    }}
+                                                                >
                                                                     {ticket.user.name}
                                                                 </div>
                                                                 <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
@@ -404,19 +542,6 @@ export default function Index({ auth, tickets, filters, statuses, priorities, ca
                                     </table>
                                 </div>
                             </div>
-
-                            {/* Boş Durum */}
-                            {tickets.data.length === 0 && (
-                                <div className="text-center py-12">
-                                    <FaTicketAlt className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" />
-                                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                        {t('ticket.noTickets')}
-                                    </h3>
-                                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                        {t('ticket.noTicketsDescription')}
-                                    </p>
-                                </div>
-                            )}
 
                             {/* Pagination - Sticky yapıldı */}
                             <div className="sticky bottom-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">

@@ -2,11 +2,15 @@ import React, { useState, useRef } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useTranslation } from '@/Contexts/TranslationContext';
-import { FaReply, FaClock, FaUser, FaTag, FaExclamationCircle, FaLock, FaUnlock, FaHistory, FaEdit, FaTrash, FaPaperclip, FaEye, FaDownload, FaTimes } from 'react-icons/fa';
+import { FaReply, FaClock, FaUser, FaTag, FaHistory, FaPaperclip, FaEye, FaDownload, FaTimes, FaTicketAlt, FaQuoteRight, FaHeadset, FaImage, FaFile } from 'react-icons/fa';
 import { PriorityBadge, StatusBadge } from './Components/Badges';
-import { motion } from 'framer-motion';
-import { Transition } from '@headlessui/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import UserInfoPanel from './Components/UserInfoPanel';
+import TicketHistoryPanel from './Components/TicketHistoryPanel';
+import PreviewModal from './Components/PreviewModal';
+import StatusSelect from './Components/StatusSelect';
+
 
 interface Message {
     id: number;
@@ -14,10 +18,12 @@ interface Message {
         id: number;
         name: string;
         email: string;
+        avatar?: string;
     };
     message: string;
     created_at: string;
     attachments: Attachment[];
+    quote?: string;
 }
 
 interface TicketHistory {
@@ -59,372 +65,543 @@ interface Ticket {
 }
 
 interface Props {
-    auth: any;
+    auth: {
+        user: {
+            id: number;
+            name: string;
+        }
+    };
     ticket: Ticket;
     statuses: string[];
 }
 
+interface MessageBubbleProps {
+    isAdmin: boolean;
+    message: string;
+    user: { name: string; avatar?: string };
+    date: string;
+    attachments?: Attachment[];
+    quote?: string;
+    onPreviewImage: (url: string) => void;
+    onQuote: () => void;
+    t: (key: string, params?: Record<string, any>) => string;
+}
+
+interface AttachmentItemProps {
+    attachment: Attachment;
+    onPreview: () => void;
+}
+
+const MessageBubble = ({ 
+    isAdmin, 
+    message, 
+    user, 
+    date, 
+    attachments,
+    quote,
+    onPreviewImage,
+    onQuote,
+    t 
+}: MessageBubbleProps) => {
+    return (
+        <div className={`group flex gap-3 p-2 transition-all ${
+            isAdmin ? 'flex-row-reverse' : 'flex-row'
+        }`}>
+            {/* Avatar */}
+            <div className="flex-shrink-0">
+                <div className="relative">
+                    {user.avatar ? (
+                        <img 
+                            src={user.avatar} 
+                            alt={user.name} 
+                            className="w-10 h-10 rounded-full object-cover ring-2 ring-white 
+                                dark:ring-gray-700 shadow-sm" 
+                        />
+                    ) : (
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm
+                            ${isAdmin ? 'bg-indigo-100 dark:bg-indigo-900/50' : 'bg-emerald-100 dark:bg-emerald-900/50'}`}>
+                            <FaUser className={`w-5 h-5 
+                                ${isAdmin ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}`} 
+                            />
+                        </div>
+                    )}
+                    {isAdmin && (
+                        <div className="absolute -bottom-0.5 -right-0.5 bg-indigo-500 rounded-full p-1">
+                            <FaHeadset className="w-2.5 h-2.5 text-white" />
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Mesaj İçeriği */}
+            <div className={`flex-1 min-w-0 space-y-1.5 p-3 rounded-xl shadow-sm ${
+                isAdmin 
+                    ? 'bg-indigo-50 dark:bg-indigo-900/20' 
+                    : 'bg-emerald-50 dark:bg-emerald-900/20'
+            }`}>
+                {/* Alıntı varsa göster */}
+                {quote && (
+                    <div className="p-2 mb-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm text-gray-600 dark:text-gray-400 border-l-2 border-gray-300 dark:border-gray-600">
+                        {quote}
+                    </div>
+                )}
+                <div className="flex items-center justify-between gap-2">
+                    <span className={`font-medium text-sm ${
+                        isAdmin 
+                            ? 'text-indigo-900 dark:text-indigo-100' 
+                            : 'text-emerald-900 dark:text-emerald-100'
+                    }`}>
+                        {user.name}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        {formatDate(date)}
+                    </span>
+                </div>
+
+                <div className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                    {message}
+                </div>
+
+                {/* Ekler */}
+                {attachments && attachments.length > 0 && (
+                    <div className="mt-2 space-y-1.5 pt-2 border-t border-gray-100 dark:border-gray-700/50">
+                        {attachments.map((attachment) => (
+                            <AttachmentItem
+                                key={attachment.id}
+                                attachment={attachment}
+                                onPreview={() => onPreviewImage(attachment.url)}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 export default function Show({ auth, ticket, statuses }: Props) {
     const { t } = useTranslation();
     const [isReplying, setIsReplying] = useState(false);
-    const [showHistory, setShowHistory] = useState(false);
-    const [selectedAttachments, setSelectedAttachments] = useState<File[]>([]);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [currentStatus, setCurrentStatus] = useState(ticket.status);
+    const [isStatusUpdating, setIsStatusUpdating] = useState(false);
 
-    // Null check yardımcı fonksiyonu
-    const safeArray = <T,>(arr: T[] | undefined | null): T[] => {
-        return arr || [];
-    };
-
-    const { data, setData, post, processing, reset, errors } = useForm({
+    const { data, setData, post, processing, reset } = useForm({
         message: '',
         status: ticket.status,
         attachments: [] as File[],
+        quote: '' as string | null,
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        post(route('admin.tickets.reply', ticket.id), {
-            onSuccess: () => {
-                reset('message');
-                setIsReplying(false);
-                toast.success(t('ticket.replySent'));
-            },
-        });
-    };
-
-    const handleStatusChange = (newStatus: string) => {
-        // Form verisi oluştur
-        const formData = new FormData();
-        formData.append('_method', 'PUT'); // Laravel method spoofing
-        formData.append('status', newStatus);
-
-        // Axios veya fetch kullanarak PUT isteği gönder
-        router.post(route('admin.tickets.update-status', ticket.id), {
-            _method: 'PUT', // Laravel method spoofing
+    // Statü değişim fonksiyonu
+    const handleStatusChange = async (newStatus: string) => {
+        setIsStatusUpdating(true);
+        
+        router.put(route('admin.tickets.update-status', ticket.id), {
             status: newStatus
         }, {
             preserveScroll: true,
-            onSuccess: () => toast.success(t('ticket.statusUpdated')),
+            preserveState: true,
+            onSuccess: () => {
+                setCurrentStatus(newStatus);
+                // Toast mesajı otomatik olarak flash message'dan gelecek
+            },
+            onError: () => {
+                toast.error(t('common.error'));
+            },
+            onFinish: () => {
+                setIsStatusUpdating(false);
+            }
         });
     };
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            setSelectedAttachments(Array.from(e.target.files));
-            setData('attachments', Array.from(e.target.files));
+    // Alıntı yapma işlemi
+    const handleQuote = (message: string) => {
+        setData('quote', message);
+        setIsReplying(true);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        formData.append('message', data.message);
+        
+        if (data.quote) {
+            formData.append('quote', data.quote);
+        }
+        
+        // Dosyaları ekle
+        if (data.attachments.length > 0) {
+            data.attachments.forEach((file, index) => {
+                formData.append(`attachments[${index}]`, file);
+            });
+        }
+
+        try {
+            await router.post(route('admin.tickets.reply', ticket.id), formData, {
+                forceFormData: true,
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    setData('message', '');
+                    setData('quote', null);
+                    setData('attachments', []);
+                    setIsReplying(false);
+                    toast.success(t('ticket.replyAdded'));
+                },
+                onError: (errors) => {
+                    console.error('Reply errors:', errors);
+                    toast.error(t('common.error'));
+                }
+            });
+        } catch (error) {
+            console.error('Reply failed:', error);
+            toast.error(t('common.error'));
         }
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        
+        const validFiles = files.filter(file => {
+            if (file.size > maxSize) {
+                toast.error(t('ticket.fileTooLarge', { name: file.name }));
+                return false;
+            }
+            
+            if (!allowedTypes.includes(file.type)) {
+                toast.error(t('ticket.invalidFileType', { name: file.name }));
+                return false;
+            }
+            
+            return true;
+        });
+
+        setData('attachments', [...data.attachments, ...validFiles]);
+    };
+
+    const removeAttachment = (index: number) => {
+        const newAttachments = [...data.attachments];
+        newAttachments.splice(index, 1);
+        setData('attachments', newAttachments);
+    };
     return (
-        <AuthenticatedLayout auth={auth}>
+        <AuthenticatedLayout auth={{user: {...auth.user, roles: [{name: auth.user.name}]}}}>
             <Head title={`${t('ticket.ticket')} #${ticket.id}`} />
-
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-                        <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
-                            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                    <div>
-                                        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                                            {ticket.subject}
-                                        </h1>
-                                        <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                                            <div className="flex items-center gap-2">
-                                                <FaUser className="w-4 h-4" />
-                                                <span>{ticket.user.name}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <FaClock className="w-4 h-4" />
-                                                <span>{formatDate(ticket.created_at)}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <FaTag className="w-4 h-4" />
-                                                <span>{t(`ticket.category.${ticket.category}`)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <PriorityBadge priority={ticket.priority} />
-                                        <StatusBadge status={ticket.status} />
+            
+            <div className="py-6">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    {/* Üst Bilgi Kartı */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8 mb-8">
+                        <div className="flex items-center justify-between flex-wrap gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl">
+                                    <FaTicketAlt className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                                        {ticket.subject}
+                                    </h1>
+                                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                                        <span className="font-medium">#{ticket.id}</span>
+                                        <span>•</span>
+                                        <span>{formatDate(ticket.created_at)}</span>
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700/50 flex flex-wrap items-center gap-3">
-                                <div className="flex-1">
-                                    <select
-                                        value={ticket.status}
-                                        onChange={(e) => handleStatusChange(e.target.value)}
-                                        className="rounded-lg text-sm border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
-                                    >
-                                        {statuses.map((status) => (
-                                            <option key={status} value={status}>
-                                                {t(`ticket.statuses.${status}`)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <button
-                                    onClick={() => setShowHistory(!showHistory)}
-                                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
-                                >
-                                    <FaHistory className="w-4 h-4 mr-2" />
-                                    {t('ticket.history')}
-                                </button>
+                            <div className="flex items-center gap-4">
+                                <PriorityBadge priority={ticket.priority} />
+                                <StatusSelect
+                                    currentStatus={currentStatus}
+                                    statuses={statuses}
+                                    onChange={handleStatusChange}
+                                    isLoading={isStatusUpdating}
+                                    t={t}
+                                />
                             </div>
-                        </div>
-
-                        <div className="space-y-6">
-                            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200/50 dark:border-gray-700/50">
-                                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-4">
-                                    {t('ticket.details')}
-                                </h3>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-gray-500 dark:text-gray-400">{t('ticket.id')}</span>
-                                        <span className="text-gray-900 dark:text-gray-100">#{ticket.id}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-gray-500 dark:text-gray-400">{t('ticket.createdAt')}</span>
-                                        <span className="text-gray-900 dark:text-gray-100">{formatDate(ticket.created_at)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-gray-500 dark:text-gray-400">{t('ticket.lastReply')}</span>
-                                        <span className="text-gray-900 dark:text-gray-100">{formatDate(ticket.last_reply_at)}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {safeArray(ticket.attachments).length > 0 && (
-                                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200/50 dark:border-gray-700/50">
-                                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-4">
-                                        {t('ticket.attachments')}
-                                    </h3>
-                                    <div className="space-y-2">
-                                        {safeArray(ticket.attachments).map((file) => (
-                                            <div key={file.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                                <div className="flex items-center space-x-3">
-                                                    <FaPaperclip className="w-4 h-4 text-gray-400" />
-                                                    <span className="text-sm text-gray-700 dark:text-gray-300">{file.name}</span>
-                                                </div>
-                                                <a
-                                                    href={file.url}
-                                                    download
-                                                    className="p-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-                                                >
-                                                    <FaDownload className="w-4 h-4" />
-                                                </a>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
-                        <div className="p-6">
-                            <div className="space-y-6">
-                                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
-                                    <div className="flex items-start gap-4">
-                                        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
-                                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                    {/* Ana İçerik Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        {/* Sol Taraf - Mesajlaşma */}
+                        <div className="lg:col-span-3 space-y-6">
+                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                                {/* Mesajlar */}
+                                <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                                    <div className="space-y-4 p-6">
+                                        <MessageBubble
+                                            isAdmin={false}
+                                            message={ticket.message}
+                                            user={ticket.user}
+                                            date={ticket.created_at}
+                                            attachments={ticket.attachments}
+                                            onPreviewImage={setPreviewImage}
+                                            onQuote={() => handleQuote(ticket.message)}
+                                            t={t}
+                                        />
+
+                                        {ticket.replies.map((reply) => (
+                                            <MessageBubble
+                                                key={reply.id}
+                                                isAdmin={reply.user.id === auth.user.id}
+                                                message={reply.message}
+                                                user={reply.user}
+                                                date={reply.created_at}
+                                                attachments={reply.attachments}
+                                                quote={reply.quote}
+                                                onPreviewImage={setPreviewImage}
+                                                onQuote={() => handleQuote(reply.message)}
+                                                t={t}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Yanıt Formu */}
+                                <div className="border-t dark:border-gray-700 p-6">
+                                    {!isReplying ? (
+                                        <button
+                                            onClick={() => setIsReplying(true)}
+                                            className="w-full py-6 px-8 border-2 border-dashed border-gray-200 
+                                                dark:border-gray-700 rounded-xl text-gray-500 dark:text-gray-400 
+                                                hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 
+                                                dark:hover:border-gray-600 transition-colors"
+                                        >
+                                            <div className="flex items-center justify-center gap-2">
+                                                <FaReply className="w-4 h-4" />
+                                                <span>{t('ticket.clickToReply')}</span>
+                                            </div>
+                                        </button>
+                                    ) : (
+                                        <form onSubmit={handleSubmit} className="space-y-6">
+                                            {data.quote && (
+                                                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <FaQuoteRight className="w-4 h-4 text-gray-400" />
+                                                        <span className="text-sm text-gray-500">{t('ticket.quote')}</span>
+                                                    </div>
+                                                    <div className="text-sm text-gray-600 dark:text-gray-300">
+                                                        {data.quote}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <textarea
+                                                value={data.message}
+                                                onChange={e => setData('message', e.target.value)}
+                                                className="w-full rounded-xl border-gray-300 dark:border-gray-700 
+                                                    dark:bg-gray-800 dark:text-gray-100 shadow-sm 
+                                                    focus:border-indigo-500 focus:ring-indigo-500"
+                                                rows={6}
+                                                placeholder={t('ticket.writeReply')}
+                                            />
+
+                                            {/* Dosya Yükleme */}
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-4">
+                                                    <input
+                                                        type="file"
+                                                        ref={fileInputRef}
+                                                        onChange={handleFileChange}
+                                                        multiple
+                                                        className="hidden"
+                                                        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        className="flex items-center gap-2 text-sm text-gray-500 
+                                                            hover:text-gray-700 dark:text-gray-400 
+                                                            dark:hover:text-gray-300"
+                                                    >
+                                                        <FaPaperclip className="w-4 h-4" />
+                                                        {t('ticket.attachFiles')}
+                                                    </button>
+                                                </div>
+
+                                                {/* Yüklenen Dosyalar */}
+                                                {data.attachments.length > 0 && (
+                                                    <div className="space-y-2">
+                                                        {data.attachments.map((file, index) => (
+                                                            <div key={index} className="flex items-center justify-between 
+                                                                p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                                                <span className="text-sm text-gray-600 
+                                                                    dark:text-gray-400 truncate">
+                                                                    {file.name}
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => removeAttachment(index)}
+                                                                    className="text-red-500 hover:text-red-700"
+                                                                >
+                                                                    <FaTimes className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Form Aksiyonları */}
+                                            <div className="flex items-center justify-end gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setIsReplying(false);
+                                                        reset();
+                                                    }}
+                                                    className="px-4 py-2 text-sm text-gray-700 
+                                                        dark:text-gray-300 hover:text-gray-900 
+                                                        dark:hover:text-gray-100"
+                                                >
+                                                    {t('common.cancel')}
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    disabled={processing || !data.message.trim()}
+                                                    className="px-4 py-2 text-sm font-medium text-white 
+                                                        bg-indigo-600 hover:bg-indigo-700 rounded-lg 
+                                                        disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    {processing ? t('common.sending') : t('common.send')}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sağ Panel */}
+                        <div className="space-y-6">
+                            {/* Kullanıcı Bilgileri */}
+                            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
+                                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6 
+                                    flex items-center gap-2">
+                                    <FaUser className="w-5 h-5 text-gray-400" />
+                                    {t('ticket.userInfo')}
+                                </h2>
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                            <span className="text-lg font-medium text-gray-600 dark:text-gray-300">
                                                 {ticket.user.name.charAt(0).toUpperCase()}
                                             </span>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between">
-                                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                    {ticket.user.name}
-                                                </div>
-                                                <div className="text-xs text-gray-500 dark:text-gray-400">
-                                                    {formatDate(ticket.created_at)}
-                                                </div>
+                                        <div>
+                                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                {ticket.user.name}
                                             </div>
-                                            <div className="mt-2 text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none">
-                                                {ticket.message}
+                                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                                                {ticket.user.email}
                                             </div>
                                         </div>
+                                    </div>
+                                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                                        <dl className="space-y-3">
+                                            <div className="flex justify-between">
+                                                <dt className="text-sm text-gray-500 dark:text-gray-400">
+                                                    {t('ticket.createdAt')}
+                                                </dt>
+                                                <dd className="text-sm text-gray-900 dark:text-gray-100">
+                                                    {formatDate(ticket.created_at)}
+                                                </dd>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <dt className="text-sm text-gray-500 dark:text-gray-400">
+                                                    {t('ticket.lastReply')}
+                                                </dt>
+                                                <dd className="text-sm text-gray-900 dark:text-gray-100">
+                                                    {formatDate(ticket.last_reply_at)}
+                                                </dd>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <dt className="text-sm text-gray-500 dark:text-gray-400">
+                                                    {t('ticket.category')}
+                                                </dt>
+                                                <dd className="text-sm text-gray-900 dark:text-gray-100">
+                                                    {t(`ticket.category.${ticket.category}`)}
+                                                </dd>
+                                            </div>
+                                        </dl>
                                     </div>
                                 </div>
-
-                                {safeArray(ticket.replies).map((reply) => (
-                                    <div 
-                                        key={reply.id}
-                                        className={`p-6 rounded-xl ${
-                                            reply.user.id === auth.user.id
-                                                ? 'bg-indigo-50 dark:bg-indigo-900/20 ml-6'
-                                                : 'bg-gray-50 dark:bg-gray-700/50'
-                                        }`}
-                                    >
-                                        <div className="flex items-start gap-4">
-                                            <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
-                                                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                                                    {reply.user.name.charAt(0).toUpperCase()}
-                                                </span>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                        {reply.user.name}
-                                                    </div>
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                                                        {formatDate(reply.created_at)}
-                                                    </div>
-                                                </div>
-                                                <div className="mt-2 text-gray-700 dark:text-gray-300">
-                                                    {reply.message}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
                             </div>
 
-                            <motion.div 
-                                initial={false}
-                                animate={{ height: isReplying ? 'auto' : 0, opacity: isReplying ? 1 : 0 }}
-                                className="mt-6 overflow-hidden"
-                            >
-                                <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            {t('ticket.yourReply')}
-                                        </label>
-                                        <textarea
-                                            value={data.message}
-                                            onChange={e => setData('message', e.target.value)}
-                                            className="w-full rounded-xl border-0 ring-1 ring-gray-200 dark:ring-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 p-4 min-h-[120px]"
-                                            placeholder={t('ticket.typeYourReply')}
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            {t('ticket.attachments')}
-                                        </label>
-                                        <div className="flex items-center gap-4">
-                                            <button
-                                                type="button"
-                                                onClick={() => fileInputRef.current?.click()}
-                                                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                                            >
-                                                <FaPaperclip className="w-4 h-4 mr-2" />
-                                                {t('ticket.addFiles')}
-                                            </button>
-                                            <input
-                                                type="file"
-                                                ref={fileInputRef}
-                                                onChange={handleFileSelect}
-                                                multiple
-                                                className="hidden"
-                                            />
-                                        </div>
-                                        {selectedAttachments.length > 0 && (
-                                            <div className="mt-2 space-y-2">
-                                                {selectedAttachments.map((file, index) => (
-                                                    <div key={index} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg">
-                                                        <span className="text-sm text-gray-700 dark:text-gray-300">{file.name}</span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                const newFiles = selectedAttachments.filter((_, i) => i !== index);
-                                                                setSelectedAttachments(newFiles);
-                                                                setData('attachments', newFiles);
-                                                            }}
-                                                            className="p-1 text-gray-400 hover:text-red-500"
-                                                        >
-                                                            <FaTrash className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex justify-end gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setIsReplying(false);
-                                                setSelectedAttachments([]);
-                                                reset();
-                                            }}
-                                            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-150"
-                                            disabled={processing}
-                                        >
-                                            {t('common.cancel')}
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors duration-150 disabled:opacity-50"
-                                            disabled={processing}
-                                        >
-                                            {processing ? t('common.sending') : t('ticket.sendReply')}
-                                        </button>
-                                    </div>
-                                </form>
-                            </motion.div>
+                            {/* Ticket Geçmişi */}
+                            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
+                                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6
+                                    flex items-center gap-2">
+                                    <FaHistory className="w-5 h-5 text-gray-400" />
+                                    {t('ticket.history')}
+                                </h2>
+                                <TicketHistoryPanel history={ticket.history as any} />
+                            </div>
                         </div>
                     </div>
-
-                    <Transition show={showHistory}>
-                        <div className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm z-50">
-                            <div className="fixed inset-0 overflow-y-auto">
-                                <div className="flex min-h-full items-center justify-center p-4">
-                                    <Transition.Child
-                                        enter="ease-out duration-300"
-                                        enterFrom="opacity-0 scale-95"
-                                        enterTo="opacity-100 scale-100"
-                                        leave="ease-in duration-200"
-                                        leaveFrom="opacity-100 scale-100"
-                                        leaveTo="opacity-0 scale-95"
-                                    >
-                                        <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                                                    {t('ticket.history')}
-                                                </h3>
-                                                <button
-                                                    onClick={() => setShowHistory(false)}
-                                                    className="text-gray-400 hover:text-gray-500"
-                                                >
-                                                    <span className="sr-only">{t('common.close')}</span>
-                                                    <FaTimes className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                            <div className="space-y-4">
-                                                {safeArray(ticket.history).map((event) => (
-                                                    <div key={event.id} className="flex items-start gap-3">
-                                                        <div className="flex-shrink-0">
-                                                            <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                                                                <FaHistory className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-sm text-gray-900 dark:text-gray-100">
-                                                                {event.user.name} {t(`ticket.actions.${event.action}`)}
-                                                            </p>
-                                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                                {formatDate(event.created_at)}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </Transition.Child>
-                                </div>
-                            </div>
-                        </div>
-                    </Transition>
                 </div>
             </div>
+
+            {/* Resim Önizleme Modalı */}
+            <PreviewModal
+                isOpen={!!previewImage}
+                imageUrl={previewImage}
+                onClose={() => setPreviewImage(null)}
+            />
         </AuthenticatedLayout>
     );
 }
+
+// Yardımcı Bileşenler
+const AttachmentItem = ({ attachment, onPreview }: AttachmentItemProps) => {
+    const isImage = attachment.type.startsWith('image/');
+    const fileSize = formatFileSize(attachment.size);
+
+    return (
+        <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white dark:bg-gray-800/50 
+            border border-gray-100 dark:border-gray-700/50 hover:border-indigo-200 
+            dark:hover:border-indigo-700/50 transition-colors shadow-sm">
+            <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                {isImage ? 
+                    <FaImage className="w-4 h-4 text-indigo-500" /> : 
+                    <FaFile className="w-4 h-4 text-gray-400" />
+                }
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                    {attachment.name}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {fileSize}
+                </p>
+            </div>
+            <div className="flex items-center gap-2">
+                {isImage && (
+                    <button
+                        onClick={onPreview}
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 
+                            hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                        <FaEye className="w-4 h-4" />
+                    </button>
+                )}
+                <a
+                    href={attachment.url}
+                    download
+                    className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 
+                        hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                    <FaDownload className="w-4 h-4" />
+                </a>
+            </div>
+        </div>
+    );
+};
 
 const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('tr-TR', {
@@ -432,6 +609,19 @@ const formatDate = (date: string) => {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        hour12: false
     });
+};
+
+const formatFileSize = (size: number) => {
+    if (size < 1024) {
+        return `${size} B`;
+    } else if (size < 1024 * 1024) {
+        return `${(size / 1024).toFixed(2)} KB`;
+    } else if (size < 1024 * 1024 * 1024) {
+        return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+    } else {
+        return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+    }
 }; 

@@ -8,6 +8,13 @@ export interface User {
     facebook_id?: string | null;
     github_id?: string | null;
     last_login_at?: string | null;
+    social_login: boolean;
+    roles: Role[];
+}
+
+export interface Role {
+    id: number;
+    name: string;
 }
 
 export interface Auth {

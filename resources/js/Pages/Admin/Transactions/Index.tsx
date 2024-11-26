@@ -6,7 +6,7 @@ import { FaSearch, FaFilter, FaEdit, FaEye, FaSync, FaDownload, FaChartBar, FaCh
 import Pagination from '@/Components/Pagination';
 import { motion, AnimatePresence } from 'framer-motion';
 import debounce from 'lodash/debounce';
-import { getTypeColor, getStatusColor, getStatusIcon } from '@/utils/transaction';
+import { getTypeColor, getStatusColor, getStatusIcon } from '@/Utils/transaction';
 import { Transaction, TransactionType, TransactionStatus, PaginatedData } from '@/types';
 import { Menu, Transition } from '@headlessui/react';
 

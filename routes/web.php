@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 // Controllers
 use App\Http\Controllers\{
@@ -61,7 +62,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard Route
     Route::get('/dashboard', function (Request $request) {
         $user = Auth::user();
-        return $user && $user->hasRole('admin')
+        return $user && $user->is_admin
             ? redirect()->route('admin.dashboard')
             : Inertia::render('Dashboard', [
                 'showWelcomeToast' => $request->query('showWelcomeToast', false),
@@ -143,6 +144,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('withdrawals', AdminWithdrawalController::class);
         Route::put('withdrawals/{withdrawal}/status', [AdminWithdrawalController::class, 'updateStatus'])
             ->name('withdrawals.update-status');
+
+        Route::controller(AdminTicketController::class)->prefix('tickets')->name('tickets.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{ticket}', 'show')->name('show');
+            Route::post('/{ticket}/reply', 'reply')->name('reply');
+            Route::put('/{ticket}/status', 'updateStatus')->name('update-status');
+        });
     });
 });
 
@@ -180,3 +188,15 @@ Route::match(['get', 'post'], '/test', function () {
 
 // Auth Routes
 require __DIR__.'/auth.php';
+
+Route::get('storage/ticket-attachments/{path}', function ($path) {
+    $fullPath = storage_path('app/public/ticket-attachments/' . $path);
+    
+    if (!file_exists($fullPath)) {
+        abort(404);
+    }
+    
+    return response()->file($fullPath, [
+        'Cache-Control' => 'public, max-age=86400',
+    ]);
+})->middleware(['auth', 'storage.access'])->where('path', '.*')->name('storage.attachment');

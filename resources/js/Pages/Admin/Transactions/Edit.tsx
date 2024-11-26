@@ -5,7 +5,7 @@ import { useTranslation } from '@/Contexts/TranslationContext';
 import { toast } from 'react-toastify';
 import { Transaction, TransactionStatus } from '@/types';
 import { FaArrowLeft, FaSave, FaTimes, FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
-import { getStatusColor, getTypeColor } from '@/utils/transaction';
+import { getStatusColor, getTypeColor } from '@/Utils/transaction';
 
 interface Props {
     auth: any;

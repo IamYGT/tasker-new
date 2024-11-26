@@ -2,7 +2,8 @@ import { FormEventHandler, useState } from 'react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { Transition } from '@headlessui/react';
 import { useTranslation } from '@/Contexts/TranslationContext';
-import type { User } from '@/types';
+import { User } from '@/types';
+
 
 // Components
 import InputError from '@/Components/InputError';

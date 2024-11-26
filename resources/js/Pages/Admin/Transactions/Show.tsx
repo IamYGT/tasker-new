@@ -4,7 +4,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useTranslation } from '@/Contexts/TranslationContext';
 import { Transaction } from '@/types';
 import { FaArrowLeft, FaUser, FaCalendar, FaMoneyBillWave, FaCreditCard, FaFileAlt, FaCheckCircle, FaTimesCircle, FaEdit, FaStickyNote, FaHistory, FaExchangeAlt, FaUserEdit, FaChartBar } from 'react-icons/fa';
-import { getStatusColor, getTypeColor, getStatusIcon } from '@/utils/transaction';
+import { getStatusColor, getTypeColor, getStatusIcon } from '@/Utils/transaction';
 import { motion } from 'framer-motion';
 
 interface HistoryItem {
