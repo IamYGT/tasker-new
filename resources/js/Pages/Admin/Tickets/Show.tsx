@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useTranslation } from '@/Contexts/TranslationContext';
@@ -84,6 +84,9 @@ interface MessageBubbleProps {
     quote?: string;
     onPreviewImage: (url: string) => void;
     onQuote: () => void;
+    isReplying: boolean;
+    handleAttachmentClick: (url: string) => Promise<void>;
+    setIsReplying: (value: boolean) => void;
     t: (key: string, params?: Record<string, any>) => string;
 }
 
@@ -101,6 +104,9 @@ const MessageBubble = ({
     quote,
     onPreviewImage,
     onQuote,
+    isReplying,
+    handleAttachmentClick,
+    setIsReplying,
     t 
 }: MessageBubbleProps) => {
     return (
@@ -169,11 +175,33 @@ const MessageBubble = ({
                             <AttachmentItem
                                 key={attachment.id}
                                 attachment={attachment}
-                                onPreview={() => onPreviewImage(attachment.url)}
+                                onPreview={() => {
+                                    onPreviewImage(attachment.url);
+                                    // Eğer resim ise ve yanıt formu açıksa, direkt olarak ekle
+                                    if (attachment.type.startsWith('image/') && isReplying) {
+                                        handleAttachmentClick(attachment.url);
+                                    }
+                                }}
                             />
                         ))}
                     </div>
                 )}
+
+                {/* Mesaj Aksiyonları */}
+                <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-gray-100 dark:border-gray-700/50">
+                    <button
+                        onClick={() => {
+                            onQuote();
+                            // Yanıt formunu otomatik aç
+                            setIsReplying(true);
+                        }}
+                        className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 
+                            dark:text-gray-400 dark:hover:text-indigo-400 transition-colors"
+                    >
+                        <FaQuoteRight className="w-3 h-3" />
+                        {t('ticket.quote')}
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -183,19 +211,29 @@ export default function Show({ auth, ticket, statuses }: Props) {
     const { t } = useTranslation();
     const [isReplying, setIsReplying] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [isAttachmentLoading, setIsAttachmentLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const replyFormRef = useRef<HTMLDivElement>(null);
     const [currentStatus, setCurrentStatus] = useState(ticket.status);
     const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+    const attachmentsContainerRef = useRef<HTMLDivElement>(null);
 
     const { data, setData, post, processing, reset } = useForm({
         message: '',
-        status: ticket.status,
+        status: currentStatus,
         attachments: [] as File[],
         quote: '' as string | null,
     });
 
+    // Status değişikliklerini senkronize et
+    useEffect(() => {
+        setData('status', currentStatus);
+    }, [currentStatus]);
+
     // Statü değişim fonksiyonu
     const handleStatusChange = async (newStatus: string) => {
+        if (newStatus === currentStatus) return;
+        
         setIsStatusUpdating(true);
         
         router.put(route('admin.tickets.update-status', ticket.id), {
@@ -205,6 +243,7 @@ export default function Show({ auth, ticket, statuses }: Props) {
             preserveState: true,
             onSuccess: () => {
                 setCurrentStatus(newStatus);
+                setData('status', newStatus); // Form verisini de güncelle
                 // Toast mesajı otomatik olarak flash message'dan gelecek
             },
             onError: () => {
@@ -216,10 +255,64 @@ export default function Show({ auth, ticket, statuses }: Props) {
         });
     };
 
-    // Alıntı yapma işlemi
+    // Alıntı yapma işlemi güncellendi
     const handleQuote = (message: string) => {
         setData('quote', message);
         setIsReplying(true);
+        
+        // Scroll işlemi için setTimeout kullan
+        // Bu, form açıldıktan sonra scroll yapılmasını sağlar
+        setTimeout(() => {
+            replyFormRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }, 100);
+    };
+
+    // Yeni fonksiyon: Resim URL'sini dosya olarak indirip form'a eklemek için
+    const handleAttachmentClick = async (url: string) => {
+        setIsAttachmentLoading(true);
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const fileName = url.split('/').pop() || 'image.jpg';
+            const file = new File([blob], fileName, { type: blob.type });
+            
+            if (!isReplying) {
+                setIsReplying(true);
+            }
+            
+            setData('attachments', [...data.attachments, file]);
+            
+            setTimeout(() => {
+                attachmentsContainerRef.current?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 100);
+            
+            toast.success(t('ticket.attachmentAdded'));
+        } catch (error) {
+            console.error('Dosya ekleme hatası:', error);
+            toast.error(t('common.error'));
+        } finally {
+            setIsAttachmentLoading(false);
+        }
+    };
+
+    // PreviewModal'ı güncelleyelim
+    const handlePreviewImage = (url: string) => {
+        setPreviewImage(url);
+        // Eğer bir resim önizleniyorsa
+        if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
+            // Form kapalıysa aç
+            if (!isReplying) {
+                setIsReplying(true);
+            }
+            
+            handleAttachmentClick(url);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -227,12 +320,12 @@ export default function Show({ auth, ticket, statuses }: Props) {
         
         const formData = new FormData();
         formData.append('message', data.message);
+        formData.append('status', data.status);
         
         if (data.quote) {
             formData.append('quote', data.quote);
         }
         
-        // Dosyaları ekle
         if (data.attachments.length > 0) {
             data.attachments.forEach((file, index) => {
                 formData.append(`attachments[${index}]`, file);
@@ -245,6 +338,7 @@ export default function Show({ auth, ticket, statuses }: Props) {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
+                    setCurrentStatus(data.status); // Global state'i güncelle
                     setData('message', '');
                     setData('quote', null);
                     setData('attachments', []);
@@ -262,6 +356,7 @@ export default function Show({ auth, ticket, statuses }: Props) {
         }
     };
 
+    // Dosya yükleme işleyicisini güncelle
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         const maxSize = 10 * 1024 * 1024; // 10MB
@@ -281,7 +376,22 @@ export default function Show({ auth, ticket, statuses }: Props) {
             return true;
         });
 
-        setData('attachments', [...data.attachments, ...validFiles]);
+        if (validFiles.length > 0) {
+            setData('attachments', [...data.attachments, ...validFiles]);
+            
+            // Form kapalıysa aç
+            if (!isReplying) {
+                setIsReplying(true);
+                
+                // Scroll işlemi
+                setTimeout(() => {
+                    replyFormRef.current?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }, 100);
+            }
+        }
     };
 
     const removeAttachment = (index: number) => {
@@ -289,6 +399,31 @@ export default function Show({ auth, ticket, statuses }: Props) {
         newAttachments.splice(index, 1);
         setData('attachments', newAttachments);
     };
+
+    // Reset fonksiyonunu güncelle
+    const resetForm = () => {
+        setIsReplying(false);
+        setData({
+            message: '',
+            status: currentStatus, // Global state ile senkronize et
+            attachments: [],
+            quote: null
+        });
+    };
+
+    useEffect(() => {
+        let isSubscribed = true;
+
+        // Cleanup function
+        return () => {
+            isSubscribed = false;
+            // Açık kalan modal varsa kapat
+            setPreviewImage(null);
+            // Form state'ini temizle
+            resetForm();
+        };
+    }, []);
+
     return (
         <AuthenticatedLayout auth={{user: {...auth.user, roles: [{name: auth.user.name}]}}}>
             <Head title={`${t('ticket.ticket')} #${ticket.id}`} />
@@ -316,10 +451,15 @@ export default function Show({ auth, ticket, statuses }: Props) {
                             <div className="flex items-center gap-4">
                                 <PriorityBadge priority={ticket.priority} />
                                 <StatusSelect
-                                    currentStatus={currentStatus}
+                                    currentStatus={data.status}
                                     statuses={statuses}
-                                    onChange={handleStatusChange}
-                                    isLoading={isStatusUpdating}
+                                    onChange={(status) => {
+                                        setData('status', status);
+                                        // Eğer form açık değilse, global state'i de güncelle
+                                        if (!isReplying) {
+                                            handleStatusChange(status);
+                                        }
+                                    }}
                                     t={t}
                                 />
                             </div>
@@ -340,8 +480,11 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                             user={ticket.user}
                                             date={ticket.created_at}
                                             attachments={ticket.attachments}
-                                            onPreviewImage={setPreviewImage}
+                                            onPreviewImage={handlePreviewImage}
                                             onQuote={() => handleQuote(ticket.message)}
+                                            isReplying={isReplying}
+                                            handleAttachmentClick={handleAttachmentClick}
+                                            setIsReplying={setIsReplying}
                                             t={t}
                                         />
 
@@ -354,8 +497,11 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                                 date={reply.created_at}
                                                 attachments={reply.attachments}
                                                 quote={reply.quote}
-                                                onPreviewImage={setPreviewImage}
+                                                onPreviewImage={handlePreviewImage}
                                                 onQuote={() => handleQuote(reply.message)}
+                                                isReplying={isReplying}
+                                                handleAttachmentClick={handleAttachmentClick}
+                                                setIsReplying={setIsReplying}
                                                 t={t}
                                             />
                                         ))}
@@ -363,7 +509,7 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                 </div>
 
                                 {/* Yanıt Formu */}
-                                <div className="border-t dark:border-gray-700 p-6">
+                                <div ref={replyFormRef} className="border-t dark:border-gray-700 p-6">
                                     {!isReplying ? (
                                         <button
                                             onClick={() => setIsReplying(true)}
@@ -391,15 +537,35 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                                 </div>
                                             )}
 
-                                            <textarea
-                                                value={data.message}
-                                                onChange={e => setData('message', e.target.value)}
-                                                className="w-full rounded-xl border-gray-300 dark:border-gray-700 
-                                                    dark:bg-gray-800 dark:text-gray-100 shadow-sm 
-                                                    focus:border-indigo-500 focus:ring-indigo-500"
-                                                rows={6}
-                                                placeholder={t('ticket.writeReply')}
-                                            />
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-sm text-gray-600 dark:text-gray-400">
+                                                        {t('ticket.updateStatus')}
+                                                    </label>
+                                                    <StatusSelect
+                                                        currentStatus={data.status}
+                                                        statuses={statuses}
+                                                        onChange={(status) => {
+                                                            setData('status', status);
+                                                            // Eğer form açık değilse, global state'i de güncelle
+                                                            if (!isReplying) {
+                                                                handleStatusChange(status);
+                                                            }
+                                                        }}
+                                                        t={t}
+                                                    />
+                                                </div>
+
+                                                <textarea
+                                                    value={data.message}
+                                                    onChange={e => setData('message', e.target.value)}
+                                                    className="w-full rounded-xl border-gray-300 dark:border-gray-700 
+                                                        dark:bg-gray-800 dark:text-gray-100 shadow-sm 
+                                                        focus:border-indigo-500 focus:ring-indigo-500"
+                                                    rows={6}
+                                                    placeholder={t('ticket.writeReply')}
+                                                />
+                                            </div>
 
                                             {/* Dosya Yükleme */}
                                             <div className="space-y-4">
@@ -426,7 +592,7 @@ export default function Show({ auth, ticket, statuses }: Props) {
 
                                                 {/* Yüklenen Dosyalar */}
                                                 {data.attachments.length > 0 && (
-                                                    <div className="space-y-2">
+                                                    <div ref={attachmentsContainerRef} className="space-y-2">
                                                         {data.attachments.map((file, index) => (
                                                             <div key={index} className="flex items-center justify-between 
                                                                 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -453,7 +619,7 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                                     type="button"
                                                     onClick={() => {
                                                         setIsReplying(false);
-                                                        reset();
+                                                        resetForm();
                                                     }}
                                                     className="px-4 py-2 text-sm text-gray-700 
                                                         dark:text-gray-300 hover:text-gray-900 
