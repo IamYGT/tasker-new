@@ -86,10 +86,12 @@ export type SetTicketData = {
 }
 
 export interface MessageUser {
+    id: number;
     name: string;
-    avatar?: string;
-    social_login: boolean;
-    roles: any[];
+    email: string;
+    avatar?: string | null;
+    social_login?: boolean;
+    roles?: Array<{ name: string }>;
 }
 
 export interface MessageBubbleProps {
@@ -97,15 +99,167 @@ export interface MessageBubbleProps {
     message: string;
     user: MessageUser;
     date: string;
-    attachments?: Array<{
-        id: number;
-        name: string;
-        url: string;
-        type: string;
-        size: number;
-    }>;
+    attachments?: Attachment[];
     quote?: string;
     onPreviewImage: (url: string) => void;
     onQuote: (text: string) => void;
+    isReplying: boolean;
+    handleAttachmentClick: (url: string) => Promise<void>;
+    setIsReplying: (value: boolean) => void;
     t: (key: string, params?: Record<string, any>) => string;
+}
+
+export interface StatCardProps {
+    title: string;
+    value: number;
+    icon: IconType;
+    color: string;
+    textColor: string;
+    onClick?: () => void;
+}
+
+export interface StatusSelectProps {
+    currentStatus: string;
+    statuses: string[];
+    onChange: (status: string) => void;
+    isLoading?: boolean;
+    t: (key: string) => string;
+}
+
+export interface PreviewModalProps {
+    isOpen: boolean;
+    imageUrl: string | null;
+    onClose: () => void;
+}
+
+export interface QuoteButtonProps {
+    onClick: () => void;
+    t: (key: string) => string;
+}
+
+export interface TicketHistoryPanelProps {
+    history: TicketHistory[];
+}
+
+export interface UserInfoPanelProps {
+    user: User;
+}
+
+export interface TicketHeaderProps {
+    ticket: {
+        id: number;
+        subject: string;
+        priority: string;
+        created_at: string;
+    };
+    currentStatus: string;
+    statuses: string[];
+    onStatusChange: (status: string) => void;
+    isReplying: boolean;
+    handleStatusChange: (status: string) => void;
+    t: (key: string) => string;
+    formatDate: (date: string) => string;
+}
+
+export interface TicketIndexPageProps {
+    auth: {
+        user: User;
+    };
+    tickets: {
+        data: Ticket[];
+        total: number;
+        links: any[];
+    };
+    filters: {
+        search?: string;
+        status?: string;
+        priority?: string;
+        category?: string;
+        sort?: string;
+        direction?: 'asc' | 'desc';
+    };
+    statuses: string[];
+    priorities: string[];
+    categories: string[];
+    stats: {
+        total: number;
+        open: number;
+        answered: number;
+        high_priority: number;
+    };
+}
+
+export interface TicketShowPageProps {
+    auth: {
+        user: User;
+    };
+    ticket: {
+        id: number;
+        subject: string;
+        message: string;
+        status: string;
+        priority: string;
+        created_at: string;
+        user: User;
+        attachments: Attachment[];
+        replies: Reply[];
+        history: TicketHistory[];
+    };
+    statuses: string[];
+}
+
+export interface TicketFormData {
+    message: string;
+    status: string;
+    attachments: File[];
+    quote: string | null;
+}
+
+export interface SortState {
+    column: string;
+    direction: 'asc' | 'desc';
+}
+
+export type SortDirection = 'asc' | 'desc';
+
+export interface TicketFilters {
+    search?: string;
+    status?: string;
+    priority?: string;
+    category?: string;
+    sort?: string;
+    direction?: SortDirection;
+    page?: string;
 } 
+
+export { User };
+
+export interface Reply {
+    id: number;
+    message: string;
+    created_at: string;
+    is_admin: boolean;
+    user: User;
+    attachments: Attachment[];
+    quote?: string;
+}
+
+export interface MessageListProps {
+    ticket: {
+        id: number;
+        subject: string;
+        message: string;
+        status: string;
+        priority: string;
+        created_at: string;
+        user: User;
+        attachments: Attachment[];
+    };
+    replies: Reply[];
+    isReplying: boolean;
+    handlePreviewImage: (url: string) => void;
+    handleQuote: (message: string) => void;
+    handleAttachmentClick: (url: string) => Promise<void>;
+    setIsReplying: (value: boolean) => void;
+    t: (key: string) => string;
+}

@@ -2,7 +2,7 @@ import React from 'react';
 import { FaHistory, FaUser, FaExchangeAlt, FaReply, FaTag, FaCheckCircle } from 'react-icons/fa';
 import { useTranslation } from '@/Contexts/TranslationContext';
 
-interface TicketHistory {
+interface HistoryItem {
     id: number;
     action: string;
     type: 'status' | 'reply' | 'create' | 'priority' | 'category';
@@ -18,7 +18,7 @@ interface TicketHistory {
 }
 
 interface TicketHistoryPanelProps {
-    history: TicketHistory[];
+    history: HistoryItem[];
 }
 
 export default function TicketHistoryPanel({ history }: TicketHistoryPanelProps) {
@@ -40,23 +40,21 @@ export default function TicketHistoryPanel({ history }: TicketHistoryPanelProps)
     };
 
     const formatTime = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleTimeString('tr-TR', {
+        return new Date(dateString).toLocaleTimeString('tr-TR', {
             hour: '2-digit',
             minute: '2-digit'
         });
     };
 
     const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('tr-TR', {
+        return new Date(dateString).toLocaleDateString('tr-TR', {
             day: 'numeric',
             month: 'short'
         });
     };
 
     // Tarihe göre grupla
-    const groupedHistory = history.reduce((groups: { [key: string]: TicketHistory[] }, item) => {
+    const groupedHistory = history.reduce((groups: { [key: string]: HistoryItem[] }, item) => {
         const date = new Date(item.created_at).toLocaleDateString('tr-TR');
         if (!groups[date]) {
             groups[date] = [];
@@ -66,33 +64,63 @@ export default function TicketHistoryPanel({ history }: TicketHistoryPanelProps)
     }, {});
 
     return (
-        <div className="space-y-4">
-            {Object.entries(groupedHistory).map(([date, items]) => (
-                <div key={date} className="space-y-2">
-                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        {formatDate(items[0].created_at)}
-                    </div>
-                    {items.map((item) => (
-                        <div key={item.id} className="flex items-start gap-3 py-2">
-                            <div className="mt-1">
-                                {getIcon(item.type)}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                    {t('ticket.history')}
+                </h2>
+            </div>
+
+            <div className="p-6">
+                {Object.entries(groupedHistory).length > 0 ? (
+                    Object.entries(groupedHistory).map(([date, items]) => (
+                        <div key={date} className="space-y-2">
+                            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 
+                                uppercase tracking-wider mb-3">
+                                {formatDate(items[0].created_at)}
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-700 dark:text-gray-300">
-                                    <span className="font-medium text-gray-900 dark:text-gray-100">
-                                        {item.user.name}
-                                    </span>
-                                    {' '}
-                                    {t(`ticket.actions.${item.action}`, item.params)}
-                                </p>
-                                <span className="text-xs text-gray-500">
-                                    {formatTime(item.created_at)}
-                                </span>
+                            
+                            <div className="relative">
+                                <div className="absolute top-0 bottom-0 left-[19px] w-px 
+                                    bg-gray-200 dark:bg-gray-700" />
+                                
+                                <div className="space-y-4">
+                                    {items.map((item) => (
+                                        <div key={item.id} className="flex items-start gap-3">
+                                            <div className="relative z-10 mt-1">
+                                                <div className="w-10 h-10 rounded-lg bg-gray-50 
+                                                    dark:bg-gray-800 flex items-center justify-center">
+                                                    {getIcon(item.type)}
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm text-gray-700 dark:text-gray-300">
+                                                    <span className="font-medium text-gray-900 
+                                                        dark:text-gray-100">
+                                                        {item.user.name}
+                                                    </span>
+                                                    {' '}
+                                                    {t(`ticket.actions.${item.action}`, item.params)}
+                                                </p>
+                                                <span className="text-xs text-gray-500">
+                                                    {formatTime(item.created_at)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    ))}
-                </div>
-            ))}
+                    ))
+                ) : (
+                    <div className="text-center py-6">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {t('ticket.noHistory')}
+                        </p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 } 

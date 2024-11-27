@@ -2,14 +2,7 @@ import React from 'react';
 import { FaCircle, FaSpinner } from 'react-icons/fa';
 import { Menu } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface StatusSelectProps {
-    currentStatus: string;
-    statuses: string[];
-    onChange: (status: string) => void;
-    isLoading?: boolean;
-    t: (key: string) => string;
-}
+import { StatusSelectProps } from '@/types/tickets';
 
 export default function StatusSelect({ 
     currentStatus, 

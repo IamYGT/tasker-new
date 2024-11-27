@@ -43,7 +43,7 @@ class TicketMessage extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function getFormattedAttachmentsAttribute()
+   public function getFormattedAttachmentsAttribute()
     {
         return $this->attachments->map(function ($attachment) {
             return [
