@@ -1,32 +1,74 @@
-import React from 'react';
+import Modal from '@/Components/Modal';
+import { useTranslation } from '@/Contexts/TranslationContext';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { useTranslation } from '@/Contexts/TranslationContext';
-import { FaUserPlus, FaEdit, FaTrash, FaKey } from 'react-icons/fa';
-import { motion } from 'framer-motion';
-import { toast } from 'react-toastify';
 import Tippy from '@tippyjs/react';
+import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import {
+    FaCopy,
+    FaEdit,
+    FaEnvelope,
+    FaEye,
+    FaKey,
+    FaTicketAlt,
+    FaTrash,
+    FaUserPlus,
+} from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
 interface User {
     id: number;
     name: string;
     email: string;
     created_at: string;
+    current_password?: string;
+    password_updated_at?: string;
     roles: Array<{
         id: number;
         name: string;
     }>;
 }
 
-interface Props {
-    auth: any;
-    users: User[];
-    languages: any;
-    secili_dil: any;
+interface SelectedUser extends User {
+    current_password?: string;
 }
 
-export default function Index({ auth, users, languages, secili_dil }: Props) {
+interface Props {
+    auth: {
+        user: {
+            id: number;
+            name: string;
+            email: string;
+            roles: Array<{
+                name: string;
+            }>;
+        };
+    };
+    users: User[];
+}
+
+export default function Index({ auth, users }: Props) {
     const { t } = useTranslation();
+    const [selectedUser, setSelectedUser] = useState<SelectedUser | null>(null);
+    const [showUserModal, setShowUserModal] = useState(false);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const showUserDetails = params.get('showUserDetails');
+        const tempPassword = params.get('tempPassword');
+
+        if (showUserDetails && tempPassword) {
+            const user = users.find((u) => u.id === parseInt(showUserDetails));
+            if (user) {
+                setSelectedUser({
+                    ...user,
+                    current_password: tempPassword,
+                });
+                setShowUserModal(true);
+            }
+        }
+    }, [users]);
 
     const handleDelete = (userId: number) => {
         if (confirm(t('users.confirmDelete'))) {
@@ -38,11 +80,48 @@ export default function Index({ auth, users, languages, secili_dil }: Props) {
         }
     };
 
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast.success(t('common.copied'));
+    };
+
+    const sendEmail = (userId: number) => {
+        router.post(
+            route('admin.users.send-credentials', userId),
+            {},
+            {
+                onSuccess: () => toast.success(t('users.emailSent')),
+                onError: () => toast.error(t('users.emailError')),
+            },
+        );
+    };
+
+    const createSupportTicket = (userId: number) => {
+        router.post(
+            route('admin.tickets.create-for-user', userId),
+            {
+                subject: 'Kullanıcı Bilgileri',
+                message: `Kullanıcı bilgileri talep edildi.\nKullanıcı: ${selectedUser?.name}\nE-posta: ${selectedUser?.email}`,
+            },
+            {
+                onSuccess: () => toast.success(t('tickets.created')),
+                onError: () => toast.error(t('tickets.error')),
+            },
+        );
+    };
+
     return (
         <AuthenticatedLayout
-            auth={auth}
+            auth={{
+                user: {
+                    id: auth.user.id,
+                    name: auth.user.name,
+                    email: auth.user.email,
+                    roles: auth.user.roles,
+                },
+            }}
             header={
-                <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
                     {t('users.title')}
                 </h2>
             }
@@ -50,13 +129,13 @@ export default function Index({ auth, users, languages, secili_dil }: Props) {
             <Head title={t('users.title')} />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                    <div className="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
                         <div className="p-6">
                             <div className="mb-6 flex justify-end">
                                 <Link
                                     href={route('admin.users.create')}
-                                    className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                    className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-150 ease-in-out hover:bg-blue-700 focus:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 active:bg-blue-900"
                                 >
                                     <FaUserPlus className="mr-2" />
                                     {t('users.addNew')}
@@ -67,69 +146,139 @@ export default function Index({ auth, users, languages, secili_dil }: Props) {
                                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                     <thead className="bg-gray-50 dark:bg-gray-700">
                                         <tr>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            <th
+                                                scope="col"
+                                                className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300"
+                                            >
                                                 {t('users.name')}
                                             </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            <th
+                                                scope="col"
+                                                className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300"
+                                            >
                                                 {t('users.email')}
                                             </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            <th
+                                                scope="col"
+                                                className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300"
+                                            >
                                                 {t('users.role')}
                                             </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            <th
+                                                scope="col"
+                                                className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300"
+                                            >
                                                 {t('users.createdAt')}
                                             </th>
-                                            <th scope="col" className="relative px-6 py-3">
-                                                <span className="sr-only">{t('users.actions')}</span>
+                                            <th
+                                                scope="col"
+                                                className="relative px-6 py-3"
+                                            >
+                                                <span className="sr-only">
+                                                    {t('users.actions')}
+                                                </span>
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                                    <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
                                         {users.map((user) => (
                                             <motion.tr
                                                 key={user.id}
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
-                                                whileHover={{ backgroundColor: 'rgba(0,0,0,0.05)' }}
-                                                className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
+                                                whileHover={{
+                                                    backgroundColor:
+                                                        'rgba(0,0,0,0.05)',
+                                                }}
+                                                className="transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-gray-700"
                                             >
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
                                                     {user.name}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                                                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
                                                     {user.email}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                                    {user.roles[0]?.name.charAt(0).toUpperCase() + user.roles[0]?.name.slice(1) || t('users.noRole')}
+                                                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
+                                                    {user.roles[0]?.name
+                                                        .charAt(0)
+                                                        .toUpperCase() +
+                                                        user.roles[0]?.name.slice(
+                                                            1,
+                                                        ) || t('users.noRole')}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                                    {new Date(user.created_at).toLocaleDateString()}
+                                                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
+                                                    {new Date(
+                                                        user.created_at,
+                                                    ).toLocaleDateString()}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                                                     <div className="flex justify-end space-x-3">
-                                                        <Tippy content={t('users.resetPassword')}>
+                                                        <Tippy
+                                                            content={t(
+                                                                'users.resetPassword',
+                                                            )}
+                                                        >
                                                             <Link
-                                                                href={route('admin.users.reset-password-form', { user: user.id })}
-                                                                className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 transition-colors duration-150"
+                                                                href={route(
+                                                                    'admin.users.reset-password-form',
+                                                                    {
+                                                                        user: user.id,
+                                                                    },
+                                                                )}
+                                                                className="text-yellow-600 transition-colors duration-150 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
                                                                 preserveScroll
                                                             >
-                                                                <FaKey className="w-5 h-5" />
+                                                                <FaKey className="h-5 w-5" />
                                                             </Link>
                                                         </Tippy>
-                                                        <Tippy content={t('users.edit')}>
+                                                        <Tippy
+                                                            content={t(
+                                                                'users.edit',
+                                                            )}
+                                                        >
                                                             <Link
-                                                                href={route('admin.users.edit', user.id)}
-                                                                className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors duration-150"
+                                                                href={route(
+                                                                    'admin.users.edit',
+                                                                    user.id,
+                                                                )}
+                                                                className="text-indigo-600 transition-colors duration-150 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
                                                             >
-                                                                <FaEdit className="w-5 h-5" />
+                                                                <FaEdit className="h-5 w-5" />
                                                             </Link>
                                                         </Tippy>
-                                                        <Tippy content={t('users.delete')}>
+                                                        <Tippy
+                                                            content={t(
+                                                                'users.delete',
+                                                            )}
+                                                        >
                                                             <button
-                                                                onClick={() => handleDelete(user.id)}
-                                                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-150"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        user.id,
+                                                                    )
+                                                                }
+                                                                className="text-red-600 transition-colors duration-150 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                                                             >
-                                                                <FaTrash className="w-5 h-5" />
+                                                                <FaTrash className="h-5 w-5" />
+                                                            </button>
+                                                        </Tippy>
+                                                        <Tippy
+                                                            content={t(
+                                                                'users.viewDetails',
+                                                            )}
+                                                        >
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSelectedUser(
+                                                                        user,
+                                                                    );
+                                                                    setShowUserModal(
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                                className="text-blue-600 transition-colors duration-150 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                                                            >
+                                                                <FaEye className="h-5 w-5" />
                                                             </button>
                                                         </Tippy>
                                                     </div>
@@ -143,6 +292,138 @@ export default function Index({ auth, users, languages, secili_dil }: Props) {
                     </div>
                 </div>
             </div>
+
+            {showUserModal && selectedUser && (
+                <Modal
+                    show={showUserModal}
+                    onClose={() => setShowUserModal(false)}
+                >
+                    <div className="p-6">
+                        <h3 className="mb-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            {t('users.userDetails')}
+                        </h3>
+
+                        <div className="space-y-6">
+                            {/* Kullanıcı Bilgi Kartı */}
+                            <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {/* İsim Alanı */}
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                            {t('users.name')}
+                                        </label>
+                                        <div className="flex items-center justify-between rounded-md bg-white p-2 dark:bg-gray-800">
+                                            <span className="text-gray-900 dark:text-gray-100">
+                                                {selectedUser.name}
+                                            </span>
+                                            <button
+                                                onClick={() =>
+                                                    copyToClipboard(
+                                                        selectedUser.name,
+                                                    )
+                                                }
+                                                className="ml-2 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700"
+                                            >
+                                                <FaCopy className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* E-posta Alanı */}
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                            {t('users.email')}
+                                        </label>
+                                        <div className="flex items-center justify-between rounded-md bg-white p-2 dark:bg-gray-800">
+                                            <span className="text-gray-900 dark:text-gray-100">
+                                                {selectedUser.email}
+                                            </span>
+                                            <button
+                                                onClick={() =>
+                                                    copyToClipboard(
+                                                        selectedUser.email,
+                                                    )
+                                                }
+                                                className="ml-2 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700"
+                                            >
+                                                <FaCopy className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Şifre Bilgisi */}
+                            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-900/50 dark:bg-yellow-900/20">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                        {t('users.currentPassword')}
+                                    </label>
+                                    <div className="flex items-center justify-between rounded-md bg-white p-2 dark:bg-gray-800">
+                                        <span
+                                            className={`text-gray-900 dark:text-gray-100 ${
+                                                selectedUser.current_password
+                                                    ? 'font-mono'
+                                                    : ''
+                                            }`}
+                                        >
+                                            {selectedUser.current_password ||
+                                                t('users.notAvailable')}
+                                        </span>
+                                        {selectedUser.current_password && (
+                                            <button
+                                                onClick={() =>
+                                                    copyToClipboard(
+                                                        selectedUser.current_password ||
+                                                            '',
+                                                    )
+                                                }
+                                                className="ml-2 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700"
+                                            >
+                                                <FaCopy className="h-4 w-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                    {selectedUser.current_password &&
+                                        selectedUser.password_updated_at && (
+                                            <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
+                                                {t('users.lastUpdated')}:{' '}
+                                                {new Date(
+                                                    selectedUser.password_updated_at,
+                                                ).toLocaleString()}
+                                            </p>
+                                        )}
+                                </div>
+                            </div>
+
+                            {/* Aksiyon Butonları */}
+                            <div className="flex justify-end space-x-3">
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => sendEmail(selectedUser.id)}
+                                    className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                >
+                                    <FaEnvelope className="mr-2 h-4 w-4" />
+                                    {t('users.sendEmail')}
+                                </motion.button>
+
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() =>
+                                        createSupportTicket(selectedUser.id)
+                                    }
+                                    className="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                >
+                                    <FaTicketAlt className="mr-2 h-4 w-4" />
+                                    {t('users.createTicket')}
+                                </motion.button>
+                            </div>
+                        </div>
+                    </div>
+                </Modal>
+            )}
         </AuthenticatedLayout>
     );
-} 
+}

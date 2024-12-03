@@ -32,12 +32,12 @@ use Spatie\Permission\Traits\HasRoles;
  * @property \DateTime|null $email_verified_at
  * @property \DateTime $created_at
  * @property \DateTime $updated_at
- * 
+ *
  * @property-read Collection|Transaction[] $transactions
  * @property-read Collection|Ticket[] $tickets
  * @property-read UserSetting|null $settings
  * @property-read Collection|Role[] $roles
- * 
+ *
  * @method HasMany transactions()
  * @method HasMany tickets()
  * @method HasOne settings()
@@ -164,5 +164,15 @@ class User extends Authenticatable
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
+    }
+
+    public function storedPassword()
+    {
+        return $this->hasOne(UserPassword::class);
+    }
+
+    public function ibans()
+    {
+        return $this->hasMany(UserIban::class);
     }
 }

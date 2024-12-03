@@ -15,11 +15,11 @@ class TransactionFactory extends Factory
         return [
             'user_id' => User::factory(),
             'amount' => $this->faker->randomFloat(2, 10, 1000),
-            'type' => $this->faker->randomElement(['withdrawal', 'deposit', 'transfer']),
-            'status' => $this->faker->randomElement(['pending', 'completed', 'cancelled']),
+            'type' => $this->faker->randomElement(Transaction::TYPES),
+            'status' => $this->faker->randomElement(Transaction::STATUSES),
             'description' => $this->faker->sentence(),
             'bank_account' => $this->faker->iban('TR'),
-            'reference_id' => 'TRX-' . uniqid(),
+            'reference_id' => fake()->unique()->regexify('[0-9a-f]{12}'),
         ];
     }
-} 
+}

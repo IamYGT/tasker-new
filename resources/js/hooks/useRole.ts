@@ -1,11 +1,14 @@
-import { usePage } from '@inertiajs/react';
 import { PageProps } from '@/types';
+import { usePage } from '@inertiajs/react';
 
 export function useRole() {
     const { auth } = usePage<PageProps>().props;
-    
+
     const hasRole = (role: string): boolean => {
-        return auth.user?.roles.some((r: { name: string }) => r.name === role) ?? false;
+        return (
+            auth.user?.roles.some((r: { name: string }) => r.name === role) ??
+            false
+        );
     };
 
     const isAdmin = (): boolean => {
@@ -21,4 +24,4 @@ export function useRole() {
         isAdmin,
         isUser,
     };
-} 
+}

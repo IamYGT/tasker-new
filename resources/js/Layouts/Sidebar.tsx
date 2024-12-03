@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import NavLink from './NavLink';
-import { 
-    MdDashboard, MdPerson, MdLogout, MdClose, MdGroup, 
+import {
+    MdDashboard, MdPerson, MdLogout, MdClose, MdGroup,
     MdPayment, MdPending, MdMoneyOff, MdConfirmationNumber,
     MdDescription, MdAnalytics, MdSettings, MdAccountBalance
 } from 'react-icons/md';
@@ -44,6 +44,11 @@ const userMenuItems: MenuItem[] = [
         name: 'sidebar.tickets',
         route: 'tickets.index',
         icon: <MdConfirmationNumber className="w-5 h-5 sm:w-6 sm:h-6" />
+    },
+    {
+        name: 'sidebar.ibans',
+        route: 'profile.ibans',
+        icon: <MdAccountBalance className="h-5 w-5 sm:h-6 sm:w-6" />
     }
 ];
 
@@ -69,9 +74,9 @@ const adminMenuItems: MenuItem[] = [
         route: 'admin.tickets.index',
         icon: <MdConfirmationNumber className="w-5 h-5 sm:w-6 sm:h-6" />
     },
-   
-   
-   
+
+
+
 ];
 
 interface SidebarProps {
@@ -139,11 +144,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                     animate={collapsed ? 'collapsed' : 'expanded'}
                     variants={sidebarVariants}
                     className={`
-                        ${darkModeClasses} 
+                        ${darkModeClasses}
                         backdrop-filter backdrop-blur-lg
-                        min-h-screen flex flex-col 
-                        fixed lg:relative 
-                        z-50 
+                        min-h-screen flex flex-col
+                        fixed lg:relative
+                        z-50
                         shadow-lg
                         transition-all duration-100 ease-in-out
                     `}
@@ -171,9 +176,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                             >
-                                <ApplicationLogo 
+                                <ApplicationLogo
                                     mode={darkMode ? 'dark' : 'light'}
-                                    className={`h-8 w-8 sm:h-10 sm:w-10 ${isMobile || !collapsed ? 'mr-3 sm:mr-4' : ''}`} 
+                                    className={`h-8 w-8 sm:h-10 sm:w-10 ${isMobile || !collapsed ? 'mr-3 sm:mr-4' : ''}`}
                                 />
                             </motion.div>
                             {(!collapsed || isMobile) && (
@@ -216,7 +221,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         {/* Ana Menü Öğeleri */}
                         <div className="space-y-2">
                             {menuItems.map((item, index) => (
-                                <Tippy 
+                                <Tippy
                                     key={index}
                                     content={collapsed && !isMobile ? t(item.name) : ""}
                                     disabled={!collapsed || isMobile}

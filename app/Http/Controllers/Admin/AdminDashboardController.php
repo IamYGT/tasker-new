@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\Withdrawal;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -17,128 +18,133 @@ class AdminDashboardController extends Controller
 {
     private function getStatsData(): array
     {
-        $now = Carbon::now();
-        $monthStart = $now->startOfMonth();
-        $lastMonthStart = $now->copy()->subMonth()->startOfMonth();
-
-        // System Health
-        $activeSessions = DB::table('sessions')
-            ->where('last_activity', '>=', now()->subMinutes(5)->getTimestamp())
-            ->count();
-        $failedJobs = DB::table('failed_jobs')->count();
-
-        // User Statistics
-        $totalUsers = User::count();
-        $activeUsers = DB::table('sessions')
-            ->where('last_activity', '>=', now()->subDays(7)->getTimestamp())
-            ->distinct('user_id')
-            ->count();
-        $newUsersThisMonth = User::where('created_at', '>=', $monthStart)->count();
-
-        // User Growth Trend (last 6 months)
-        $userGrowth = collect(range(5, 0))->map(function ($months) {
-            $start = now()->subMonths($months)->startOfMonth();
-            $end = $start->copy()->endOfMonth();
-            return [
-                'month' => $start->format('M'),
-                'users' => User::whereBetween('created_at', [$start, $end])->count()
-            ];
-        });
-
-        // Transaction Statistics
-        $totalTransactions = Transaction::count();
-        $pendingTransactions = Transaction::where('status', 'pending')->count();
-        $monthlyVolume = Transaction::where('created_at', '>=', $monthStart)
-            ->where('status', 'completed')
-            ->sum('amount');
-
-        // Calculate trends
-        $lastMonthUsers = User::where('created_at', '>=', $lastMonthStart)
-            ->where('created_at', '<', $monthStart)
-            ->count();
-
-        $userTrend = $lastMonthUsers > 0
-            ? round(($newUsersThisMonth - $lastMonthUsers) / $lastMonthUsers * 100, 1)
-            : 100;
-
-        $lastMonthVolume = Transaction::where('created_at', '>=', $lastMonthStart)
-            ->where('created_at', '<', $monthStart)
-            ->where('status', 'completed')
-            ->sum('amount');
-
-        $volumeTrend = $lastMonthVolume > 0
-            ? round(($monthlyVolume - $lastMonthVolume) / $lastMonthVolume * 100, 1)
-            : 100;
-
-        // Recent Activity
-        $recentActivity = collect([])
-            ->merge(Transaction::with('user')->latest()->take(5)->get())
-            ->merge(User::latest()->take(5)->get())
-            ->merge(Ticket::with('user')->latest()->take(5)->get())
-            ->sortByDesc('created_at')
-            ->take(10)
-            ->map(function ($item) {
-                if ($item instanceof Transaction) {
-                    return [
-                        'id' => $item->id,
-                        'type' => 'transaction',
-                        'description' => "New {$item->type} transaction ({$item->reference_id})",
-                        'status' => $item->status,
-                        'user' => $item->user->name,
-                        'timestamp' => $item->created_at->toIso8601String()
-                    ];
-                } elseif ($item instanceof User) {
-                    return [
-                        'id' => $item->id,
-                        'type' => 'user',
-                        'description' => 'New user registration',
-                        'status' => $item->email_verified_at ? 'verified' : 'pending',
-                        'user' => $item->name,
-                        'timestamp' => $item->created_at->toIso8601String()
-                    ];
-                } else {
-                    return [
-                        'id' => $item->id,
-                        'type' => 'ticket',
-                        'description' => "New ticket: {$item->subject}",
-                        'status' => $item->status,
-                        'user' => $item->user->name,
-                        'timestamp' => $item->created_at->toIso8601String()
-                    ];
-                }
-            })
-            ->values()
-            ->all();
-
         return [
-            'systemHealth' => [
-                'activeSessions' => $activeSessions,
-                'failedJobs' => $failedJobs,
+            'users' => [
+                'total' => User::count(),
+                'activeToday' => DB::table('sessions')
+                    ->where('last_activity', '>=', now()->subDay()->getTimestamp())
+                    ->distinct('user_id')
+                    ->count(),
+                'newThisWeek' => User::where('created_at', '>=', now()->subWeek())->count(),
             ],
-            'userStats' => [
-                'total' => $totalUsers,
-                'active' => $activeUsers,
-                'newThisMonth' => $newUsersThisMonth,
-                'trend' => $userTrend,
+            'tickets' => [
+                'total' => Ticket::count(),
+                'open' => Ticket::where('status', 'open')->count(),
+                'answered' => Ticket::where('status', 'answered')->count(),
+                'closed' => Ticket::where('status', 'closed')->count(),
             ],
-            'userGrowth' => $userGrowth,
-            'transactionStats' => [
-                'total' => $totalTransactions,
-                'pending' => $pendingTransactions,
-                'monthlyVolume' => $monthlyVolume,
-                'volumeTrend' => $volumeTrend,
+            'transactions' => [
+                'total' => Transaction::count(),
+                'pending' => Transaction::where('status', 'pending')->count(),
+                'completed' => Transaction::where('status', 'completed')->count(),
+                'totalAmount' => Transaction::where('status', 'completed')->sum('amount'),
+                'totalAmount_usd' => Transaction::where('status', 'completed')->sum('amount_usd'),
+                'exchange_rate' => Transaction::avg('exchange_rate') ?? 0,
             ],
-            'recentActivity' => $recentActivity ?: [],
+            'recentActivity' => $this->getRecentActivity(),
         ];
     }
 
     public function index()
     {
-        $stats = Cache::remember('admin_dashboard_stats', 300, function () {
-            return $this->getStatsData();
-        });
+        $now = Carbon::now();
+        $monthStart = $now->startOfMonth();
 
-        return Inertia::render('Admin/Dashboard', compact('stats'));
+        $stats = [
+            'users' => [
+                'total' => User::count(),
+                'activeToday' => DB::table('sessions')
+                    ->where('last_activity', '>=', now()->subDay()->getTimestamp())
+                    ->distinct('user_id')
+                    ->count(),
+                'newThisWeek' => User::where('created_at', '>=', now()->subWeek())->count(),
+            ],
+            'tickets' => [
+                'total' => Ticket::count(),
+                'open' => Ticket::where('status', 'open')->count(),
+                'answered' => Ticket::where('status', 'answered')->count(),
+                'closed' => Ticket::where('status', 'closed')->count(),
+            ],
+            'transactions' => [
+                'total' => Transaction::count(),
+                'pending' => Transaction::where('status', 'pending')->count(),
+                'completed' => Transaction::where('status', 'completed')->count(),
+                'totalAmount' => Transaction::where('status', 'completed')->sum('amount'),
+                'totalAmount_usd' => Transaction::where('status', 'completed')->sum('amount_usd'),
+                'exchange_rate' => Transaction::avg('exchange_rate') ?? 0,
+            ],
+            'recentActivity' => $this->getRecentActivity(),
+        ];
+
+        return Inertia::render('Admin/AdminDashboard', [
+            'stats' => $stats
+        ]);
+    }
+
+    private function calculateTransactionGrowth()
+    {
+        $currentMonth = Transaction::where('status', 'completed')
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->count();
+
+        $lastMonth = Transaction::where('status', 'completed')
+            ->whereBetween('created_at', [
+                now()->subMonth()->startOfMonth(),
+                now()->subMonth()->endOfMonth()
+            ])
+            ->count();
+
+        return $this->calculateGrowth($lastMonth, $currentMonth);
+    }
+
+    private function calculateAverageTransactionAmount()
+    {
+        return Cache::remember('avg_transaction_amount', 300, function () {
+            return Transaction::where('status', 'completed')
+                ->where('created_at', '>=', now()->subDays(30))
+                ->avg('amount') ?? 0;
+        });
+    }
+
+    private function getRecentActivity()
+    {
+        return Cache::remember('recent_activity', 60, function () {
+            return collect([])
+                ->merge(Transaction::with('user')->latest()->take(5)->get())
+                ->merge(Ticket::with('user')->latest()->take(5)->get())
+                ->merge(Withdrawal::with('user')->latest()->take(5)->get())
+                ->sortByDesc('created_at')
+                ->take(10)
+                ->map(function ($item) {
+                    $type = match (true) {
+                        $item instanceof Transaction => 'transaction',
+                        $item instanceof Ticket => 'ticket',
+                        $item instanceof Withdrawal => 'withdrawal',
+                    };
+
+                    return [
+                        'id' => $item->id,
+                        'type' => $type,
+                        'user' => $item->user->name,
+                        'amount' => $item->amount ? (float)$item->amount : null,
+                        'amount_usd' => $item->amount_usd ? (float)$item->amount_usd : null,
+                        'exchange_rate' => $item->exchange_rate ? (float)$item->exchange_rate : null,
+                        'status' => $item->status,
+                        'created_at' => $item->created_at->diffForHumans(),
+                    ];
+                })
+                ->values()
+                ->all();
+        });
+    }
+
+    private function getActivityRoute($item, $type)
+    {
+        return match ($type) {
+            'transaction' => route('admin.transactions.show', $item),
+            'ticket' => route('admin.tickets.show', $item),
+            'withdrawal' => route('admin.withdrawals.show', $item),
+        };
     }
 
     public function getStats(): JsonResponse

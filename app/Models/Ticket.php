@@ -40,10 +40,15 @@ class Ticket extends Model
         return $this->hasMany(TicketMessage::class);
     }
 
+    public function histories(): HasMany
+    {
+        return $this->hasMany(TicketHistory::class);
+    }
+
     public function addToHistory(string $messageKey, string $type = 'info', ?array $params = null): void
     {
         $history = $this->history ?? [];
-        
+
         $history[] = [
             'id' => count($history) + 1,
             'action' => $messageKey,
@@ -54,7 +59,15 @@ class Ticket extends Model
                 'name' => request()->user()->name
             ]
         ];
+
         $this->update(['history' => $history]);
+
+        $this->histories()->create([
+            'user_id' => auth()->id(),
+            'action' => $messageKey,
+            'type' => $type,
+            'params' => $params
+        ]);
     }
 
     public function updateStatus(string $status): void
@@ -73,11 +86,8 @@ class Ticket extends Model
         }
     }
 
-    /**
-     * Biletin mesajları ile olan ilişkisi
-     */
-    public function messages()
+    public function messages(): HasMany
     {
         return $this->hasMany(TicketMessage::class);
     }
-} 
+}

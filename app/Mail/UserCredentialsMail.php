@@ -2,10 +2,14 @@
 
 namespace App\Mail;
 
+use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
 
 class UserCredentialsMail extends Mailable
 {
+    use Queueable, SerializesModels;
+
     public $user;
     public $password;
 
@@ -17,7 +21,10 @@ class UserCredentialsMail extends Mailable
 
     public function build()
     {
-        return $this->markdown('emails.user-credentials')
-                    ->subject('Hesap Bilgileriniz');
+        return $this->subject('Kullanıcı Bilgileriniz')
+                    ->markdown('emails.user-credentials', [
+                        'user' => $this->user,
+                        'password' => $this->password
+                    ]);
     }
 }

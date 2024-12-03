@@ -33,7 +33,7 @@ class AuthenticatedSessionController extends Controller
     {
         try {
             $user = \App\Models\User::where('email', $request->email)->first();
-            
+
             if (!$user) {
                 return back()
                     ->with('message', $this->getTranslation('login.invalidEmail'))

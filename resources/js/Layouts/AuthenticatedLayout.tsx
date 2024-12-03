@@ -1,27 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { usePage, router } from '@inertiajs/react';
+import { useRole } from '@/hooks/useRole';
+import { User } from '@/types';
 import { getTheme, setTheme } from '@/Utils/themeManager';
-import Sidebar from './Sidebar';
+import { router, usePage } from '@inertiajs/react';
+import React, { useEffect, useState } from 'react';
 import Header from './Header';
 import LogoutModal from './LogoutModal';
-import { motion } from 'framer-motion';
-import { User } from '@/types';
-import { useRole } from '@/hooks/useRole';
+import Sidebar from './Sidebar';
 
 interface Props {
     auth: {
         user: {
-            roles: Array<{
-                name: string;
-            }>;
+            id: number;
+            name: string;
+            email: string;
+            roles: Array<{ name: string }>;
         };
     };
-    children: React.ReactNode;
     header?: React.ReactNode;
+    children: React.ReactNode;
 }
 
 export default function Authenticated({ auth, header, children }: Props) {
-    const { languages, secili_dil } = usePage().props as any;
+    const { languages, secili_dil, scroll } = usePage().props as any;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [darkMode, setDarkMode] = useState(getTheme());
@@ -58,6 +58,12 @@ export default function Authenticated({ auth, header, children }: Props) {
         }
     }, [collapsed, isMobile]);
 
+    useEffect(() => {
+        if (scroll?.y) {
+            window.scrollTo(0, scroll.y);
+        }
+    }, [scroll]);
+
     const toggleDarkMode = () => {
         setDarkMode(!darkMode);
     };
@@ -70,32 +76,34 @@ export default function Authenticated({ auth, header, children }: Props) {
 
     const handleLanguageChange = (langCode: string) => {
         setIsLoading(true);
-        router.get(route('language.switch', langCode), {}, {
-            preserveState: true,
-            preserveScroll: true,
-            only: ['languages', 'secili_dil'],
-            onSuccess: () => {
-                setIsLoading(false);
-                window.location.reload();
+        router.get(
+            route('language.switch', langCode),
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['languages', 'secili_dil'],
+                onSuccess: () => {
+                    setIsLoading(false);
+                    window.location.reload();
+                },
+                onError: () => {
+                    setIsLoading(false);
+                },
             },
-            onError: () => {
-                setIsLoading(false);
-            },
-        });
-    };
-
-    const handleDashboardClick = () => {
-        // Dashboard click işlemleri
+        );
     };
 
     return (
-        <div className={`flex h-screen ${darkMode ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900' : 'bg-gradient-to-br from-blue-100 via-blue-200 to-indigo-300'} transition-all duration-500 ease-in-out animate-gradient`}>
+        <div
+            className={`flex h-screen ${darkMode ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900' : 'bg-gradient-to-br from-blue-100 via-blue-200 to-indigo-300'} animate-gradient transition-all duration-500 ease-in-out`}
+        >
             {isLoading && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-white"></div>
                 </div>
             )}
-            
+
             {sidebarOpen && isMobile && (
                 <div
                     className="fixed inset-0 z-40 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity"
@@ -111,16 +119,15 @@ export default function Authenticated({ auth, header, children }: Props) {
                 setShowLogoutModal={setShowLogoutModal}
                 collapsed={isMobile ? false : collapsed}
                 isAdmin={isAdmin()}
-            
             />
 
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex flex-1 flex-col overflow-hidden">
                 <Header
                     sidebarOpen={sidebarOpen}
                     setSidebarOpen={setSidebarOpen}
                     darkMode={darkMode}
                     toggleDarkMode={toggleDarkMode}
-                    auth={{user: auth?.user as User}}
+                    auth={{ user: auth?.user as User }}
                     languages={languages}
                     secili_dil={secili_dil}
                     header={header}
@@ -132,10 +139,10 @@ export default function Authenticated({ auth, header, children }: Props) {
                     onLanguageChange={handleLanguageChange}
                 />
 
-                <main className={`flex-1 overflow-x-hidden overflow-y-auto p-6 sm:p-8 lg:p-10 backdrop-filter backdrop-blur-md ${darkMode ? 'text-gray-100' : 'text-gray-900'} transition-all duration-500 ease-in-out`}>
-                    <div className="container mx-auto">
-                        {children}
-                    </div>
+                <main
+                    className={`flex-1 overflow-y-auto overflow-x-hidden p-6 backdrop-blur-md backdrop-filter sm:p-8 lg:p-10 ${darkMode ? 'text-gray-100' : 'text-gray-900'} transition-all duration-500 ease-in-out`}
+                >
+                    <div className="container mx-auto">{children}</div>
                 </main>
             </div>
 

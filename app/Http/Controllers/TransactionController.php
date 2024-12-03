@@ -11,24 +11,78 @@ class TransactionController extends Controller
 {
     public function history()
     {
-        $transactions = Auth::user()->transactions()
+        $user = Auth::user();
+
+        // İşlem istatistiklerini hesapla ve float'a dönüştür
+        $stats = [
+            'total_amount_usd' => (float) $user->transactions()
+                ->whereIn('status', ['completed', 'approved'])
+                ->sum('amount_usd'),
+
+            'total_amount_try' => (float) $user->transactions()
+                ->whereIn('status', ['completed', 'approved'])
+                ->sum('amount'),
+
+            'pending_count' => (int) $user->transactions()
+                ->whereIn('status', ['pending', 'waiting'])
+                ->count(),
+
+            'completed_count' => (int) $user->transactions()
+                ->whereIn('status', ['completed', 'approved'])
+                ->count(),
+        ];
+
+        // İşlemleri getir
+        $transactions = $user->transactions()
+            ->with(['user']) // Eager loading
             ->latest()
             ->paginate(10);
 
         return Inertia::render('Transactions/History', [
-            'transactions' => $transactions
+            'transactions' => $transactions,
+            'stats' => $stats,
+            'filters' => [
+                'search' => request('search', ''),
+                'type' => request('type', 'all'),
+            ],
         ]);
     }
 
     public function pending()
     {
-        $pendingTransactions = Auth::user()->transactions()
-            ->where('status', 'pending')
+        $user = Auth::user();
+
+        $stats = [
+            'total_amount_usd' => $user->transactions()
+                ->whereIn('status', ['completed', 'approved'])
+                ->sum('amount_usd'),
+
+            'total_amount_try' => $user->transactions()
+                ->whereIn('status', ['completed', 'approved'])
+                ->sum('amount'),
+
+            'pending_count' => $user->transactions()
+                ->whereIn('status', ['pending', 'waiting'])
+                ->count(),
+
+            'completed_count' => $user->transactions()
+                ->whereIn('status', ['completed', 'approved'])
+                ->count(),
+        ];
+
+        $pendingTransactions = $user->transactions()
+            ->with(['user'])
+            ->whereIn('status', ['pending', 'waiting'])
             ->latest()
             ->paginate(10);
 
         return Inertia::render('Transactions/Pending', [
-            'transactions' => $pendingTransactions
+            'transactions' => $pendingTransactions,
+            'stats' => $stats,
+            'filters' => [
+                'search' => request('search', ''),
+                'type' => request('type', 'all'),
+            ],
         ]);
     }
 
@@ -47,6 +101,19 @@ class TransactionController extends Controller
             'reference_id' => 'TRX-' . uniqid()
         ]);
 
-        return redirect()->back()->with('success', 'İşleminiz başarıyla oluşturuldu.');
+        return redirect()->back()->with('success', translate('transaction.created'));
     }
-} 
+
+    // İşlem detaylarını görüntüleme
+    public function show(Transaction $transaction)
+    {
+        // Yetkilendirme kontrolü
+        if ($transaction->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        return Inertia::render('Transactions/Show', [
+            'transaction' => $transaction->load(['user']),
+        ]);
+    }
+}

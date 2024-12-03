@@ -14,6 +14,9 @@ use App\Mail\PasswordResetNotification;
 use Illuminate\Support\Facades\Log;
 use App\Models\Role;
 use App\Helpers\Helpers;
+use App\Helpers\PasswordEncryption;
+use App\Models\UserPassword;
+use App\Mail\UserCredentialsMail;
 
 class AdminUserController extends Controller
 {
@@ -43,10 +46,7 @@ class AdminUserController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        $userRole = Role::where('name', 'user')->first();
-        if ($userRole) {
-            $user->roles()->sync([$userRole->id]);
-        }
+        $user->assignRole('user');
 
         return redirect()->route('admin.users.index')
             ->with('success', translate('users.createSuccess'));
@@ -54,21 +54,10 @@ class AdminUserController extends Controller
 
     public function index()
     {
-        $users = User::with('roles')->get();
-
-        // Şifreleri oku
-        $passwordsFile = storage_path('app/passwords.json');
-        $passwords = [];
-
-        if (file_exists($passwordsFile)) {
-            $passwords = json_decode(file_get_contents($passwordsFile), true) ?? [];
-        }
-
-        // Kullanıcı listesine şifreleri ekle
-        $users = $users->map(function ($user) use ($passwords) {
+        $users = User::with('roles')->get()->map(function ($user) {
             $userData = $user->toArray();
-            $userData['current_password'] = $passwords[$user->id]['password'] ?? null;
-            $userData['password_updated_at'] = $passwords[$user->id]['created_at'] ?? null;
+            $userData['current_password'] = session()->get("user_{$user->id}_plain_password");
+            $userData['password_updated_at'] = $user->updated_at?->toDateTimeString();
             return $userData;
         });
 
@@ -119,9 +108,8 @@ class AdminUserController extends Controller
     public function destroy(User $user)
     {
         $user->delete();
-
         return redirect()->route('admin.users.index')
-            ->with('success', 'Kullanıcı başarıyla silindi.');
+            ->with('success', translate('users.deleteSuccess'));
     }
 
     public function autoResetPassword(User $user)
@@ -186,5 +174,60 @@ class AdminUserController extends Controller
         $user->assignRole($request->role);
 
         return redirect()->back()->with('success', 'Rol başarıyla atandı.');
+    }
+
+    public function storePassword(Request $request)
+    {
+        try {
+            $data = $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'password' => 'required|string',
+                'email' => 'required|email'
+            ]);
+
+            $user = User::findOrFail($data['user_id']);
+
+            // Şifreyi session'da sakla
+            session()->put("user_{$user->id}_plain_password", $data['password']);
+
+            return response()->json(['success' => true, 'message' => 'Password stored successfully']);
+        } catch (\Exception $e) {
+            Log::error('Password store error:', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function sendCredentials(Request $request, $userId)
+    {
+        try {
+            $user = User::findOrFail($userId);
+
+            // Rastgele şifre oluştur
+            $password = Str::random(12);
+
+            // Şifreyi güncelle
+            $user->update([
+                'password' => Hash::make($password)
+            ]);
+
+            // Mail gönder
+            Mail::to($user->email)->send(new UserCredentialsMail($user, $password));
+
+            Log::info('Kullanıcı bilgileri mail olarak gönderildi', [
+                'user_id' => $userId,
+                'email' => $user->email
+            ]);
+
+            return back()->with('success', 'user.credentials.sent');
+
+        } catch (\Exception $e) {
+            Log::error('Mail gönderme hatası:', [
+                'error' => $e->getMessage(),
+                'user_id' => $userId,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->with('error', 'user.credentials.error');
+        }
     }
 }

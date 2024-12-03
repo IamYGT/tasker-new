@@ -1,41 +1,75 @@
-import './bootstrap';
-import '../css/app.css';
 import 'react-toastify/dist/ReactToastify.css';
+import '../css/app.css';
+import './bootstrap';
 
-import { createRoot } from 'react-dom/client';
+import { PageProps } from '@/types';
+import { getTheme, setTheme } from '@/Utils/themeManager';
+import { ErrorBag, Errors } from '@inertiajs/core';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-import { getTheme, setTheme } from '@/Utils/themeManager';
-import { TranslationProvider } from './Contexts/TranslationContext';
-import { Page } from '@inertiajs/core';
-import { ErrorBag, Errors } from '@inertiajs/core';
-import { PageProps } from '@/types';
+import { createRoot } from 'react-dom/client';
 import { ToastContainer } from 'react-toastify';
+import { TranslationProvider } from './Contexts/TranslationContext';
 
-const appName = window.document.getElementsByTagName('title')[0]?.innerText || 'Laravel';
+// ScrollManager tipini import et
+import type { ScrollManager } from '@/types/global';
+
+const appName =
+    window.document.getElementsByTagName('title')[0]?.innerText || 'Laravel';
+
+// Scroll yönetimi için util fonksiyonları
+const scrollManager: ScrollManager = {
+    position: 0,
+    enable() {
+        const scrollY = this.position;
+        document.body.classList.remove('modal-open');
+        window.scrollTo(0, scrollY);
+    },
+    disable() {
+        this.position = window.scrollY;
+        document.body.classList.add('modal-open');
+    },
+};
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
-    resolve: (name) => resolvePageComponent(`./Pages/${name}.tsx`, import.meta.glob('./Pages/**/*.tsx')),
+    resolve: (name) =>
+        resolvePageComponent(
+            `./Pages/${name}.tsx`,
+            import.meta.glob('./Pages/**/*.tsx'),
+        ),
     setup({ el, App, props }) {
         const root = createRoot(el);
 
         setTheme(getTheme());
+
+        // Global scroll yönetimi
+        window.scrollManager = scrollManager;
+
         root.render(
             <App {...props}>
-                {({ Component, props, key }: { 
-                    Component: React.ComponentType; 
-                    props: PageProps<any> & { errors: Errors & ErrorBag }; 
-                    key: React.Key; 
+                {({
+                    Component,
+                    props,
+                    key,
+                }: {
+                    Component: React.ComponentType;
+                    props: PageProps<Record<string, unknown>> & {
+                        errors: Errors & ErrorBag;
+                    };
+                    key: React.Key;
                 }) => (
-                    <TranslationProvider translations={props.translations} locale={props.locale}>
+                    <TranslationProvider
+                        translations={props.translations}
+                        locale={props.locale}
+                    >
                         <>
                             <Component {...props} key={key} />
                             <ToastContainer />
                         </>
                     </TranslationProvider>
                 )}
-            </App>
+            </App>,
         );
     },
     progress: {

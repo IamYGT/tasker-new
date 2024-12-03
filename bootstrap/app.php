@@ -12,9 +12,11 @@ use App\Http\Middleware\{
     AdminMiddleware,
     UserMiddleware,
     RedirectBasedOnRole,
-    StorageAccessMiddleware
+    StorageAccessMiddleware,
+    VerifyCsrfToken
 };
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use App\Console\Commands\UpdateTransactionUsdAmounts;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,16 +24,23 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withCommands([
+        UpdateTransactionUsdAmounts::class
+    ])
     ->withMiddleware(function (Middleware $middleware) {
-        // Web Middleware Grubu
         $middleware->web(append: [
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            VerifyCsrfToken::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
         // Locale Middleware
         $middleware->append(LocaleMiddleware::class);
-        
+
         // Şifrelenmeyecek Cookie'ler
         $middleware->encryptCookies(except: [
             'language',

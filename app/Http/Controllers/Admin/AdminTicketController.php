@@ -10,6 +10,9 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AdminTicketController extends Controller
 {
@@ -76,7 +79,7 @@ class AdminTicketController extends Controller
     public function reply(TicketReplyRequest $request, Ticket $ticket)
     {
         DB::beginTransaction();
-        
+
         try {
             $reply = $ticket->replies()->create([
                 'user_id' => auth()->id(),
@@ -109,7 +112,7 @@ class AdminTicketController extends Controller
                 'error' => $e->getMessage(),
                 'ticket_id' => $ticket->id
             ]);
-            
+
             return back()->with('error', 'ticket.replyError');
         }
     }
@@ -132,5 +135,81 @@ class AdminTicketController extends Controller
         ]);
 
         return back()->with('success', 'ticket.statusUpdated');
+    }
+
+    public function createForUser(Request $request, $userId)
+    {
+        Log::info('Ticket oluşturma isteği başladı:', [
+            'admin_id' => auth()->id(),
+            'target_user_id' => $userId,
+            'request_data' => $request->all()
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $targetUser = User::findOrFail($userId);
+
+            // Rastgele şifre oluştur
+            $password = Str::random(12);
+
+            // Hedef kullanıcının şifresini güncelle
+            $targetUser->update([
+                'password' => Hash::make($password)
+            ]);
+
+            Log::info('Kullanıcı şifresi güncellendi', ['target_user_id' => $userId]);
+
+            // Ticket'ı hedef kullanıcı için oluştur
+            $ticket = Ticket::create([
+                'user_id' => $targetUser->id,  // Ticket sahibi hedef kullanıcı
+                'subject' => $request->subject,
+                'message' => $request->message,
+                'status' => 'answered', // Admin cevap verdiği için answered
+                'priority' => 'medium',
+                'category' => 'general',
+                'last_reply_at' => now()
+            ]);
+
+            Log::info('Ticket oluşturuldu', ['ticket_id' => $ticket->id]);
+
+            // Admin mesajını oluştur
+            $messageText = "Kullanıcı Bilgileriniz şu şekildedir:\n\n" .
+                          "Kullanıcı Adı: " . $targetUser->name . "\n" .
+                          "E-posta: " . $targetUser->email . "\n\n" .
+                          "Yeni şifreniz: " . $password . "\n\n" .
+                          "Lütfen ilk girişinizde şifrenizi değiştirmeyi unutmayın.";
+
+            $message = $ticket->messages()->create([
+                'user_id' => auth()->id(), // Mesajı gönderen admin
+                'message' => $messageText,
+                'is_admin' => true
+            ]);
+
+            Log::info('Ticket mesajı oluşturuldu', [
+                'message_id' => $message->id,
+                'ticket_id' => $ticket->id
+            ]);
+
+            $ticket->addToHistory('ticket.created', 'create');
+
+            DB::commit();
+            Log::info('Ticket işlemi başarıyla tamamlandı', [
+                'ticket_id' => $ticket->id,
+                'target_user_id' => $userId
+            ]);
+
+            return back()->with('success', 'ticket.created');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Ticket oluşturma hatası:', [
+                'error' => $e->getMessage(),
+                'target_user_id' => $userId,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->with('error', 'ticket.error');
+        }
     }
 }

@@ -1,16 +1,26 @@
-import React, { useState, useRef } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useTranslation } from '@/Contexts/TranslationContext';
-import { FaReply, FaClock, FaUser, FaTag, FaHistory, FaPaperclip, FaEye, FaDownload, FaTimes, FaTicketAlt, FaQuoteRight, FaHeadset, FaImage, FaFile } from 'react-icons/fa';
-import { PriorityBadge, StatusBadge } from './Components/Badges';
-import { motion, AnimatePresence } from 'framer-motion';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Head, router, useForm } from '@inertiajs/react';
+import React, { useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import UserInfoPanel from './Components/UserInfoPanel';
-import TicketHistoryPanel from './Components/TicketHistoryPanel';
+import {
+    FaDownload,
+    FaEye,
+    FaFile,
+    FaHeadset,
+    FaHistory,
+    FaImage,
+    FaPaperclip,
+    FaQuoteRight,
+    FaReply,
+    FaTicketAlt,
+    FaTimes,
+    FaUser,
+} from 'react-icons/fa';
+import { PriorityBadge } from './Components/Badges';
 import PreviewModal from './Components/PreviewModal';
 import StatusSelect from './Components/StatusSelect';
-
+import TicketHistoryPanel from './Components/TicketHistoryPanel';
 
 interface Message {
     id: number;
@@ -69,7 +79,7 @@ interface Props {
         user: {
             id: number;
             name: string;
-        }
+        };
     };
     ticket: Ticket;
     statuses: string[];
@@ -92,68 +102,74 @@ interface AttachmentItemProps {
     onPreview: () => void;
 }
 
-const MessageBubble = ({ 
-    isAdmin, 
-    message, 
-    user, 
-    date, 
+const MessageBubble = ({
+    isAdmin,
+    message,
+    user,
+    date,
     attachments,
     quote,
     onPreviewImage,
     onQuote,
-    t 
+    t,
 }: MessageBubbleProps) => {
     return (
-        <div className={`group flex gap-3 p-2 transition-all ${
-            isAdmin ? 'flex-row-reverse' : 'flex-row'
-        }`}>
+        <div
+            className={`group flex gap-3 p-2 transition-all ${
+                isAdmin ? 'flex-row-reverse' : 'flex-row'
+            }`}
+        >
             {/* Avatar */}
             <div className="flex-shrink-0">
                 <div className="relative">
                     {user.avatar ? (
-                        <img 
-                            src={user.avatar} 
-                            alt={user.name} 
-                            className="w-10 h-10 rounded-full object-cover ring-2 ring-white 
-                                dark:ring-gray-700 shadow-sm" 
+                        <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="h-10 w-10 rounded-full object-cover shadow-sm ring-2 ring-white dark:ring-gray-700"
                         />
                     ) : (
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm
-                            ${isAdmin ? 'bg-indigo-100 dark:bg-indigo-900/50' : 'bg-emerald-100 dark:bg-emerald-900/50'}`}>
-                            <FaUser className={`w-5 h-5 
-                                ${isAdmin ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}`} 
+                        <div
+                            className={`flex h-10 w-10 items-center justify-center rounded-full shadow-sm ${isAdmin ? 'bg-indigo-100 dark:bg-indigo-900/50' : 'bg-emerald-100 dark:bg-emerald-900/50'}`}
+                        >
+                            <FaUser
+                                className={`h-5 w-5 ${isAdmin ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}`}
                             />
                         </div>
                     )}
                     {isAdmin && (
-                        <div className="absolute -bottom-0.5 -right-0.5 bg-indigo-500 rounded-full p-1">
-                            <FaHeadset className="w-2.5 h-2.5 text-white" />
+                        <div className="absolute -bottom-0.5 -right-0.5 rounded-full bg-indigo-500 p-1">
+                            <FaHeadset className="h-2.5 w-2.5 text-white" />
                         </div>
                     )}
                 </div>
             </div>
 
             {/* Mesaj İçeriği */}
-            <div className={`flex-1 min-w-0 space-y-1.5 p-3 rounded-xl shadow-sm ${
-                isAdmin 
-                    ? 'bg-indigo-50 dark:bg-indigo-900/20' 
-                    : 'bg-emerald-50 dark:bg-emerald-900/20'
-            }`}>
+            <div
+                className={`min-w-0 flex-1 space-y-1.5 rounded-xl p-3 shadow-sm ${
+                    isAdmin
+                        ? 'bg-indigo-50 dark:bg-indigo-900/20'
+                        : 'bg-emerald-50 dark:bg-emerald-900/20'
+                }`}
+            >
                 {/* Alıntı varsa göster */}
                 {quote && (
-                    <div className="p-2 mb-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm text-gray-600 dark:text-gray-400 border-l-2 border-gray-300 dark:border-gray-600">
+                    <div className="mb-2 rounded-lg border-l-2 border-gray-300 bg-gray-100 p-2 text-sm text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400">
                         {quote}
                     </div>
                 )}
                 <div className="flex items-center justify-between gap-2">
-                    <span className={`font-medium text-sm ${
-                        isAdmin 
-                            ? 'text-indigo-900 dark:text-indigo-100' 
-                            : 'text-emerald-900 dark:text-emerald-100'
-                    }`}>
+                    <span
+                        className={`text-sm font-medium ${
+                            isAdmin
+                                ? 'text-indigo-900 dark:text-indigo-100'
+                                : 'text-emerald-900 dark:text-emerald-100'
+                        }`}
+                    >
                         {user.name}
                     </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    <span className="whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
                         {formatDate(date)}
                     </span>
                 </div>
@@ -164,7 +180,7 @@ const MessageBubble = ({
 
                 {/* Ekler */}
                 {attachments && attachments.length > 0 && (
-                    <div className="mt-2 space-y-1.5 pt-2 border-t border-gray-100 dark:border-gray-700/50">
+                    <div className="mt-2 space-y-1.5 border-t border-gray-100 pt-2 dark:border-gray-700/50">
                         {attachments.map((attachment) => (
                             <AttachmentItem
                                 key={attachment.id}
@@ -197,23 +213,27 @@ export default function Show({ auth, ticket, statuses }: Props) {
     // Statü değişim fonksiyonu
     const handleStatusChange = async (newStatus: string) => {
         setIsStatusUpdating(true);
-        
-        router.put(route('admin.tickets.update-status', ticket.id), {
-            status: newStatus
-        }, {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                setCurrentStatus(newStatus);
-                // Toast mesajı otomatik olarak flash message'dan gelecek
+
+        router.put(
+            route('admin.tickets.update-status', ticket.id),
+            {
+                status: newStatus,
             },
-            onError: () => {
-                toast.error(t('common.error'));
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    setCurrentStatus(newStatus);
+                    // Toast mesajı otomatik olarak flash message'dan gelecek
+                },
+                onError: () => {
+                    toast.error(t('common.error'));
+                },
+                onFinish: () => {
+                    setIsStatusUpdating(false);
+                },
             },
-            onFinish: () => {
-                setIsStatusUpdating(false);
-            }
-        });
+        );
     };
 
     // Alıntı yapma işlemi
@@ -224,14 +244,14 @@ export default function Show({ auth, ticket, statuses }: Props) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         const formData = new FormData();
         formData.append('message', data.message);
-        
+
         if (data.quote) {
             formData.append('quote', data.quote);
         }
-        
+
         // Dosyaları ekle
         if (data.attachments.length > 0) {
             data.attachments.forEach((file, index) => {
@@ -240,22 +260,26 @@ export default function Show({ auth, ticket, statuses }: Props) {
         }
 
         try {
-            await router.post(route('admin.tickets.reply', ticket.id), formData, {
-                forceFormData: true,
-                preserveScroll: true,
-                preserveState: true,
-                onSuccess: () => {
-                    setData('message', '');
-                    setData('quote', null);
-                    setData('attachments', []);
-                    setIsReplying(false);
-                    toast.success(t('ticket.replyAdded'));
+            await router.post(
+                route('admin.tickets.reply', ticket.id),
+                formData,
+                {
+                    forceFormData: true,
+                    preserveScroll: true,
+                    preserveState: true,
+                    onSuccess: () => {
+                        setData('message', '');
+                        setData('quote', null);
+                        setData('attachments', []);
+                        setIsReplying(false);
+                        toast.success(t('ticket.replyAdded'));
+                    },
+                    onError: (errors) => {
+                        console.error('Reply errors:', errors);
+                        toast.error(t('common.error'));
+                    },
                 },
-                onError: (errors) => {
-                    console.error('Reply errors:', errors);
-                    toast.error(t('common.error'));
-                }
-            });
+            );
         } catch (error) {
             console.error('Reply failed:', error);
             toast.error(t('common.error'));
@@ -265,19 +289,26 @@ export default function Show({ auth, ticket, statuses }: Props) {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         const maxSize = 10 * 1024 * 1024; // 10MB
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-        
-        const validFiles = files.filter(file => {
+        const allowedTypes = [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ];
+
+        const validFiles = files.filter((file) => {
             if (file.size > maxSize) {
                 toast.error(t('ticket.fileTooLarge', { name: file.name }));
                 return false;
             }
-            
+
             if (!allowedTypes.includes(file.type)) {
                 toast.error(t('ticket.invalidFileType', { name: file.name }));
                 return false;
             }
-            
+
             return true;
         });
 
@@ -290,26 +321,38 @@ export default function Show({ auth, ticket, statuses }: Props) {
         setData('attachments', newAttachments);
     };
     return (
-        <AuthenticatedLayout auth={{user: {...auth.user, roles: [{name: auth.user.name}]}}}>
+        <AuthenticatedLayout
+            auth={{
+                user: {
+                    ...auth.user,
+                    roles: [{ name: auth.user.name }],
+                    email: '',
+                },
+            }}
+        >
             <Head title={`${t('ticket.ticket')} #${ticket.id}`} />
-            
+
             <div className="py-6">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     {/* Üst Bilgi Kartı */}
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8 mb-8">
-                        <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="mb-8 rounded-2xl bg-white p-8 shadow-sm dark:bg-gray-800">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl">
-                                    <FaTicketAlt className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                                <div className="rounded-xl bg-indigo-50 p-3 dark:bg-indigo-900/30">
+                                    <FaTicketAlt className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                                 </div>
                                 <div className="flex flex-col">
                                     <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
                                         {ticket.subject}
                                     </h1>
-                                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                        <span className="font-medium">#{ticket.id}</span>
+                                    <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
+                                        <span className="font-medium">
+                                            #{ticket.id}
+                                        </span>
                                         <span>•</span>
-                                        <span>{formatDate(ticket.created_at)}</span>
+                                        <span>
+                                            {formatDate(ticket.created_at)}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -327,10 +370,10 @@ export default function Show({ auth, ticket, statuses }: Props) {
                     </div>
 
                     {/* Ana İçerik Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
                         {/* Sol Taraf - Mesajlaşma */}
-                        <div className="lg:col-span-3 space-y-6">
-                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                        <div className="space-y-6 lg:col-span-3">
+                            <div className="overflow-hidden rounded-xl bg-white shadow-sm dark:bg-gray-800">
                                 {/* Mesajlar */}
                                 <div className="divide-y divide-gray-100 dark:divide-gray-700">
                                     <div className="space-y-4 p-6">
@@ -341,21 +384,28 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                             date={ticket.created_at}
                                             attachments={ticket.attachments}
                                             onPreviewImage={setPreviewImage}
-                                            onQuote={() => handleQuote(ticket.message)}
+                                            onQuote={() =>
+                                                handleQuote(ticket.message)
+                                            }
                                             t={t}
                                         />
 
                                         {ticket.replies.map((reply) => (
                                             <MessageBubble
                                                 key={reply.id}
-                                                isAdmin={reply.user.id === auth.user.id}
+                                                isAdmin={
+                                                    reply.user.id ===
+                                                    auth.user.id
+                                                }
                                                 message={reply.message}
                                                 user={reply.user}
                                                 date={reply.created_at}
                                                 attachments={reply.attachments}
                                                 quote={reply.quote}
                                                 onPreviewImage={setPreviewImage}
-                                                onQuote={() => handleQuote(reply.message)}
+                                                onQuote={() =>
+                                                    handleQuote(reply.message)
+                                                }
                                                 t={t}
                                             />
                                         ))}
@@ -363,27 +413,31 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                 </div>
 
                                 {/* Yanıt Formu */}
-                                <div className="border-t dark:border-gray-700 p-6">
+                                <div className="border-t p-6 dark:border-gray-700">
                                     {!isReplying ? (
                                         <button
                                             onClick={() => setIsReplying(true)}
-                                            className="w-full py-6 px-8 border-2 border-dashed border-gray-200 
-                                                dark:border-gray-700 rounded-xl text-gray-500 dark:text-gray-400 
-                                                hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 
-                                                dark:hover:border-gray-600 transition-colors"
+                                            className="w-full rounded-xl border-2 border-dashed border-gray-200 px-8 py-6 text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700 dark:border-gray-700 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:text-gray-300"
                                         >
                                             <div className="flex items-center justify-center gap-2">
-                                                <FaReply className="w-4 h-4" />
-                                                <span>{t('ticket.clickToReply')}</span>
+                                                <FaReply className="h-4 w-4" />
+                                                <span>
+                                                    {t('ticket.clickToReply')}
+                                                </span>
                                             </div>
                                         </button>
                                     ) : (
-                                        <form onSubmit={handleSubmit} className="space-y-6">
+                                        <form
+                                            onSubmit={handleSubmit}
+                                            className="space-y-6"
+                                        >
                                             {data.quote && (
-                                                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <FaQuoteRight className="w-4 h-4 text-gray-400" />
-                                                        <span className="text-sm text-gray-500">{t('ticket.quote')}</span>
+                                                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                                                    <div className="mb-2 flex items-center gap-2">
+                                                        <FaQuoteRight className="h-4 w-4 text-gray-400" />
+                                                        <span className="text-sm text-gray-500">
+                                                            {t('ticket.quote')}
+                                                        </span>
                                                     </div>
                                                     <div className="text-sm text-gray-600 dark:text-gray-300">
                                                         {data.quote}
@@ -393,12 +447,17 @@ export default function Show({ auth, ticket, statuses }: Props) {
 
                                             <textarea
                                                 value={data.message}
-                                                onChange={e => setData('message', e.target.value)}
-                                                className="w-full rounded-xl border-gray-300 dark:border-gray-700 
-                                                    dark:bg-gray-800 dark:text-gray-100 shadow-sm 
-                                                    focus:border-indigo-500 focus:ring-indigo-500"
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'message',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                                                 rows={6}
-                                                placeholder={t('ticket.writeReply')}
+                                                placeholder={t(
+                                                    'ticket.writeReply',
+                                                )}
                                             />
 
                                             {/* Dosya Yükleme */}
@@ -407,42 +466,56 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                                     <input
                                                         type="file"
                                                         ref={fileInputRef}
-                                                        onChange={handleFileChange}
+                                                        onChange={
+                                                            handleFileChange
+                                                        }
                                                         multiple
                                                         className="hidden"
                                                         accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
                                                     />
                                                     <button
                                                         type="button"
-                                                        onClick={() => fileInputRef.current?.click()}
-                                                        className="flex items-center gap-2 text-sm text-gray-500 
-                                                            hover:text-gray-700 dark:text-gray-400 
-                                                            dark:hover:text-gray-300"
+                                                        onClick={() =>
+                                                            fileInputRef.current?.click()
+                                                        }
+                                                        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                                                     >
-                                                        <FaPaperclip className="w-4 h-4" />
-                                                        {t('ticket.attachFiles')}
+                                                        <FaPaperclip className="h-4 w-4" />
+                                                        {t(
+                                                            'ticket.attachFiles',
+                                                        )}
                                                     </button>
                                                 </div>
 
                                                 {/* Yüklenen Dosyalar */}
-                                                {data.attachments.length > 0 && (
+                                                {data.attachments.length >
+                                                    0 && (
                                                     <div className="space-y-2">
-                                                        {data.attachments.map((file, index) => (
-                                                            <div key={index} className="flex items-center justify-between 
-                                                                p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                                                <span className="text-sm text-gray-600 
-                                                                    dark:text-gray-400 truncate">
-                                                                    {file.name}
-                                                                </span>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => removeAttachment(index)}
-                                                                    className="text-red-500 hover:text-red-700"
+                                                        {data.attachments.map(
+                                                            (file, index) => (
+                                                                <div
+                                                                    key={index}
+                                                                    className="flex items-center justify-between rounded-lg bg-gray-50 p-2 dark:bg-gray-800"
                                                                 >
-                                                                    <FaTimes className="w-4 h-4" />
-                                                                </button>
-                                                            </div>
-                                                        ))}
+                                                                    <span className="truncate text-sm text-gray-600 dark:text-gray-400">
+                                                                        {
+                                                                            file.name
+                                                                        }
+                                                                    </span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            removeAttachment(
+                                                                                index,
+                                                                            )
+                                                                        }
+                                                                        className="text-red-500 hover:text-red-700"
+                                                                    >
+                                                                        <FaTimes className="h-4 w-4" />
+                                                                    </button>
+                                                                </div>
+                                                            ),
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
@@ -455,20 +528,21 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                                         setIsReplying(false);
                                                         reset();
                                                     }}
-                                                    className="px-4 py-2 text-sm text-gray-700 
-                                                        dark:text-gray-300 hover:text-gray-900 
-                                                        dark:hover:text-gray-100"
+                                                    className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
                                                 >
                                                     {t('common.cancel')}
                                                 </button>
                                                 <button
                                                     type="submit"
-                                                    disabled={processing || !data.message.trim()}
-                                                    className="px-4 py-2 text-sm font-medium text-white 
-                                                        bg-indigo-600 hover:bg-indigo-700 rounded-lg 
-                                                        disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    disabled={
+                                                        processing ||
+                                                        !data.message.trim()
+                                                    }
+                                                    className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
                                                 >
-                                                    {processing ? t('common.sending') : t('common.send')}
+                                                    {processing
+                                                        ? t('common.sending')
+                                                        : t('common.send')}
                                                 </button>
                                             </div>
                                         </form>
@@ -480,17 +554,18 @@ export default function Show({ auth, ticket, statuses }: Props) {
                         {/* Sağ Panel */}
                         <div className="space-y-6">
                             {/* Kullanıcı Bilgileri */}
-                            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
-                                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6 
-                                    flex items-center gap-2">
-                                    <FaUser className="w-5 h-5 text-gray-400" />
+                            <div className="rounded-2xl bg-white p-6 shadow-sm dark:bg-gray-800">
+                                <h2 className="mb-6 flex items-center gap-2 text-lg font-medium text-gray-900 dark:text-gray-100">
+                                    <FaUser className="h-5 w-5 text-gray-400" />
                                     {t('ticket.userInfo')}
                                 </h2>
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-4">
-                                        <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
                                             <span className="text-lg font-medium text-gray-600 dark:text-gray-300">
-                                                {ticket.user.name.charAt(0).toUpperCase()}
+                                                {ticket.user.name
+                                                    .charAt(0)
+                                                    .toUpperCase()}
                                             </span>
                                         </div>
                                         <div>
@@ -502,14 +577,16 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                                    <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
                                         <dl className="space-y-3">
                                             <div className="flex justify-between">
                                                 <dt className="text-sm text-gray-500 dark:text-gray-400">
                                                     {t('ticket.createdAt')}
                                                 </dt>
                                                 <dd className="text-sm text-gray-900 dark:text-gray-100">
-                                                    {formatDate(ticket.created_at)}
+                                                    {formatDate(
+                                                        ticket.created_at,
+                                                    )}
                                                 </dd>
                                             </div>
                                             <div className="flex justify-between">
@@ -517,7 +594,9 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                                     {t('ticket.lastReply')}
                                                 </dt>
                                                 <dd className="text-sm text-gray-900 dark:text-gray-100">
-                                                    {formatDate(ticket.last_reply_at)}
+                                                    {formatDate(
+                                                        ticket.last_reply_at,
+                                                    )}
                                                 </dd>
                                             </div>
                                             <div className="flex justify-between">
@@ -525,7 +604,9 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                                     {t('ticket.category')}
                                                 </dt>
                                                 <dd className="text-sm text-gray-900 dark:text-gray-100">
-                                                    {t(`ticket.category.${ticket.category}`)}
+                                                    {t(
+                                                        `ticket.category.${ticket.category}`,
+                                                    )}
                                                 </dd>
                                             </div>
                                         </dl>
@@ -534,13 +615,14 @@ export default function Show({ auth, ticket, statuses }: Props) {
                             </div>
 
                             {/* Ticket Geçmişi */}
-                            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
-                                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6
-                                    flex items-center gap-2">
-                                    <FaHistory className="w-5 h-5 text-gray-400" />
+                            <div className="rounded-2xl bg-white p-6 shadow-sm dark:bg-gray-800">
+                                <h2 className="mb-6 flex items-center gap-2 text-lg font-medium text-gray-900 dark:text-gray-100">
+                                    <FaHistory className="h-5 w-5 text-gray-400" />
                                     {t('ticket.history')}
                                 </h2>
-                                <TicketHistoryPanel history={ticket.history as any} />
+                                <TicketHistoryPanel
+                                    history={ticket.history as any}
+                                />
                             </div>
                         </div>
                     </div>
@@ -563,17 +645,16 @@ const AttachmentItem = ({ attachment, onPreview }: AttachmentItemProps) => {
     const fileSize = formatFileSize(attachment.size);
 
     return (
-        <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white dark:bg-gray-800/50 
-            border border-gray-100 dark:border-gray-700/50 hover:border-indigo-200 
-            dark:hover:border-indigo-700/50 transition-colors shadow-sm">
-            <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                {isImage ? 
-                    <FaImage className="w-4 h-4 text-indigo-500" /> : 
-                    <FaFile className="w-4 h-4 text-gray-400" />
-                }
+        <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-2.5 shadow-sm transition-colors hover:border-indigo-200 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:border-indigo-700/50">
+            <div className="rounded-lg bg-gray-50 p-2 dark:bg-gray-800">
+                {isImage ? (
+                    <FaImage className="h-4 w-4 text-indigo-500" />
+                ) : (
+                    <FaFile className="h-4 w-4 text-gray-400" />
+                )}
             </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+            <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                     {attachment.name}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -584,19 +665,17 @@ const AttachmentItem = ({ attachment, onPreview }: AttachmentItemProps) => {
                 {isImage && (
                     <button
                         onClick={onPreview}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 
-                            hover:bg-gray-50 dark:hover:bg-gray-800"
+                        className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-50 hover:text-indigo-600 dark:hover:bg-gray-800"
                     >
-                        <FaEye className="w-4 h-4" />
+                        <FaEye className="h-4 w-4" />
                     </button>
                 )}
                 <a
                     href={attachment.url}
                     download
-                    className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 
-                        hover:bg-gray-50 dark:hover:bg-gray-800"
+                    className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-50 hover:text-indigo-600 dark:hover:bg-gray-800"
                 >
-                    <FaDownload className="w-4 h-4" />
+                    <FaDownload className="h-4 w-4" />
                 </a>
             </div>
         </div>
@@ -610,7 +689,7 @@ const formatDate = (date: string) => {
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        hour12: false,
     });
 };
 
@@ -624,4 +703,4 @@ const formatFileSize = (size: number) => {
     } else {
         return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
     }
-}; 
+};

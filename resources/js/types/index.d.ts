@@ -28,7 +28,9 @@ export interface CustomPageProps {
     locale: string;
 }
 
-export type PageProps<T = {}> = InertiaPageProps<CustomPageProps & T>;
+export type PageProps<T = Record<string, unknown>> = InertiaPageProps<
+    CustomPageProps & T
+>;
 
 export interface Role {
     id: number;
@@ -37,21 +39,53 @@ export interface Role {
 
 export interface Transaction {
     id: number;
-    reference_id: string;
-    amount: number;
+    amount: string | number;
+    amount_usd: string | number;
+    exchange_rate: string | number | null;
     type: TransactionType;
     status: TransactionStatus;
     description: string;
-    bank_account: string;
+    bank_account?: string;
+    reference_id: string;
     created_at: string;
     updated_at: string;
     notes?: string;
-    user: User;
+    user: {
+        id: number;
+        name: string;
+        email: string;
+        roles?: Array<{ name: string }>;
+    };
 }
 
 export type TransactionType = 'withdrawal' | 'deposit' | 'transfer';
 
-export type TransactionStatus = 'pending' | 'completed' | 'cancelled';
+export type TransactionStatus =
+    | 'pending'
+    | 'waiting'
+    | 'completed'
+    | 'cancelled'
+    | 'rejected'
+    | 'approved';
+
+export interface TransactionFormData {
+    status: TransactionStatus;
+    notes: string;
+}
+
+export interface TransactionStats {
+    totalAmount: string | number;
+    lastUpdate: string;
+    historyCount: number;
+}
+
+export interface HistoryItem {
+    type: 'status_change' | 'notes_update' | 'info';
+    messageKey: string;
+    params?: Record<string, string>;
+    date: string;
+    user?: string;
+}
 
 export interface TransactionFilters {
     search?: string;
@@ -66,12 +100,14 @@ export interface PaginatedData<T> {
         label: string;
         active: boolean;
     }[];
-    current_page: number;
-    last_page: number;
-    from: number;
-    to: number;
-    total: number;
-    per_page: number;
+    meta: {
+        current_page: number;
+        last_page: number;
+        from: number;
+        to: number;
+        total: number;
+        per_page: number;
+    };
 }
 
 export interface TransactionIndexPageProps extends PageProps {
@@ -84,4 +120,20 @@ export interface TransactionIndexPageProps extends PageProps {
 export interface TransactionEditPageProps extends PageProps {
     transaction: Transaction;
     statuses: TransactionStatus[];
+}
+
+export interface RecentActivity {
+    id: number;
+    reference_id: string;
+    amount: number | null;
+    amount_usd: number | null;
+    exchange_rate: number | null;
+    type: TransactionType;
+    status: TransactionStatus;
+    description: string;
+    bank_account: string;
+    created_at: string;
+    updated_at: string;
+    notes?: string;
+    user: User;
 }
