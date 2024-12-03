@@ -22,7 +22,7 @@ class UserIbanController extends Controller
         $banksJson = file_get_contents(resource_path('js/Data/turkey_banks.json'));
         $banks = json_decode($banksJson, true)['banks'];
 
-        return Inertia::render('Profile/UserIbanIndex', [
+        return Inertia::render('Profile/Ibans/UserIbanIndex', [
             'ibans' => $ibans,
             'banks' => $banks,
         ]);
