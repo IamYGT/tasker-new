@@ -16,4 +16,4 @@ class AdminSettingController extends Controller
     {
         // Ayarları güncelleme mantığı
     }
-} 
+}

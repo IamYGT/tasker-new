@@ -72,4 +72,12 @@ class Ticket extends Model
             ]);
         }
     }
+
+    /**
+     * Biletin mesajları ile olan ilişkisi
+     */
+    public function messages()
+    {
+        return $this->hasMany(TicketMessage::class);
+    }
 } 

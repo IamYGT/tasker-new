@@ -10,10 +10,11 @@ class LanguageWord extends Model
 
 
     protected $table = 'dil_kelimeler';
+    protected $primaryKey = 'id';
     public $timestamps = false;
 
     protected $fillable = [
-      'adi', 'anahtar', 'deger', 'kod'
+      'name', 'anahtar', 'deger', 'kod'
     ];
 
     public function toSearchableArray()

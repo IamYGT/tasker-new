@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Role;
 use App\Helpers\Helpers;
 
-class UserController extends Controller
+class AdminUserController extends Controller
 {
     protected $helpers;
 
@@ -53,21 +54,26 @@ class UserController extends Controller
 
     public function index()
     {
+        $users = User::with('roles')->get();
+
+        // Şifreleri oku
+        $passwordsFile = storage_path('app/passwords.json');
+        $passwords = [];
+
+        if (file_exists($passwordsFile)) {
+            $passwords = json_decode(file_get_contents($passwordsFile), true) ?? [];
+        }
+
+        // Kullanıcı listesine şifreleri ekle
+        $users = $users->map(function ($user) use ($passwords) {
+            $userData = $user->toArray();
+            $userData['current_password'] = $passwords[$user->id]['password'] ?? null;
+            $userData['password_updated_at'] = $passwords[$user->id]['created_at'] ?? null;
+            return $userData;
+        });
+
         return Inertia::render('Admin/Users/Index', [
-            'users' => User::with('roles')->get()->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'created_at' => $user->created_at,
-                    'roles' => $user->roles->map(function ($role) {
-                        return [
-                            'id' => $role->id,
-                            'name' => $role->name
-                        ];
-                    })
-                ];
-            })
+            'users' => $users
         ]);
     }
 
@@ -118,7 +124,7 @@ class UserController extends Controller
             ->with('success', 'Kullanıcı başarıyla silindi.');
     }
 
-    public function autoResetPassword(User $user) 
+    public function autoResetPassword(User $user)
     {
         try {
             $newPassword = Str::random(10);
@@ -181,4 +187,4 @@ class UserController extends Controller
 
         return redirect()->back()->with('success', 'Rol başarıyla atandı.');
     }
-} 
+}

@@ -27,7 +27,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property bool $social_login
  * @property string|null $last_social_login
  * @property bool $social_registration
- * @property int|null $role_id
+ * @property bool $is_active
+ * @property string|null $remember_token
  * @property \DateTime|null $email_verified_at
  * @property \DateTime $created_at
  * @property \DateTime $updated_at
@@ -64,7 +65,6 @@ class User extends Authenticatable
         'social_login',
         'last_social_login',
         'social_registration',
-        'role_id',
         'is_active',
     ];
 

@@ -10,7 +10,7 @@ class Language extends Model
     protected $primaryKey = 'dil_id';
     public $timestamps = false;
 
-protected $fillable = [
-    'dil_baslik', 'dil_kod', 'dil_varsayilan', 'dil_durum'
-];
+    protected $fillable = [
+        'dil_baslik', 'dil_resim', 'dil_kod', 'dil_varsayilan', 'dil_durum'
+    ];
 }

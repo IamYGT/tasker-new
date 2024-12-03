@@ -57,7 +57,7 @@ class Transaction extends Model
         'amount' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
-        'history' => 'array'
+        'history' => 'json'
     ];
 
     // İlişkiler
