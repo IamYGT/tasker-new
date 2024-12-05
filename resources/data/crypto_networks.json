@@ -1,0 +1,76 @@
+{
+    "networks": [
+        {
+            "id": "eth",
+            "name": "Ethereum",
+            "symbol": "ETH",
+            "chain": "ERC20",
+            "icon": "ethereum.svg",
+            "validation_regex": "^0x[a-fA-F0-9]{40}$",
+            "explorer_url": "https://etherscan.io/address/"
+        },
+        {
+            "id": "bsc",
+            "name": "BNB Smart Chain",
+            "symbol": "BSC",
+            "chain": "BEP20",
+            "icon": "binance.svg",
+            "validation_regex": "^0x[a-fA-F0-9]{40}$",
+            "explorer_url": "https://bscscan.com/address/"
+        },
+        {
+            "id": "btc",
+            "name": "Bitcoin",
+            "symbol": "BTC",
+            "chain": "BTC",
+            "icon": "bitcoin.svg",
+            "validation_regex": "^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^bc1[ac-hj-np-z02-9]{11,71}$",
+            "explorer_url": "https://blockchair.com/bitcoin/address/"
+        },
+        {
+            "id": "trx",
+            "name": "TRON",
+            "symbol": "TRX",
+            "chain": "TRC20",
+            "icon": "tron.svg",
+            "validation_regex": "^T[A-Za-z1-9]{33}$",
+            "explorer_url": "https://tronscan.org/#/address/"
+        },
+        {
+            "id": "matic",
+            "name": "Polygon",
+            "symbol": "MATIC",
+            "chain": "POLYGON",
+            "icon": "polygon.svg",
+            "validation_regex": "^0x[a-fA-F0-9]{40}$",
+            "explorer_url": "https://polygonscan.com/address/"
+        },
+        {
+            "id": "sol",
+            "name": "Solana",
+            "symbol": "SOL",
+            "chain": "SOL",
+            "icon": "solana.svg",
+            "validation_regex": "[1-9A-HJ-NP-Za-km-z]{32,44}",
+            "explorer_url": "https://solscan.io/account/"
+        },
+        {
+            "id": "avax",
+            "name": "Avalanche",
+            "symbol": "AVAX",
+            "chain": "AVAX C-Chain",
+            "icon": "avalanche.svg",
+            "validation_regex": "^0x[a-fA-F0-9]{40}$",
+            "explorer_url": "https://snowtrace.io/address/"
+        },
+        {
+            "id": "ada",
+            "name": "Cardano",
+            "symbol": "ADA",
+            "chain": "ADA",
+            "icon": "cardano.svg",
+            "validation_regex": "^addr1[a-zA-Z0-9]{98}$",
+            "explorer_url": "https://cardanoscan.io/address/"
+        }
+    ]
+}

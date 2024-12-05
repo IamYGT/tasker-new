@@ -1,15 +1,23 @@
-import React, { useEffect, useState, useCallback } from 'react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
-import NavLink from './NavLink';
-import {
-    MdDashboard, MdPerson, MdLogout, MdClose, MdGroup,
-    MdPayment, MdPending, MdMoneyOff, MdConfirmationNumber,
-    MdDescription, MdAnalytics, MdSettings, MdAccountBalance
-} from 'react-icons/md';
-import { motion, AnimatePresence } from 'framer-motion';
-import Tippy from '@tippyjs/react';
-import 'tippy.js/dist/tippy.css';
 import { useTranslation } from '@/Contexts/TranslationContext';
+import Tippy from '@tippyjs/react';
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+    MdAccountBalance,
+    MdAccountBalanceWallet,
+    MdClose,
+    MdConfirmationNumber,
+    MdDashboard,
+    MdGroup,
+    MdLogout,
+    MdMoneyOff,
+    MdPayment,
+    MdPending,
+    MdPerson,
+} from 'react-icons/md';
+import 'tippy.js/dist/tippy.css';
+import NavLink from './NavLink';
 
 // Menü öğesi tipi
 interface MenuItem {
@@ -23,33 +31,38 @@ const userMenuItems: MenuItem[] = [
     {
         name: 'sidebar.dashboard',
         route: 'dashboard',
-        icon: <MdDashboard className="w-5 h-5 sm:w-6 sm:h-6" />
+        icon: <MdDashboard className="h-5 w-5 sm:h-6 sm:w-6" />,
     },
     {
         name: 'sidebar.transactions',
         route: 'transactions.history',
-        icon: <MdPayment className="w-5 h-5 sm:w-6 sm:h-6" />
+        icon: <MdPayment className="h-5 w-5 sm:h-6 sm:w-6" />,
     },
     {
         name: 'sidebar.pendingTransactions',
         route: 'transactions.pending',
-        icon: <MdPending className="w-5 h-5 sm:w-6 sm:h-6" />
+        icon: <MdPending className="h-5 w-5 sm:h-6 sm:w-6" />,
     },
     {
         name: 'sidebar.withdrawals',
         route: 'withdrawal.request',
-        icon: <MdMoneyOff className="w-5 h-5 sm:w-6 sm:h-6" />
+        icon: <MdMoneyOff className="h-5 w-5 sm:h-6 sm:w-6" />,
     },
     {
         name: 'sidebar.tickets',
         route: 'tickets.index',
-        icon: <MdConfirmationNumber className="w-5 h-5 sm:w-6 sm:h-6" />
+        icon: <MdConfirmationNumber className="h-5 w-5 sm:h-6 sm:w-6" />,
     },
     {
         name: 'sidebar.ibans',
         route: 'profile.ibans',
-        icon: <MdAccountBalance className="h-5 w-5 sm:h-6 sm:w-6" />
-    }
+        icon: <MdAccountBalance className="h-5 w-5 sm:h-6 sm:w-6" />,
+    },
+    {
+        name: 'sidebar.cryptos',
+        route: 'profile.cryptos',
+        icon: <MdAccountBalanceWallet className="h-5 w-5 sm:h-6 sm:w-6" />,
+    },
 ];
 
 // Admin menü öğeleri
@@ -57,26 +70,23 @@ const adminMenuItems: MenuItem[] = [
     {
         name: 'sidebar.dashboard',
         route: 'admin.dashboard',
-        icon: <MdDashboard className="w-5 h-5 sm:w-6 sm:h-6" />
+        icon: <MdDashboard className="h-5 w-5 sm:h-6 sm:w-6" />,
     },
     {
         name: 'sidebar.userManagement',
         route: 'admin.users.index',
-        icon: <MdGroup className="w-5 h-5 sm:w-6 sm:h-6" />
+        icon: <MdGroup className="h-5 w-5 sm:h-6 sm:w-6" />,
     },
     {
         name: 'sidebar.transactions',
         route: 'admin.transactions.index',
-        icon: <MdPayment className="w-5 h-5 sm:w-6 sm:h-6" />
+        icon: <MdPayment className="h-5 w-5 sm:h-6 sm:w-6" />,
     },
     {
         name: 'sidebar.tickets',
         route: 'admin.tickets.index',
-        icon: <MdConfirmationNumber className="w-5 h-5 sm:w-6 sm:h-6" />
+        icon: <MdConfirmationNumber className="h-5 w-5 sm:h-6 sm:w-6" />,
     },
-
-
-
 ];
 
 interface SidebarProps {
@@ -109,29 +119,55 @@ const Sidebar: React.FC<SidebarProps> = ({
     }, [checkMobile]);
 
     const sidebarVariants = {
-        expanded: { width: '16rem', transition: { duration: 0.1, ease: 'easeInOut' } }, // Hızlandırıldı
-        collapsed: { width: '4.5rem', transition: { duration: 0.1, ease: 'easeInOut' } } // Hızlandırıldı
+        expanded: {
+            width: '16rem',
+            transition: { duration: 0.1, ease: 'easeInOut' },
+        }, // Hızlandırıldı
+        collapsed: {
+            width: '4.5rem',
+            transition: { duration: 0.1, ease: 'easeInOut' },
+        }, // Hızlandırıldı
     };
 
     const contentVariants = {
         expanded: { opacity: 1, x: 0, transition: { duration: 0.05 } }, // Hızlandırıldı
-        collapsed: { opacity: collapsed ? 1 : 0, x: collapsed ? 0 : -10, transition: { duration: 0.05 } } // Hızlandırıldı
+        collapsed: {
+            opacity: collapsed ? 1 : 0,
+            x: collapsed ? 0 : -10,
+            transition: { duration: 0.05 },
+        }, // Hızlandırıldı
     };
 
     const logoVariants = {
         expanded: { rotate: 0, scale: 1, transition: { duration: 0.1 } }, // Hızlandırıldı
-        collapsed: { rotate: 360, scale: 0.9, transition: { duration: 0.1 } } // Hızlandırıldı
+        collapsed: { rotate: 360, scale: 0.9, transition: { duration: 0.1 } }, // Hızlandırıldı
     };
 
     const buttonVariants = {
-        expanded: { width: '100%', justifyContent: 'flex-start', padding: '0.75rem 1rem' },
-        collapsed: { width: '3rem', justifyContent: 'center', padding: '0.75rem' }
+        expanded: {
+            width: '100%',
+            justifyContent: 'flex-start',
+            padding: '0.75rem 1rem',
+        },
+        collapsed: {
+            width: '3rem',
+            justifyContent: 'center',
+            padding: '0.75rem',
+        },
     };
 
-    const darkModeClasses = darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-900';
-    const headerClasses = darkMode ? 'bg-gray-900 bg-opacity-70' : 'bg-gray-200 bg-opacity-70';
-    const closeButtonClasses = darkMode ? 'text-gray-200 hover:bg-gray-700 focus:ring-gray-500' : 'text-gray-900 hover:bg-gray-300 focus:ring-gray-400';
-    const logoutButtonClasses = darkMode ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800' : 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700';
+    const darkModeClasses = darkMode
+        ? 'bg-gray-800 text-gray-200'
+        : 'bg-gray-100 text-gray-900';
+    const headerClasses = darkMode
+        ? 'bg-gray-900 bg-opacity-70'
+        : 'bg-gray-200 bg-opacity-70';
+    const closeButtonClasses = darkMode
+        ? 'text-gray-200 hover:bg-gray-700 focus:ring-gray-500'
+        : 'text-gray-900 hover:bg-gray-300 focus:ring-gray-400';
+    const logoutButtonClasses = darkMode
+        ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800'
+        : 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700';
 
     // Menü öğelerini seç
     const menuItems = isAdmin ? adminMenuItems : userMenuItems;
@@ -143,24 +179,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                     initial={collapsed ? 'collapsed' : 'expanded'}
                     animate={collapsed ? 'collapsed' : 'expanded'}
                     variants={sidebarVariants}
-                    className={`
-                        ${darkModeClasses}
-                        backdrop-filter backdrop-blur-lg
-                        min-h-screen flex flex-col
-                        fixed lg:relative
-                        z-50
-                        shadow-lg
-                        transition-all duration-100 ease-in-out
-                    `}
+                    className={` ${darkModeClasses} fixed z-50 flex min-h-screen flex-col shadow-lg backdrop-blur-lg backdrop-filter transition-all duration-100 ease-in-out lg:relative`}
                     aria-label={t('sidebar.ariaLabel')}
                 >
                     {/* Header */}
                     <motion.div
-                        className={`
-                            flex items-center justify-between h-14 sm:h-[4.5rem] px-3 sm:px-4
-                            ${headerClasses}
-                            backdrop-filter backdrop-blur-md
-                        `}
+                        className={`flex h-14 items-center justify-between px-3 sm:h-[4.5rem] sm:px-4 ${headerClasses} backdrop-blur-md backdrop-filter`}
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.1 }} // Hızlandırıldı
@@ -169,7 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <motion.div
                             variants={contentVariants}
                             transition={{ duration: 0.05 }} // Hızlandırıldı
-                            className={`flex items-center overflow-hidden ${collapsed && !isMobile ? 'justify-center w-full' : ''}`}
+                            className={`flex items-center overflow-hidden ${collapsed && !isMobile ? 'w-full justify-center' : ''}`}
                         >
                             <motion.div
                                 variants={logoVariants}
@@ -187,7 +211,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -10 }}
                                     transition={{ duration: 0.05 }}
-                                    className="font-semibold text-lg sm:text-xl"
+                                    className="text-lg font-semibold sm:text-xl"
                                 >
                                     {import.meta.env.VITE_APP_NAME}
                                 </motion.span>
@@ -199,21 +223,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => setSidebarOpen(false)}
-                                className={`
-                                    ${closeButtonClasses}
-                                    p-2.5 rounded-full transition-colors duration-100
-                                    focus:outline-none focus:ring-2 focus:ring-opacity-50
-                                `}
+                                className={` ${closeButtonClasses} rounded-full p-2.5 transition-colors duration-100 focus:outline-none focus:ring-2 focus:ring-opacity-50`}
                                 aria-label={t('sidebar.closeLabel')}
                             >
-                                <MdClose className="w-6 h-6" />
+                                <MdClose className="h-6 w-6" />
                             </motion.button>
                         )}
                     </motion.div>
 
                     {/* Navigation Links */}
                     <motion.nav
-                        className="flex-grow mt-6 px-3 sm:px-4 space-y-1 overflow-y-auto custom-scrollbar"
+                        className="custom-scrollbar mt-6 flex-grow space-y-1 overflow-y-auto px-3 sm:px-4"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.1, delay: 0.05 }}
@@ -223,7 +243,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                             {menuItems.map((item, index) => (
                                 <Tippy
                                     key={index}
-                                    content={collapsed && !isMobile ? t(item.name) : ""}
+                                    content={
+                                        collapsed && !isMobile
+                                            ? t(item.name)
+                                            : ''
+                                    }
                                     disabled={!collapsed || isMobile}
                                     placement="right"
                                 >
@@ -232,7 +256,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             href={route(item.route)}
                                             active={route().current(item.route)}
                                             darkMode={darkMode}
-                                            collapsed={isMobile ? false : collapsed}
+                                            collapsed={
+                                                isMobile ? false : collapsed
+                                            }
                                             icon={item.icon}
                                             isMobile={isMobile}
                                         >
@@ -244,18 +270,30 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </div>
 
                         {/* Profil Linki - Her iki rol için de görünür */}
-                        <div className="space-y-2 mt-6">
-                            <div className={`${collapsed && !isMobile ? 'border-b border-gray-600 dark:border-gray-400 my-2' : 'px-3 py-2 text-xs font-semibold uppercase tracking-wider ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}`}>
+                        <div className="mt-6 space-y-2">
+                            <div
+                                className={`${collapsed && !isMobile ? 'my-2 border-b border-gray-600 dark:border-gray-400' : 'px-3 py-2 text-xs font-semibold uppercase tracking-wider ' + (darkMode ? 'text-gray-400' : 'text-gray-500')}`}
+                            >
                                 {!collapsed && t('sidebar.settings')}
                             </div>
-                            <Tippy content={collapsed && !isMobile ? t('sidebar.profile') : ""} disabled={!collapsed || isMobile} placement="right">
+                            <Tippy
+                                content={
+                                    collapsed && !isMobile
+                                        ? t('sidebar.profile')
+                                        : ''
+                                }
+                                disabled={!collapsed || isMobile}
+                                placement="right"
+                            >
                                 <div>
                                     <NavLink
                                         href={route('profile.edit')}
                                         active={route().current('profile.edit')}
                                         darkMode={darkMode}
                                         collapsed={isMobile ? false : collapsed}
-                                        icon={<MdPerson className="w-5 h-5 sm:w-6 sm:h-6" />}
+                                        icon={
+                                            <MdPerson className="h-5 w-5 sm:h-6 sm:w-6" />
+                                        }
                                         isMobile={isMobile}
                                     >
                                         {t('sidebar.profile')}
@@ -272,29 +310,33 @@ const Sidebar: React.FC<SidebarProps> = ({
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.1, delay: 0.05 }} // Hızlandırıldı
                     >
-                        <Tippy content={collapsed && !isMobile ? t('sidebar.logout') : ""} disabled={!collapsed || isMobile} placement="right">
+                        <Tippy
+                            content={
+                                collapsed && !isMobile
+                                    ? t('sidebar.logout')
+                                    : ''
+                            }
+                            disabled={!collapsed || isMobile}
+                            placement="right"
+                        >
                             <motion.button
                                 whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.97 }}
                                 onClick={() => setShowLogoutModal(true)}
-                                className={`
-                                    flex items-center
-                                    ${logoutButtonClasses}
-                                    rounded-xl transition duration-100 ease-in-out
-                                    shadow-md hover:shadow-lg
-                                    focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-red-400
-                                    backdrop-filter backdrop-blur-sm
-                                    font-medium text-sm sm:text-base
-                                `}
+                                className={`flex items-center ${logoutButtonClasses} rounded-xl text-sm font-medium shadow-md backdrop-blur-sm backdrop-filter transition duration-100 ease-in-out hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-50 sm:text-base`}
                                 variants={buttonVariants}
-                                animate={collapsed && !isMobile ? 'collapsed' : 'expanded'}
+                                animate={
+                                    collapsed && !isMobile
+                                        ? 'collapsed'
+                                        : 'expanded'
+                                }
                                 aria-label={t('sidebar.logout')}
                             >
-                                <MdLogout className="w-5 h-5 sm:w-6 sm:h-6" />
+                                <MdLogout className="h-5 w-5 sm:h-6 sm:w-6" />
                                 {(!collapsed || isMobile) && (
                                     <motion.span
                                         variants={contentVariants}
-                                        className="ml-2 sm:ml-3 whitespace-nowrap overflow-hidden"
+                                        className="ml-2 overflow-hidden whitespace-nowrap sm:ml-3"
                                     >
                                         {t('sidebar.logout')}
                                     </motion.span>

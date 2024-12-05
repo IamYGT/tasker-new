@@ -15,7 +15,8 @@ use App\Http\Controllers\{
     TransactionController,
     WithdrawalController,
     TicketController,
-    UserIbanController
+    UserIbanController,
+    UserCryptoController
 };
 
 // Admin Controllers
@@ -162,7 +163,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/ibans', [UserIbanController::class, 'store'])->name('ibans.store');
         Route::put('/ibans/{iban}', [UserIbanController::class, 'update'])->name('ibans.update');
         Route::delete('/ibans/{iban}', [UserIbanController::class, 'destroy'])->name('ibans.destroy');
+
+        Route::get('/cryptos', [UserCryptoController::class, 'index'])->name('cryptos');
+        Route::post('/cryptos', [UserCryptoController::class, 'store'])->name('cryptos.store');
+        Route::put('/cryptos/{crypto}', [UserCryptoController::class, 'update'])->name('cryptos.update');
+        Route::delete('/cryptos/{crypto}', [UserCryptoController::class, 'destroy'])->name('cryptos.destroy');
     });
+
+    Route::get('/profile/ibans', [UserIbanController::class, 'index'])
+        ->name('profile.ibans');
+    Route::post('/profile/ibans', [UserIbanController::class, 'store'])
+        ->name('profile.ibans.store');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -171,6 +182,9 @@ Route::middleware(['auth'])->group(function () {
     // Transaction routes
     Route::get('/transactions/{transaction}', [TransactionController::class, 'show'])
         ->name('transactions.show');
+
+    Route::post('/profile/ibans', [UserIbanController::class, 'store'])
+        ->name('profile.ibans.store');
 });
 
 /*
@@ -229,3 +243,7 @@ require __DIR__.'/auth.php';
 Route::match(['get', 'post'], '/test', function () {
     return Inertia::render('Test');
 })->name('test');
+
+Route::delete('/profile/ibans/{iban}', [UserIbanController::class, 'destroy'])
+    ->name('profile.ibans.destroy')
+    ->middleware(['auth', 'verified']);

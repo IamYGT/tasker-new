@@ -137,3 +137,21 @@ export interface RecentActivity {
     notes?: string;
     user: User;
 }
+
+interface Network {
+    [x: string]: string;
+    id: string;
+    name: string;
+    symbol: string;
+    chain: string;
+}
+
+interface UserCrypto {
+    id: number;
+    network_id: string;
+    address: string;
+    title: string;
+    is_default: boolean;
+    is_active: boolean;
+    network_details: Network;
+}

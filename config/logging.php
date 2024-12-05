@@ -127,6 +127,27 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'crypto' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/crypto/crypto.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+        ],
+
+        'auth' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/auth/auth.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+        ],
+
+        'error' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/error/error.log'),
+            'level' => 'error',
+            'days' => 30,
+        ],
+
     ],
 
 ];

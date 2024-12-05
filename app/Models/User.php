@@ -57,15 +57,15 @@ class User extends Authenticatable
         'email',
         'password',
         'google_id',
-        'facebook_id',
-        'github_id',
         'avatar',
         'google_refresh_token',
         'last_login_at',
+        'facebook_id',
+        'github_id',
         'social_login',
         'last_social_login',
         'social_registration',
-        'is_active',
+        'is_active'
     ];
 
     /**
@@ -76,7 +76,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-        'google_refresh_token',
+        'google_refresh_token'
     ];
 
     /**
@@ -86,9 +86,10 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'is_active' => 'boolean',
+        'password' => 'hashed',
         'social_login' => 'boolean',
-        'social_registration' => 'boolean'
+        'social_registration' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     protected $attributes = [

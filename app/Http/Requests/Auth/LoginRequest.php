@@ -16,6 +16,7 @@ class LoginRequest extends FormRequest
      */
     public function authorize(): bool
     {
+        session(['dil_kod' => 'tr']);
         return true;
     }
 

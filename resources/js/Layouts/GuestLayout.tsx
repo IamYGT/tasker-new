@@ -1,30 +1,38 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
-import { useTranslation } from '@/Contexts/TranslationContext';
 import LanguageSelector from '@/Layouts/LanguageSelector';
 import ThemeToggle from '@/Layouts/ThemeToggle';
 import { getTheme, setTheme } from '@/Utils/themeManager';
 import { router } from '@inertiajs/react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { PropsWithChildren, useEffect, useState } from 'react';
 
+interface Language {
+    dil_id: number;
+    dil_kod: string;
+    dil_baslik: string;
+}
+
 interface GuestLayoutProps extends PropsWithChildren {
-    languages: any;
-    secili_dil: any;
+    languages: Language[];
+    secili_dil: Language;
 }
 
 export default function Guest({
     children,
     languages,
-    secili_dil,
+    secili_dil = {
+        dil_id: 1,
+        dil_kod: 'tr',
+        dil_baslik: 'Türkçe',
+    },
 }: GuestLayoutProps) {
-    const { t } = useTranslation();
     const [darkMode, setDarkMode] = useState(getTheme());
     const [isMobile, setIsMobile] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [notification, setNotification] = useState<{
-        message: string;
-        type: 'success' | 'error';
-    } | null>(null);
+
+    useEffect(() => {
+        sessionStorage.setItem('dil_kod', secili_dil.dil_kod);
+    }, [secili_dil]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -87,23 +95,6 @@ export default function Guest({
                     />
                 </div>
             </div>
-
-            <AnimatePresence>
-                {notification && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -50 }}
-                        className={`fixed right-4 top-4 rounded-md p-4 shadow-lg ${
-                            notification.type === 'success'
-                                ? 'bg-green-500'
-                                : 'bg-red-500'
-                        } text-white`}
-                    >
-                        {notification.message}
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             <div className="flex flex-grow items-center justify-center">
                 <div className="w-full px-6 py-4 sm:max-w-md">

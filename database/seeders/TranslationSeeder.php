@@ -17,226 +17,7 @@ class TranslationSeeder extends Seeder
                 'key' => 'sidebar.dashboard'
             ],
 
-        ];
-
-
-        $translations = array_merge($translations, [
-            // Admin Dashboard Translations
-            [
-                'key' => 'admin.dashboard',
-                'tr' => 'Yönetici Paneli',
-                'en' => 'Admin Dashboard',
-            ],
-
-
-        ]);
-
-        $translations = array_merge($translations, [
-            [
-                'key' => 'transaction.pendingTransactions',
-                'tr' => 'Bekleyen İşlemler',
-                'en' => 'Pending Transactions'
-            ],
-            [
-                'key' => 'transaction.noPendingTransactions',
-                'tr' => 'Bekleyen İşlem Bulunmuyor',
-                'en' => 'No Pending Transactions'
-            ],
-            [
-                'key' => 'transaction.allTransactionsCompleted',
-                'tr' => 'Tüm işlemleriniz tamamlanmış durumda',
-                'en' => 'All your transactions are completed'
-            ],
-            [
-                'key' => 'transaction.createTicket',
-                'tr' => 'Destek Talebi Oluştur',
-                'en' => 'Create Support Ticket'
-            ],
-            [
-                'key' => 'transaction.pendingInfo.title',
-                'tr' => 'İşleminiz Beklemede',
-                'en' => 'Your Transaction is Pending'
-            ],
-            [
-                'key' => 'transaction.pendingInfo.description',
-                'tr' => 'İşleminiz inceleme aşamasındadır. Herhangi bir sorunuz veya sorununuz varsa destek talebi oluşturabilirsiniz.',
-                'en' => 'Your transaction is under review. If you have any questions or concerns, you can create a support ticket.'
-            ],
-            [
-                'key' => 'transaction.openSupportTicket',
-                'tr' => 'Destek Talebi Oluştur',
-                'en' => 'Open Support Ticket'
-            ],
-            [
-                'key' => 'transaction.pendingInfo.help',
-                'tr' => 'İşleminizle ilgili herhangi bir sorunuz varsa, destek ekibimiz size yardımcı olmaktan memnuniyet duyacaktır.',
-                'en' => 'If you have any questions about your transaction, our support team will be happy to help you.'
-            ],
-            [
-                'key' => 'transaction.pendingInfo.note',
-                'tr' => 'Not: İşlem süreleri banka ve işlem tipine göre değişiklik gösterebilir.',
-                'en' => 'Note: Processing times may vary depending on the bank and transaction type.'
-            ]
-        ]);
-
-        $translations = array_merge($translations, [
-            // İşlem Detay Sayfası Çevirileri
-            [
-                'key' => 'transaction.details',
-                'tr' => 'İşlem Detayları',
-                'en' => 'Transaction Details'
-            ],
-            [
-                'key' => 'transaction.lastUpdated',
-                'tr' => 'Son Güncelleme',
-                'en' => 'Last Updated'
-            ],
-            [
-                'key' => 'transaction.amountUSD',
-                'tr' => 'USD Tutarı',
-                'en' => 'USD Amount'
-            ],
-            [
-                'key' => 'transaction.amountTRY',
-                'tr' => 'TL Tutarı',
-                'en' => 'TRY Amount'
-            ],
-            [
-                'key' => 'transaction.exchangeRate',
-                'tr' => 'Döviz Kuru',
-                'en' => 'Exchange Rate'
-            ],
-            [
-                'key' => 'transaction.type',
-                'tr' => 'İşlem Tipi',
-                'en' => 'Transaction Type'
-            ],
-            [
-                'key' => 'transaction.bankAccount',
-                'tr' => 'Banka Hesabı',
-                'en' => 'Bank Account'
-            ],
-            [
-                'key' => 'transaction.date',
-                'tr' => 'İşlem Tarihi',
-                'en' => 'Transaction Date'
-            ],
-            [
-                'key' => 'transaction.type.withdrawal',
-                'tr' => 'Para Çekme',
-                'en' => 'Withdrawal'
-            ],
-            [
-                'key' => 'transaction.type.deposit',
-                'tr' => 'Para Yatırma',
-                'en' => 'Deposit'
-            ],
-            [
-                'key' => 'transaction.type.transfer',
-                'tr' => 'Transfer',
-                'en' => 'Transfer'
-            ],
-            [
-                'key' => 'status.pending',
-                'tr' => 'Beklemede',
-                'en' => 'Pending'
-            ],
-            [
-                'key' => 'status.waiting',
-                'tr' => 'Bekliyor',
-                'en' => 'Waiting'
-            ],
-            [
-                'key' => 'status.completed',
-                'tr' => 'Tamamlandı',
-                'en' => 'Completed'
-            ],
-            [
-                'key' => 'status.cancelled',
-                'tr' => 'İptal Edildi',
-                'en' => 'Cancelled'
-            ],
-            [
-                'key' => 'status.rejected',
-                'tr' => 'Reddedildi',
-                'en' => 'Rejected'
-            ],
-            [
-                'key' => 'status.approved',
-                'tr' => 'Onaylandı',
-                'en' => 'Approved'
-            ],
-            [
-                'key' => 'transaction.referenceId',
-                'tr' => 'Referans No',
-                'en' => 'Reference No'
-            ],
-            [
-                'key' => 'transaction.status',
-                'tr' => 'Durum',
-                'en' => 'Status'
-            ],
-            [
-                'key' => 'transaction.paymentDetails',
-                'tr' => 'Ödeme Detayları',
-                'en' => 'Payment Details'
-            ],
-            [
-                'key' => 'transaction.processingTime',
-                'tr' => 'İşlem Süresi',
-                'en' => 'Processing Time'
-            ],
-            [
-                'key' => 'transaction.processingTimeNote',
-                'tr' => 'İşlem süresi banka ve işlem tipine göre değişiklik gösterebilir.',
-                'en' => 'Processing time may vary depending on bank and transaction type.'
-            ],
-            [
-                'key' => 'common.back',
-                'tr' => 'Geri Dön',
-                'en' => 'Go Back'
-            ],
-            [
-                'key' => 'common.details',
-                'tr' => 'Detaylar',
-                'en' => 'Details'
-            ],
-            [
-                'key' => 'common.processing',
-                'tr' => 'İşleniyor',
-                'en' => 'Processing'
-            ],
-            [
-                'key' => 'common.close',
-                'tr' => 'Kapat',
-                'en' => 'Close'
-            ]
-        ]);
-
-        $translations = array_merge($translations, [
-            [
-                'key' => 'iban.created',
-                'tr' => 'IBAN başarıyla eklendi',
-                'en' => 'IBAN added successfully'
-            ],
-            [
-                'key' => 'iban.createError',
-                'tr' => 'IBAN eklenirken bir hata oluştu',
-                'en' => 'Error occurred while adding IBAN'
-            ],
-            [
-                'key' => 'iban.updated',
-                'tr' => 'IBAN başarıyla güncellendi',
-                'en' => 'IBAN updated successfully'
-            ],
-            [
-                'key' => 'iban.updateError',
-                'tr' => 'IBAN güncellenirken bir hata oluştu',
-                'en' => 'Error occurred while updating IBAN'
-            ]
-        ]);
-
-        $translations = array_merge($translations, [
+            // IBAN Yönetimi
             [
                 'key' => 'iban.management',
                 'tr' => 'IBAN Yönetimi',
@@ -244,50 +25,103 @@ class TranslationSeeder extends Seeder
             ],
             [
                 'key' => 'iban.add',
-                'tr' => 'Yeni IBAN Ekle',
-                'en' => 'Add New IBAN'
+                'tr' => 'IBAN Ekle',
+                'en' => 'Add IBAN'
+            ],
+
+            // IBAN Silme Modalı
+            [
+                'key' => 'iban.deleteTitle',
+                'tr' => 'IBAN\'ı Sil',
+                'en' => 'Delete IBAN'
             ],
             [
-                'key' => 'iban.bankSelect',
-                'tr' => 'Banka Seçin',
-                'en' => 'Select Bank'
+                'key' => 'iban.deleteConfirmation',
+                'tr' => '"{title}" başlıklı {iban} IBAN\'ını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+                'en' => 'Are you sure you want to delete the IBAN {iban} titled "{title}"? This action cannot be undone.'
             ],
             [
-                'key' => 'iban.title',
-                'tr' => 'Başlık',
-                'en' => 'Title'
+                'key' => 'iban.deleteDefaultWarning',
+                'tr' => 'Bu varsayılan IBAN\'ınızdır. Silmeden önce başka bir IBAN\'ı varsayılan olarak ayarlamanız önerilir.',
+                'en' => 'This is your default IBAN. It is recommended to set another IBAN as default before deleting this one.'
+            ],
+
+            // Genel Butonlar
+            [
+                'key' => 'common.delete',
+                'tr' => 'Sil',
+                'en' => 'Delete'
             ],
             [
-                'key' => 'iban.number',
-                'tr' => 'IBAN Numarası',
-                'en' => 'IBAN Number'
+                'key' => 'common.cancel',
+                'tr' => 'İptal',
+                'en' => 'Cancel'
             ],
             [
-                'key' => 'iban.setDefault',
-                'tr' => 'Varsayılan IBAN olarak ayarla',
-                'en' => 'Set as Default IBAN'
+                'key' => 'common.confirm',
+                'tr' => 'Onayla',
+                'en' => 'Confirm'
+            ],
+
+            // IBAN İşlem Sonuçları
+            [
+                'key' => 'iban.deleted',
+                'tr' => 'IBAN başarıyla silindi',
+                'en' => 'IBAN successfully deleted'
             ],
             [
-                'key' => 'iban.default',
-                'tr' => 'Varsayılan',
-                'en' => 'Default'
+                'key' => 'iban.errors.delete_failed',
+                'tr' => 'IBAN silinirken bir hata oluştu',
+                'en' => 'An error occurred while deleting the IBAN'
+            ],
+
+            // Kripto Yönetimi
+            [
+                'key' => 'crypto.management',
+                'tr' => 'Kripto Adres Yönetimi',
+                'en' => 'Crypto Address Management'
             ],
             [
-                'key' => 'iban.bankNotFound',
-                'tr' => 'Banka Bulunamadı',
-                'en' => 'Bank Not Found'
+                'key' => 'crypto.add',
+                'tr' => 'Kripto Adres Ekle',
+                'en' => 'Add Crypto Address'
             ],
             [
-                'key' => 'common.save',
-                'tr' => 'Kaydet',
-                'en' => 'Save'
+                'key' => 'crypto.deleteTitle',
+                'tr' => 'Kripto Adresi Sil',
+                'en' => 'Delete Crypto Address'
             ],
             [
-                'key' => 'common.saving',
-                'tr' => 'Kaydediliyor...',
-                'en' => 'Saving...'
-            ]
-        ]);
+                'key' => 'crypto.deleteConfirmation',
+                'tr' => '"{title}" başlıklı {address} adresini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+                'en' => 'Are you sure you want to delete the address {address} titled "{title}"? This action cannot be undone.'
+            ],
+            [
+                'key' => 'crypto.deleteDefaultWarning',
+                'tr' => 'Bu varsayılan kripto adresinizdir. Silmeden önce başka bir adresi varsayılan olarak ayarlamanız önerilir.',
+                'en' => 'This is your default crypto address. It is recommended to set another address as default before deleting this one.'
+            ],
+            [
+                'key' => 'crypto.errors.network_required',
+                'tr' => 'Lütfen bir ağ seçin',
+                'en' => 'Please select a network'
+            ],
+            [
+                'key' => 'crypto.errors.network_invalid',
+                'tr' => 'Geçersiz ağ seçimi',
+                'en' => 'Invalid network selection'
+            ],
+            [
+                'key' => 'crypto.errors.address_required',
+                'tr' => 'Adres alanı zorunludur',
+                'en' => 'Address field is required'
+            ],
+            [
+                'key' => 'crypto.errors.address_exists',
+                'tr' => 'Bu adres zaten kayıtlı',
+                'en' => 'This address is already registered'
+            ],
+        ];
 
         foreach ($translations as $translation) {
             // TR için kontrol ve ekleme

@@ -5,14 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class UserIban extends Model
+class UserCrypto extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
         'user_id',
-        'bank_id',
-        'iban',
+        'network_id',
+        'address',
         'title',
         'is_default',
         'is_active'
@@ -27,4 +27,4 @@ class UserIban extends Model
     {
         return $this->belongsTo(User::class);
     }
-}
+} 
