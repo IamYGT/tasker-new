@@ -60,32 +60,37 @@ class HandleInertiaRequests extends Middleware
     private function getTurkeyBanks(): array
     {
         return Cache::remember('turkey_banks', 60 * 24, function () {
-            $banksJson = file_get_contents(resource_path('js/Data/turkey_banks.json'));
-            return json_decode($banksJson, true)['banks'];
+            return \DB::table('banks')
+                ->where('is_active', true)
+                ->get(['id', 'name', 'code', 'swift', 'logo'])
+                ->toArray();
         });
     }
 
     private function getUserIbans($user): array
     {
+        $banks = $this->getTurkeyBanks();
+
         return $user->ibans()
             ->with('user')
             ->orderBy('is_default', 'desc')
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($iban) {
-                $bankDetails = collect($this->getTurkeyBanks())
-                    ->firstWhere('id', $iban->bank_id);
+            ->map(function ($iban) use ($banks) {
+                $bankDetails = collect($banks)->firstWhere('id', $iban->bank_id);
 
                 return [
                     'id' => $iban->id,
                     'bank_id' => $iban->bank_id,
                     'iban' => $iban->iban,
-                    'formatted_iban' => $iban->formatted_iban,
                     'title' => $iban->title,
                     'is_default' => $iban->is_default,
                     'is_active' => $iban->is_active,
-                    'created_at' => $iban->created_at,
-                    'bank_details' => $bankDetails,
+                    'bank_details' => $bankDetails ? [
+                        'name' => $bankDetails->name,
+                        'code' => $bankDetails->code,
+                        'swift' => $bankDetails->swift
+                    ] : null
                 ];
             })
             ->toArray();

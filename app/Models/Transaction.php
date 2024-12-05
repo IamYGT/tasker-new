@@ -83,9 +83,15 @@ class Transaction extends Model
     }
 
     // İşlem geçmişini kaydetmek için yardımcı method
-    public function addToHistory(string $messageKey, string $type = 'info', ?array $params = null): void
+    public function addToHistory(string $messageKey, string $type, ?array $params = null)
     {
-        $history = $this->history ?? [];
+        // Mevcut history'yi JSON'dan diziye çevir
+        $history = $this->history ? json_decode($this->history, true) : [];
+
+        // Eğer history geçerli bir dizi değilse, yeni bir dizi oluştur
+        if (!is_array($history)) {
+            $history = [];
+        }
 
         // Parametre değerlerini çevir
         if ($params) {
@@ -96,6 +102,7 @@ class Transaction extends Model
             }
         }
 
+        // Yeni history öğesini ekle
         $history[] = [
             'messageKey' => $messageKey, // Çeviri anahtarını sakla
             'params' => $params, // Parametreleri sakla
@@ -104,7 +111,8 @@ class Transaction extends Model
             'user' => auth()->user()->name ?? null
         ];
 
-        $this->update(['history' => $history]);
+        // History'yi JSON olarak güncelle
+        $this->update(['history' => json_encode($history)]);
     }
 
     // Kur dönüşümü için yardımcı method

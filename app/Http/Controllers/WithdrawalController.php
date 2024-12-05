@@ -24,17 +24,20 @@ class WithdrawalController extends Controller
             }
         });
 
+        // Aktif bankaları getir
+        $banks = \DB::table('banks')
+            ->where('is_active', true)
+            ->get(['id', 'name', 'code', 'swift', 'logo']);
+
         // Kullanıcının kayıtlı IBAN'larını getir ve banka detaylarını ekle
         $savedIbans = auth()->user()->ibans()
             ->where('is_active', true)
             ->orderBy('is_default', 'desc')
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($iban) {
-                // Banka bilgilerini ekle
-                $banksJson = file_get_contents(resource_path('js/Data/turkey_banks.json'));
-                $banks = json_decode($banksJson, true)['banks'];
-                $bankDetails = collect($banks)->firstWhere('id', $iban->bank_id);
+            ->map(function ($iban) use ($banks) {
+                // Banka bilgilerini banks tablosundan al
+                $bankDetails = $banks->firstWhere('id', $iban->bank_id);
 
                 return [
                     'id' => $iban->id,
@@ -43,17 +46,18 @@ class WithdrawalController extends Controller
                     'title' => $iban->title,
                     'is_default' => $iban->is_default,
                     'is_active' => $iban->is_active,
-                    'bank_details' => [
-                        'name' => $bankDetails['name'] ?? '',
-                        'code' => $bankDetails['code'] ?? '',
-                        'swift' => $bankDetails['swift'] ?? ''
-                    ]
+                    'bank_details' => $bankDetails ? [
+                        'name' => $bankDetails->name,
+                        'code' => $bankDetails->code,
+                        'swift' => $bankDetails->swift
+                    ] : null
                 ];
             });
 
         return Inertia::render('Withdrawal/Create', [
             'exchangeRate' => $exchangeRate,
-            'savedIbans' => $savedIbans
+            'savedIbans' => $savedIbans,
+            'banks' => $banks // Banka listesini frontend'e gönder
         ]);
     }
 
@@ -104,7 +108,7 @@ class WithdrawalController extends Controller
                 $transactionData = array_merge($transactionData, [
                     'crypto_address' => $validated['wallet_address'],
                     'crypto_network' => $validated['network'],
-                    'crypto_fee' => 1.00, // Sabit USDT ��creti
+                    'crypto_fee' => 1.00, // Sabit USDT creti
                 ]);
             }
 

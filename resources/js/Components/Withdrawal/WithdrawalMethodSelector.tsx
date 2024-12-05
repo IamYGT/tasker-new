@@ -1,5 +1,5 @@
 import { useTranslation } from '@/Contexts/TranslationContext';
-import { UserIban } from '@/types';
+import { UserIban, Bank } from '@/types';
 import { motion } from 'framer-motion';
 import React, { useState } from 'react';
 import { FaBuildingColumns, FaWallet } from 'react-icons/fa6';
@@ -9,6 +9,7 @@ import { WithdrawalForm } from './WithdrawalForm';
 interface WithdrawalMethodSelectorProps {
     exchangeRate: number;
     savedIbans: UserIban[];
+    banks: Bank[];
     onAmountChange: (amount: string) => void;
     onProcessingChange: (status: boolean) => void;
 }
@@ -18,6 +19,7 @@ type WithdrawalMethod = 'bank' | 'crypto';
 export const WithdrawalMethodSelector = ({
     exchangeRate,
     savedIbans,
+    banks,
     onAmountChange,
     onProcessingChange,
 }: WithdrawalMethodSelectorProps) => {
@@ -89,6 +91,7 @@ export const WithdrawalMethodSelector = ({
                     <WithdrawalForm
                         exchangeRate={exchangeRate}
                         savedIbans={savedIbans}
+                        banks={banks}
                         onAmountChange={onAmountChange}
                         onProcessingChange={onProcessingChange}
                     />

@@ -202,80 +202,52 @@ const ActivityItem = ({
         }
     };
 
-    // Tıklama yönlendirmesi için route belirleme
-    const getActivityRoute = (activity: DashboardStats['recentActivity'][0]) => {
-        switch (activity.type) {
-            case 'transaction':
-            case 'withdrawal':
-                return route('transactions.show', activity.id);
-            case 'ticket':
-                return route('tickets.show', activity.id);
-            default:
-                return '#';
-        }
-    };
-
-    // Mesaj formatını düzenleme
-    const getActivityMessage = (activity: DashboardStats['recentActivity'][0]) => {
-        switch (activity.type) {
-            case 'transaction':
-            case 'withdrawal':
-                return t('activity.transaction', {
-                    amount: activity.amount_usd
-                        ? new Intl.NumberFormat('en-US', {
-                            style: 'currency',
-                            currency: 'USD'
-                        }).format(activity.amount_usd)
-                        : '-'
-                });
-            case 'ticket':
-                return t('activity.ticket.created');
-            default:
-                return '';
-        }
-    };
-
     const statusStyle = getStatusStyles(activity.status);
 
     return (
-        <Link href={getActivityRoute(activity)}>
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.01 }}
-                className={`group flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-all duration-200 hover:bg-gray-50 hover:shadow-md dark:border-gray-700 dark:hover:bg-gray-800/50 ${statusStyle.border}`}
-            >
-                {/* İkon Alanı */}
-                <div className={`shrink-0 rounded-full p-2.5 ${statusStyle.bg} ${statusStyle.icon} transition-colors group-hover:bg-opacity-70`}>
-                    {getActivityIcon(activity.type)}
-                </div>
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`group flex items-center gap-4 rounded-xl border p-4 transition-all duration-200 hover:shadow-md dark:border-gray-700 ${statusStyle.border}`}
+        >
+            {/* İkon Alanı */}
+            <div className={`rounded-full p-2.5 ${statusStyle.bg} ${statusStyle.icon}`}>
+                {getActivityIcon(activity.type)}
+            </div>
 
-                {/* İçerik Alanı */}
-                <div className="flex-1 space-y-1 overflow-hidden">
-                    <div className="flex items-center gap-2">
-                        <h4 className="truncate font-medium text-gray-900 dark:text-gray-100">
-                            {activity.user}
-                        </h4>
-                        <span className="shrink-0 text-sm text-gray-500 dark:text-gray-400">
-                            • {activity.created_at}
-                        </span>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                        {getActivityMessage(activity)}
-                    </p>
-                </div>
-
-                {/* Durum Etiketi */}
-                <div className="shrink-0">
-                    <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${statusStyle.bg} ${statusStyle.text} transition-colors group-hover:bg-opacity-70`}
-                    >
-                        <span className={`h-1.5 w-1.5 rounded-full ${statusStyle.text}`}>•</span>
-                        {t(`status.${activity.status}`)}
+            {/* İçerik Alanı */}
+            <div className="flex-1 space-y-1">
+                <div className="flex items-center gap-2">
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                        {activity.user}
+                    </h4>
+                    <span className={`text-sm ${statusStyle.text}`}>
+                        •
+                    </span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {activity.created_at}
                     </span>
                 </div>
-            </motion.div>
-        </Link>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {t(`activity.${activity.type}`, {
+                        amount: activity.amount_usd
+                            ? new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'USD'
+                            }).format(activity.amount_usd)
+                            : '-'
+                    })}
+                </p>
+            </div>
+
+            {/* Durum Etiketi */}
+            <div className="shrink-0">
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${statusStyle.bg} ${statusStyle.text}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${statusStyle.text}`}>•</span>
+                    {t(`status.${activity.status}`)}
+                </span>
+            </div>
+        </motion.div>
     );
 };
 

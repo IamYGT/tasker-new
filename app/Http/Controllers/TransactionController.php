@@ -203,8 +203,25 @@ class TransactionController extends Controller
             abort(403);
         }
 
+        // Banks tablosundan aktif bankaları çekelim
+        $banks = \DB::table('banks')
+            ->where('is_active', true)
+            ->get(['id', 'name', 'code', 'logo']);
+
+        // Debug için loglama
+        \Log::info('Transaction Details:', [
+            'id' => $transaction->id,
+            'type' => $transaction->type,
+            'bank_id' => $transaction->bank_id,
+            'bank_account' => $transaction->bank_account,
+            'banks' => $banks
+        ]);
+
+        $transaction = $transaction->load(['user']);
+
         return Inertia::render('Transactions/Show', [
-            'transaction' => $transaction->load(['user']),
+            'transaction' => $transaction,
+            'banks' => $banks
         ]);
     }
 

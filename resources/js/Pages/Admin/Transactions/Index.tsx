@@ -1,19 +1,6 @@
 import Pagination from '@/Components/Pagination';
 import { useTranslation } from '@/Contexts/TranslationContext';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import {
-    getStatusColor,
-    getStatusIcon,
-    getTypeColor,
-} from '@/Utils/transaction';
-import {
-    PaginatedData,
-    Transaction,
-    TransactionStatus,
-    TransactionType,
-} from '@/types';
-import { parseAmount } from '@/utils/format';
-import { Menu, Transition } from '@headlessui/react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import debounce from 'lodash/debounce';
@@ -32,9 +19,42 @@ import {
     FaSearch,
     FaSync,
     FaUser,
+    FaCheckCircle,
+    FaTimesCircle,
+    FaInfoCircle,
+    FaBitcoin,
+    FaUniversity,
 } from 'react-icons/fa';
+import { Menu, Transition } from '@headlessui/react';
 
-// Stats interface'ini ekleyelim
+interface Transaction {
+    id: number;
+    user_id: number;
+    amount: string;
+    amount_usd: string;
+    exchange_rate: string;
+    type: 'bank_withdrawal' | 'crypto_withdrawal';
+    status: 'pending' | 'completed' | 'cancelled' | 'rejected';
+    description?: string;
+    bank_account?: string;
+    bank_id?: string;
+    reference_id: string;
+    processed_at?: string;
+    notes?: string;
+    history?: string;
+    crypto_address?: string;
+    crypto_network?: string;
+    crypto_fee?: string;
+    crypto_txid?: string;
+    created_at: string;
+    updated_at: string;
+    user: {
+        id: number;
+        name: string;
+        email: string;
+    };
+}
+
 interface TransactionStats {
     total_usd: number;
     total_try: number;
@@ -44,6 +64,7 @@ interface TransactionStats {
         completed: number;
         pending: number;
         cancelled: number;
+        rejected: number;
     };
     today: {
         total_usd: number;
@@ -54,6 +75,24 @@ interface TransactionStats {
         total_usd: number;
         total_try: number;
         count: number;
+    };
+}
+
+interface PaginatedData<T> {
+    data: T[];
+    links: {
+        url: string | null;
+        label: string;
+        active: boolean;
+    }[];
+    meta: {
+        current_page: number;
+        from: number;
+        last_page: number;
+        path: string;
+        per_page: number;
+        to: number;
+        total: number;
     };
 }
 
@@ -69,12 +108,12 @@ interface Props {
     transactions: PaginatedData<Transaction>;
     filters: {
         search?: string;
-        status?: TransactionStatus;
-        type?: TransactionType;
+        status?: Transaction['status'];
+        type?: Transaction['type'];
     };
-    statuses: TransactionStatus[];
-    types: TransactionType[];
-    stats: TransactionStats; // Yeni stats prop'u
+    statuses: Transaction['status'][];
+    types: Transaction['type'][];
+    stats: TransactionStats;
 }
 
 export default function Index({
@@ -83,7 +122,7 @@ export default function Index({
     filters,
     statuses,
     types,
-    stats, // stats prop'unu ekleyelim
+    stats,
 }: Props) {
     const { t } = useTranslation();
     const [showFilters, setShowFilters] = useState(false);
@@ -96,7 +135,6 @@ export default function Index({
         type: filters.type || '',
     });
 
-    // useEffect ekleyelim
     useEffect(() => {
         setInitialLoad(false);
     }, []);
@@ -123,7 +161,7 @@ export default function Index({
         }
     }, [isLoading, setData]);
 
-    // Arama fonksiyonunu useMemo ile tanımlayalım
+    // Arama fonksiyonu
     const debouncedSearch = useMemo(
         () =>
             debounce((query: string) => {
@@ -140,10 +178,9 @@ export default function Index({
                     );
                 }
             }, 500),
-        [data, initialLoad, setIsLoading],
+        [data, initialLoad],
     );
 
-    // Component unmount olduğunda debounce'u temizleyelim
     useEffect(() => {
         return () => {
             debouncedSearch.cancel();
@@ -165,6 +202,7 @@ export default function Index({
         },
     };
 
+    // Dışa aktarma fonksiyonu
     const exportData = (format: 'json' | 'csv') => {
         const data = transactions.data.map((t) => ({
             reference_id: t.reference_id,
@@ -172,9 +210,18 @@ export default function Index({
             email: t.user.email,
             type: t.type,
             amount: t.amount,
+            amount_usd: t.amount_usd,
+            exchange_rate: t.exchange_rate,
             status: t.status,
             bank_account: t.bank_account,
+            bank_id: t.bank_id,
+            crypto_address: t.crypto_address,
+            crypto_network: t.crypto_network,
+            crypto_fee: t.crypto_fee,
+            crypto_txid: t.crypto_txid,
+            processed_at: t.processed_at ? new Date(t.processed_at).toLocaleDateString('tr-TR') : '',
             created_at: new Date(t.created_at).toLocaleDateString('tr-TR'),
+            updated_at: new Date(t.updated_at).toLocaleDateString('tr-TR'),
             notes: t.notes,
         }));
 
@@ -187,16 +234,24 @@ export default function Index({
             mimeType = 'application/json';
             fileExtension = 'json';
         } else {
-            // CSV başlıkları için çevirileri kullan
             const headers = [
                 t('transaction.referenceId'),
                 t('transaction.user'),
                 t('common.email'),
                 t('transaction.type'),
                 t('transaction.amount'),
+                t('transaction.amountUsd'),
+                t('transaction.exchangeRate'),
                 t('transaction.status'),
                 t('transaction.bankAccount'),
-                t('transaction.date'),
+                t('transaction.bank'),
+                t('transaction.cryptoAddress'),
+                t('transaction.cryptoNetwork'),
+                t('transaction.cryptoFee'),
+                t('transaction.cryptoTxid'),
+                t('transaction.processedAt'),
+                t('transaction.createdAt'),
+                t('transaction.updatedAt'),
                 t('transaction.notes'),
             ];
             const csvContent = [
@@ -213,7 +268,6 @@ export default function Index({
             fileExtension = 'csv';
         }
 
-        // Dosya adında da çeviriyi kullan
         const fileName = `${t('transaction.transactions')}_${new Date().toISOString().split('T')[0]}.${fileExtension}`;
 
         const blob = new Blob([content], { type: mimeType });
@@ -227,16 +281,62 @@ export default function Index({
         window.URL.revokeObjectURL(url);
     };
 
+    // Status ve tip renkleri için yardımcı fonksiyonlar
+    const getStatusColor = (status: Transaction['status']) => {
+        switch (status) {
+            case 'completed':
+                return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300';
+            case 'pending':
+                return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300';
+            case 'cancelled':
+                return 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-300';
+            case 'rejected':
+                return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300';
+            default:
+                return 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-300';
+        }
+    };
+
+    const getTypeColor = (type: Transaction['type']) => {
+        switch (type) {
+            case 'bank_withdrawal':
+                return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300';
+            case 'crypto_withdrawal':
+                return 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300';
+            default:
+                return 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-300';
+        }
+    };
+
+    const getStatusIcon = (status: Transaction['status']) => {
+        switch (status) {
+            case 'completed':
+                return <FaCheckCircle className="h-4 w-4 text-green-500" />;
+            case 'pending':
+                return <FaClock className="h-4 w-4 text-yellow-500" />;
+            case 'cancelled':
+                return <FaTimesCircle className="h-4 w-4 text-gray-500" />;
+            case 'rejected':
+                return <FaTimesCircle className="h-4 w-4 text-red-500" />;
+            default:
+                return <FaInfoCircle className="h-4 w-4 text-gray-500" />;
+        }
+    };
+
+    const getTypeIcon = (type: Transaction['type']) => {
+        switch (type) {
+            case 'bank_withdrawal':
+                return <FaUniversity className="h-4 w-4" />;
+            case 'crypto_withdrawal':
+                return <FaBitcoin className="h-4 w-4" />;
+            default:
+                return <FaMoneyBillWave className="h-4 w-4" />;
+        }
+    };
+
     return (
         <AuthenticatedLayout
-            auth={{
-                user: {
-                    id: auth.user.id,
-                    name: auth.user.name,
-                    email: auth.user.email,
-                    roles: auth.user.roles,
-                },
-            }}
+            auth={auth}
             header={
                 <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
                     {t('admin.transactions')}
@@ -257,7 +357,7 @@ export default function Index({
                         {/* Toplam İşlemler */}
                         <motion.div
                             variants={cardVariants}
-                            className="group cursor-pointer overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:from-blue-900/30 dark:to-blue-800/30"
+                            className="group overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:from-blue-900/30 dark:to-blue-800/30"
                         >
                             <div className="flex items-center justify-between">
                                 <div>
@@ -267,15 +367,8 @@ export default function Index({
                                     <h3 className="mt-2 text-3xl font-bold text-blue-700 dark:text-blue-300">
                                         {stats.counts.total.toLocaleString()}
                                     </h3>
-                                    <div className="mt-2 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800 dark:bg-blue-800/30 dark:text-blue-300">
-                                        <svg
-                                            className="mr-1.5 h-3 w-3 text-blue-500"
-                                            fill="currentColor"
-                                            viewBox="0 0 20 20"
-                                        >
-                                            <path d="M5.293 9.707l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L9 8.414V15a1 1 0 11-2 0V8.414L4.707 11.121a1 1 0 01-1.414-1.414z" />
-                                        </svg>
-                                        {t('stats.today')}: {stats.today.count}
+                                    <div className="mt-2 text-xs text-blue-500 dark:text-blue-400">
+                                        {t('stats.todayCount', { count: stats.today.count })}
                                     </div>
                                 </div>
                                 <FaChartBar className="h-12 w-12 text-blue-500/50 transition-transform group-hover:scale-110" />
@@ -285,7 +378,7 @@ export default function Index({
                         {/* Tamamlanan İşlemler */}
                         <motion.div
                             variants={cardVariants}
-                            className="group cursor-pointer overflow-hidden rounded-xl bg-gradient-to-br from-green-50 to-green-100 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:from-green-900/30 dark:to-green-800/30"
+                            className="group overflow-hidden rounded-xl bg-gradient-to-br from-green-50 to-green-100 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:from-green-900/30 dark:to-green-800/30"
                         >
                             <div className="flex items-center justify-between">
                                 <div>
@@ -295,20 +388,8 @@ export default function Index({
                                     <h3 className="mt-2 text-3xl font-bold text-green-700 dark:text-green-300">
                                         {stats.counts.completed.toLocaleString()}
                                     </h3>
-                                    <div className="mt-2 inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800 dark:bg-green-800/30 dark:text-green-300">
-                                        <svg
-                                            className="mr-1.5 h-3 w-3 text-green-500"
-                                            fill="currentColor"
-                                            viewBox="0 0 20 20"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                        {t('stats.thisMonth')}:{' '}
-                                        {stats.this_month.count}
+                                    <div className="mt-2 text-xs text-green-500 dark:text-green-400">
+                                        {((stats.counts.completed / stats.counts.total) * 100).toFixed(1)}%
                                     </div>
                                 </div>
                                 <FaCheck className="h-12 w-12 text-green-500/50 transition-transform group-hover:scale-110" />
@@ -318,7 +399,7 @@ export default function Index({
                         {/* Bekleyen İşlemler */}
                         <motion.div
                             variants={cardVariants}
-                            className="group cursor-pointer overflow-hidden rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:from-amber-900/30 dark:to-amber-800/30"
+                            className="group overflow-hidden rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:from-amber-900/30 dark:to-amber-800/30"
                         >
                             <div className="flex items-center justify-between">
                                 <div>
@@ -328,9 +409,8 @@ export default function Index({
                                     <h3 className="mt-2 text-3xl font-bold text-amber-700 dark:text-amber-300">
                                         {stats.counts.pending.toLocaleString()}
                                     </h3>
-                                    <div className="mt-2 inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 dark:bg-amber-800/30 dark:text-amber-300">
-                                        <FaClock className="mr-1.5 h-3 w-3 text-amber-500" />
-                                        {t('stats.needsAction')}
+                                    <div className="mt-2 text-xs text-amber-500 dark:text-amber-400">
+                                        {((stats.counts.pending / stats.counts.total) * 100).toFixed(1)}%
                                     </div>
                                 </div>
                                 <FaClock className="h-12 w-12 text-amber-500/50 transition-transform group-hover:scale-110" />
@@ -340,7 +420,7 @@ export default function Index({
                         {/* Toplam Hacim */}
                         <motion.div
                             variants={cardVariants}
-                            className="group cursor-pointer overflow-hidden rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:from-purple-900/30 dark:to-purple-800/30"
+                            className="group overflow-hidden rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:from-purple-900/30 dark:to-purple-800/30"
                         >
                             <div className="flex items-center justify-between">
                                 <div>
@@ -351,22 +431,15 @@ export default function Index({
                                         {new Intl.NumberFormat('en-US', {
                                             style: 'currency',
                                             currency: 'USD',
+                                            maximumFractionDigits: 0,
                                         }).format(stats.total_usd)}
                                     </h3>
-                                    <div className="mt-1 text-sm text-purple-500 dark:text-purple-400">
+                                    <div className="mt-2 text-xs text-purple-500 dark:text-purple-400">
                                         {new Intl.NumberFormat('tr-TR', {
                                             style: 'currency',
                                             currency: 'TRY',
+                                            maximumFractionDigits: 0,
                                         }).format(stats.total_try)}
-                                    </div>
-                                    <div className="mt-2 inline-flex items-center rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-800 dark:bg-purple-800/30 dark:text-purple-300">
-                                        <FaMoneyBillWave className="mr-1.5 h-3 w-3 text-purple-500" />
-                                        {t('stats.avgRate')}:{' '}
-                                        {stats.average_rate
-                                            ? Number(
-                                                  stats.average_rate,
-                                              ).toFixed(4)
-                                            : '-'}
                                     </div>
                                 </div>
                                 <FaMoneyBillWave className="h-12 w-12 text-purple-500/50 transition-transform group-hover:scale-110" />
@@ -389,15 +462,10 @@ export default function Index({
                                         <input
                                             type="text"
                                             className="focus:ring-primary-500 w-full rounded-xl border-gray-200 py-3 pl-12 pr-4 text-base transition-all focus:ring-2 dark:border-gray-600 dark:bg-gray-700/50"
-                                            placeholder={t(
-                                                'common.searchPlaceholder',
-                                            )}
+                                            placeholder={t('common.searchPlaceholder')}
                                             value={data.search}
                                             onChange={(e) => {
-                                                setData(
-                                                    'search',
-                                                    e.target.value,
-                                                );
+                                                setData('search', e.target.value);
                                                 debouncedSearch(e.target.value);
                                             }}
                                         />
@@ -410,9 +478,7 @@ export default function Index({
 
                                 <div className="flex items-center gap-3">
                                     <button
-                                        onClick={() =>
-                                            setShowFilters(!showFilters)
-                                        }
+                                        onClick={() => setShowFilters(!showFilters)}
                                         className={`flex items-center rounded-xl px-4 py-2.5 transition-all ${
                                             showFilters
                                                 ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
@@ -423,19 +489,12 @@ export default function Index({
                                         {t('common.filters')}
                                         {(data.status || data.type) && (
                                             <span className="bg-primary-500 ml-2 rounded-full px-2 py-0.5 text-xs text-white">
-                                                {
-                                                    [
-                                                        data.status,
-                                                        data.type,
-                                                    ].filter(Boolean).length
-                                                }
+                                                {[data.status, data.type].filter(Boolean).length}
                                             </span>
                                         )}
                                     </button>
 
-                                    {(data.status ||
-                                        data.type ||
-                                        data.search) && (
+                                    {(data.status || data.type || data.search) && (
                                         <button
                                             onClick={resetFilters}
                                             className="rounded-xl px-4 py-2.5 text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -445,7 +504,7 @@ export default function Index({
                                     )}
 
                                     <Menu as="div" className="relative">
-                                        <Menu.Button className="group flex items-center rounded-xl bg-light-primary px-4 py-2.5 font-medium text-white shadow-sm transition-all duration-200 hover:bg-light-primary/90 hover:shadow dark:bg-dark-primary dark:hover:bg-dark-primary/90">
+                                        <Menu.Button className="group flex items-center rounded-xl bg-primary-600 px-4 py-2.5 font-medium text-white shadow-sm transition-all duration-200 hover:bg-primary-700 hover:shadow dark:bg-primary-700 dark:hover:bg-primary-600">
                                             <FaDownload className="mr-2 h-4 w-4" />
                                             {t('common.export')}
                                         </Menu.Button>
@@ -463,11 +522,7 @@ export default function Index({
                                                     <Menu.Item>
                                                         {({ active }) => (
                                                             <button
-                                                                onClick={() =>
-                                                                    exportData(
-                                                                        'json',
-                                                                    )
-                                                                }
+                                                                onClick={() => exportData('json')}
                                                                 className={`${
                                                                     active
                                                                         ? 'bg-gray-100 dark:bg-gray-600'
@@ -482,11 +537,7 @@ export default function Index({
                                                     <Menu.Item>
                                                         {({ active }) => (
                                                             <button
-                                                                onClick={() =>
-                                                                    exportData(
-                                                                        'csv',
-                                                                    )
-                                                                }
+                                                                onClick={() => exportData('csv')}
                                                                 className={`${
                                                                     active
                                                                         ? 'bg-gray-100 dark:bg-gray-600'
@@ -523,38 +574,24 @@ export default function Index({
                                                 <select
                                                     value={data.status}
                                                     onChange={(e) => {
-                                                        setData(
-                                                            'status',
-                                                            e.target.value,
-                                                        );
+                                                        setData('status', e.target.value);
                                                         router.get(
-                                                            route(
-                                                                'admin.transactions.index',
-                                                            ),
+                                                            route('admin.transactions.index'),
                                                             {
                                                                 ...data,
-                                                                status: e.target
-                                                                    .value,
+                                                                status: e.target.value,
                                                             },
                                                             {
-                                                                preserveState:
-                                                                    true,
+                                                                preserveState: true,
                                                             },
                                                         );
                                                     }}
                                                     className="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                                                 >
-                                                    <option value="">
-                                                        {t('common.all')}
-                                                    </option>
+                                                    <option value="">{t('common.all')}</option>
                                                     {statuses.map((status) => (
-                                                        <option
-                                                            key={status}
-                                                            value={status}
-                                                        >
-                                                            {t(
-                                                                `status.${status}`,
-                                                            )}
+                                                        <option key={status} value={status}>
+                                                            {t(`status.${status}`)}
                                                         </option>
                                                     ))}
                                                 </select>
@@ -567,38 +604,24 @@ export default function Index({
                                                 <select
                                                     value={data.type}
                                                     onChange={(e) => {
-                                                        setData(
-                                                            'type',
-                                                            e.target.value,
-                                                        );
+                                                        setData('type', e.target.value);
                                                         router.get(
-                                                            route(
-                                                                'admin.transactions.index',
-                                                            ),
+                                                            route('admin.transactions.index'),
                                                             {
                                                                 ...data,
-                                                                type: e.target
-                                                                    .value,
+                                                                type: e.target.value,
                                                             },
                                                             {
-                                                                preserveState:
-                                                                    true,
+                                                                preserveState: true,
                                                             },
                                                         );
                                                     }}
                                                     className="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                                                 >
-                                                    <option value="">
-                                                        {t('common.all')}
-                                                    </option>
+                                                    <option value="">{t('common.all')}</option>
                                                     {types.map((type) => (
-                                                        <option
-                                                            key={type}
-                                                            value={type}
-                                                        >
-                                                            {t(
-                                                                `transaction.${type}`,
-                                                            )}
+                                                        <option key={type} value={type}>
+                                                            {t(`transaction.${type}`)}
                                                         </option>
                                                     ))}
                                                 </select>
@@ -614,27 +637,13 @@ export default function Index({
                             <table className="w-full text-sm">
                                 <thead className="bg-gray-50 text-xs uppercase dark:bg-gray-700/50">
                                     <tr>
-                                        <th className="px-4 py-3">
-                                            {t('transaction.referenceId')}
-                                        </th>
-                                        <th className="px-4 py-3">
-                                            {t('transaction.user')}
-                                        </th>
-                                        <th className="hidden px-4 py-3 md:table-cell">
-                                            {t('transaction.type')}
-                                        </th>
-                                        <th className="px-4 py-3">
-                                            {t('transaction.amount')}
-                                        </th>
-                                        <th className="px-4 py-3">
-                                            {t('transaction.status')}
-                                        </th>
-                                        <th className="hidden px-4 py-3 lg:table-cell">
-                                            {t('transaction.lastUpdate')}
-                                        </th>
-                                        <th className="w-20 px-4 py-3">
-                                            {t('common.actions')}
-                                        </th>
+                                        <th className="px-4 py-3">{t('transaction.referenceId')}</th>
+                                        <th className="px-4 py-3">{t('transaction.user')}</th>
+                                        <th className="hidden px-4 py-3 md:table-cell">{t('transaction.type')}</th>
+                                        <th className="px-4 py-3">{t('transaction.amount')}</th>
+                                        <th className="px-4 py-3">{t('transaction.status')}</th>
+                                        <th className="hidden px-4 py-3 lg:table-cell">{t('transaction.lastUpdate')}</th>
+                                        <th className="w-20 px-4 py-3">{t('common.actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -644,9 +653,7 @@ export default function Index({
                                             className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700/50"
                                         >
                                             <td className="px-4 py-3 font-medium">
-                                                <span className="text-xs">
-                                                    {transaction.reference_id}
-                                                </span>
+                                                <span className="text-xs">{transaction.reference_id}</span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
@@ -655,110 +662,76 @@ export default function Index({
                                                     </div>
                                                     <div className="min-w-0">
                                                         <div className="truncate font-medium">
-                                                            {
-                                                                transaction.user
-                                                                    .name
-                                                            }
+                                                            {transaction.user.name}
                                                         </div>
                                                         <div className="truncate text-xs text-gray-500">
-                                                            {
-                                                                transaction.user
-                                                                    .email
-                                                            }
+                                                            {transaction.user.email}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="hidden px-4 py-3 md:table-cell">
                                                 <span
-                                                    className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${getTypeColor(transaction.type)}`}
+                                                    className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium ${getTypeColor(
+                                                        transaction.type,
+                                                    )}`}
                                                 >
-                                                    {t(
-                                                        `transaction.${transaction.type}`,
-                                                    )}
+                                                    {getTypeIcon(transaction.type)}
+                                                    <span className="ml-1">{t(`transaction.${transaction.type}`)}</span>
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex flex-col space-y-1">
                                                     <span className="font-medium text-gray-900 dark:text-gray-100">
-                                                        {new Intl.NumberFormat(
-                                                            'en-US',
-                                                            {
-                                                                style: 'currency',
-                                                                currency: 'USD',
-                                                            },
-                                                        ).format(
-                                                            parseAmount(
-                                                                transaction.amount_usd,
-                                                            ),
-                                                        )}
+                                                        {new Intl.NumberFormat('en-US', {
+                                                            style: 'currency',
+                                                            currency: 'USD',
+                                                        }).format(parseFloat(transaction.amount_usd))}
                                                     </span>
                                                     <span className="text-xs text-gray-500">
-                                                        {new Intl.NumberFormat(
-                                                            'tr-TR',
-                                                            {
-                                                                style: 'currency',
-                                                                currency: 'TRY',
-                                                            },
-                                                        ).format(
-                                                            parseAmount(
-                                                                transaction.amount,
-                                                            ),
-                                                        )}
+                                                        {new Intl.NumberFormat('tr-TR', {
+                                                            style: 'currency',
+                                                            currency: 'TRY',
+                                                        }).format(parseFloat(transaction.amount))}
                                                     </span>
                                                     <span className="text-xs text-gray-400">
                                                         {t('transaction.rate')}:{' '}
                                                         {transaction.exchange_rate
-                                                            ? Number(
-                                                                  transaction.exchange_rate,
-                                                              ).toFixed(4)
+                                                            ? Number(transaction.exchange_rate).toFixed(4)
                                                             : '-'}
                                                     </span>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span
-                                                    className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium ${getStatusColor(transaction.status)}`}
-                                                >
-                                                    {getStatusIcon(
+                                                    className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium ${getStatusColor(
                                                         transaction.status,
-                                                    )}
-                                                    {t(
-                                                        `status.${transaction.status}`,
-                                                    )}
+                                                    )}`}
+                                                >
+                                                    {getStatusIcon(transaction.status)}
+                                                    <span className="ml-1">{t(`status.${transaction.status}`)}</span>
                                                 </span>
                                             </td>
                                             <td className="hidden px-4 py-3 lg:table-cell">
                                                 <span className="text-xs text-gray-500">
-                                                    {new Date(
-                                                        transaction.updated_at,
-                                                    ).toLocaleDateString(
-                                                        'tr-TR',
-                                                        {
-                                                            day: 'numeric',
-                                                            month: 'short',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit',
-                                                        },
-                                                    )}
+                                                    {new Date(transaction.updated_at).toLocaleDateString('tr-TR', {
+                                                        day: 'numeric',
+                                                        month: 'short',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                    })}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex justify-end gap-1">
                                                     <Link
-                                                        href={route(
-                                                            'admin.transactions.show',
-                                                            transaction.id,
-                                                        )}
+                                                        href={route('admin.transactions.show', transaction.id)}
                                                         className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                                                     >
                                                         <FaEye className="h-4 w-4" />
                                                     </Link>
                                                     <Link
-                                                        href={route(
-                                                            'admin.transactions.edit',
-                                                            transaction.id,
-                                                        )}
+                                                        href={route('admin.transactions.edit', transaction.id)}
                                                         className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                                                     >
                                                         <FaEdit className="h-4 w-4" />

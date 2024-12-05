@@ -1,6 +1,5 @@
 import { useTranslation } from '@/Contexts/TranslationContext';
 import type { PageProps, Bank } from '@/types';
-import turkeyBanksData from '@/Data/turkey_banks.json';
 import { useForm } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
@@ -39,18 +38,10 @@ interface UserIban {
 interface WithdrawalFormProps {
     exchangeRate: number;
     savedIbans: UserIban[];
+    banks: Bank[];
     onAmountChange: (amount: string) => void;
     onProcessingChange: (status: boolean) => void;
 }
-
-// JSON verisi için type assertion
-interface TurkeyBanks {
-    banks: Array<Bank>;
-}
-
-const turkeyBanks: TurkeyBanks = {
-    banks: (turkeyBanksData as any).banks || []
-};
 
 // IBAN yardımcı fonksiyonları
 const formatIBAN = (iban: string): string => {
@@ -90,6 +81,7 @@ const validateIBAN = (iban: string): boolean => {
 export const WithdrawalForm = ({
     exchangeRate,
     savedIbans,
+    banks,
     onAmountChange,
     onProcessingChange,
 }: WithdrawalFormProps) => {
@@ -241,7 +233,7 @@ export const WithdrawalForm = ({
                             required
                         >
                             <option value="">{t('common.select')}</option>
-                            {turkeyBanks.banks.map((bank: Bank) => (
+                            {banks.map((bank: Bank) => (
                                 <option key={bank.id} value={bank.id}>
                                     {bank.name}
                                 </option>

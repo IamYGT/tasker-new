@@ -172,6 +172,8 @@ export interface Bank {
     name: string;
     code: string;
     swift: string;
+    logo?: string;
+    is_active: boolean;
 }
 
 export interface UserIban {

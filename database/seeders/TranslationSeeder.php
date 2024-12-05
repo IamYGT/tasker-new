@@ -83,6 +83,28 @@ class TranslationSeeder extends Seeder
                 'key' => 'activity.withdrawal',
                 'tr' => '{amount} tutarında çekim talebi',
                 'en' => 'Withdrawal request of {amount}'
+            ],
+
+            // Son aktiviteler için çeviriler
+            [
+                'key' => 'dashboard.recentActivity',
+                'tr' => 'Son Aktiviteler',
+                'en' => 'Recent Activity'
+            ],
+            [
+                'key' => 'dashboard.noRecentActivity',
+                'tr' => 'Henüz aktivite yok',
+                'en' => 'No recent activity'
+            ],
+            [
+                'key' => 'dashboard.noRecentActivityDescription',
+                'tr' => 'Yeni aktiviteler burada görüntülenecek',
+                'en' => 'New activities will appear here'
+            ],
+            [
+                'key' => 'common.viewAll',
+                'tr' => 'Tümünü Gör',
+                'en' => 'View All'
             ]
         ];
 

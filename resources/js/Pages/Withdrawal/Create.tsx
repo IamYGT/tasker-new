@@ -18,12 +18,14 @@ interface Props {
     };
     exchangeRate: number;
     savedIbans: UserIban[];
+    banks: Bank[];
 }
 
 export default function WithdrawalRequest({
     auth,
     exchangeRate,
     savedIbans,
+    banks,
 }: Props) {
     const { t } = useTranslation();
     const [amount, setAmount] = useState('');
@@ -50,6 +52,7 @@ export default function WithdrawalRequest({
                         <WithdrawalMethodSelector
                             exchangeRate={exchangeRate}
                             savedIbans={savedIbans}
+                            banks={banks}
                             onAmountChange={setAmount}
                             onProcessingChange={handleProcessingChange}
                         />

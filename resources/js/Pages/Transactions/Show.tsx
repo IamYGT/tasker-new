@@ -4,7 +4,7 @@ import type { TransactionStatus } from '@/types';
 import { formatDate, getStatusColor, parseAmount } from '@/utils/format';
 import { Head, Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
-import { banks } from '@/data/banks';
+
 import {
     FaArrowLeft,
     FaCalendar,
@@ -36,6 +36,7 @@ interface Props {
         };
     };
     transaction: Transaction;
+    banks: Bank[];
 }
 
 // DetailCard için interface tanımı
@@ -56,7 +57,7 @@ interface Transaction {
     status: TransactionStatus;
     description: string;
     bank_account?: string;
-    bank_id?: string; // bank_id eklendi
+    bank_id?: string;
     reference_id: string;
     created_at: string;
     updated_at: string;
@@ -72,6 +73,14 @@ interface Transaction {
         email: string;
         roles?: Array<{ name: string }>;
     };
+}
+
+// Bank interface'ini ekleyelim
+interface Bank {
+    id: string;
+    name: string;
+    code: string;
+    logo?: string;
 }
 
 const StatusBadge = ({ status }: { status: TransactionStatus }) => {
@@ -150,9 +159,22 @@ const getTransactionStatus = (status: string) => {
     }
 };
 
-export default function Show({ auth, transaction }: Props) {
+export default function Show({ auth, transaction, banks }: Props) {
     const { t } = useTranslation();
-    const bank = transaction.bank_id ? banks.find(b => b.id === transaction.bank_id) : null;
+
+    console.log('Transaction Data:', {
+        bank_id: transaction.bank_id,
+        type: transaction.type,
+        bank_account: transaction.bank_account,
+        banks: banks
+    });
+
+    // bank_id kontrolünü güncelleyelim
+    const bank = transaction.type === 'bank_withdrawal' && transaction.bank_id
+        ? banks.find((b: Bank) => b.id === transaction.bank_id)
+        : null;
+
+    console.log('Found Bank:', bank);
 
     // Tarih formatı için yardımcı fonksiyon
     const formatDateTime = (dateString: string) => {
