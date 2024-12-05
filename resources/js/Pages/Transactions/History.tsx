@@ -4,7 +4,7 @@ import { parseAmount } from '@/utils/format';
 import { Head } from '@inertiajs/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import {
     FaArrowDown,
     FaArrowUp,
