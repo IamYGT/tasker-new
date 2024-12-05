@@ -38,6 +38,8 @@ export interface Role {
 }
 
 export interface Transaction {
+    history: any;
+    history: any;
     id: number;
     amount: string | number;
     amount_usd: string | number;

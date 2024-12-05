@@ -93,13 +93,13 @@ class TransactionController extends Controller
         // Validasyon kurallarını ayır
         $commonRules = [
             'amount_usd' => 'required|numeric|min:1',
-            'type' => 'required|in:withdrawal,deposit,transfer,crypto_withdrawal',
+            'type' => 'required|in:bank_withdrawal,crypto_withdrawal',
             'description' => 'nullable|string|max:255',
         ];
 
         $bankRules = [
-            'bank_id' => 'required_if:type,withdrawal|string|max:50',
-            'bank_account' => 'required_if:type,withdrawal|string|size:26',
+            'bank_id' => 'required_if:type,bank_withdrawal|string|max:50',
+            'bank_account' => 'required_if:type,bank_withdrawal|string|size:26',
         ];
 
         $cryptoRules = [
@@ -108,12 +108,11 @@ class TransactionController extends Controller
         ];
 
         // İşlem tipine göre validasyon kurallarını birleştir
-        $rules = $commonRules;
-        if ($request->input('type') === 'withdrawal') {
-            $rules = array_merge($rules, $bankRules);
-        } elseif ($request->input('type') === 'crypto_withdrawal') {
-            $rules = array_merge($rules, $cryptoRules);
-        }
+        $rules = array_merge(
+            $commonRules,
+            $request->input('type') === 'bank_withdrawal' ? $bankRules : [],
+            $request->input('type') === 'crypto_withdrawal' ? $cryptoRules : []
+        );
 
         try {
             $validated = $request->validate($rules);
@@ -133,7 +132,7 @@ class TransactionController extends Controller
             ];
 
             // İşlem tipine göre ek alanları ekle
-            if ($validated['type'] === 'withdrawal') {
+            if ($validated['type'] === 'bank_withdrawal') {
                 $transactionData = array_merge($transactionData, [
                     'bank_id' => $validated['bank_id'],
                     'bank_account' => $validated['bank_account'],
@@ -215,10 +214,8 @@ class TransactionController extends Controller
     private function generateReferenceId(string $type): string
     {
         $prefix = match($type) {
-            'withdrawal' => 'WD',
-            'crypto_withdrawal' => 'CR',
-            'deposit' => 'DP',
-            'transfer' => 'TR',
+            'bank_withdrawal' => 'BW',
+            'crypto_withdrawal' => 'CW',
             default => 'TX'
         };
 

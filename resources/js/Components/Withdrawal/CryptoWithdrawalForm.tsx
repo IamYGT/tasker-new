@@ -20,7 +20,7 @@ interface CryptoWithdrawalFormProps {
 }
 
 const NETWORKS = [
-    { id: 'trc20', name: 'Tron (TRC20)', fee: '1' },
+    { id: 'trc20', name: 'Tron (TRC20)', fee: '1', isDefault: true },
 
 ];
 
@@ -34,7 +34,7 @@ export const CryptoWithdrawalForm = ({
     const { data, setData, post, processing, errors } = useForm<FormData>({
         amount_usd: '',
         wallet_address: '',
-        network: '',
+        network: 'trc20',
         type: 'crypto_withdrawal',
     });
 

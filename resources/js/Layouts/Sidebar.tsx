@@ -40,11 +40,6 @@ const userMenuItems: MenuItem[] = [
         icon: <MdPayment className="h-5 w-5 sm:h-6 sm:w-6" />,
     },
     {
-        name: 'sidebar.pendingTransactions',
-        route: 'transactions.pending',
-        icon: <MdPending className="h-5 w-5 sm:h-6 sm:w-6" />,
-    },
-    {
         name: 'sidebar.withdrawals',
         route: 'withdrawal.request',
         icon: <MdMoneyOff className="h-5 w-5 sm:h-6 sm:w-6" />,

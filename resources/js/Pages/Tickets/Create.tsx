@@ -16,6 +16,10 @@ interface Props {
             roles?: Array<{ name: string }>;
         };
     };
+    subject?: string;
+    message?: string;
+    priority?: string;
+    category?: string;
 }
 
 interface FormData {
@@ -26,16 +30,16 @@ interface FormData {
     attachments: File[];
 }
 
-export default function Create({ auth }: Props) {
+export default function Create({ auth, subject, message, priority = 'medium', category = 'general' }: Props) {
     const { t } = useTranslation();
     const [dragActive, setDragActive] = useState(false);
 
     const { data, setData, post, processing, errors, reset } =
         useForm<FormData>({
-            subject: '',
-            message: '',
-            priority: 'medium',
-            category: 'general',
+            subject: subject || '',
+            message: message || '',
+            priority: priority,
+            category: category,
             attachments: [],
         });
 

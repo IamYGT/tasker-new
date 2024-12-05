@@ -27,4 +27,9 @@ class UserIban extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function bank()
+    {
+        return $this->belongsTo(Bank::class);
+    }
 }

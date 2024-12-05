@@ -84,7 +84,7 @@ class AdminTransactionController extends Controller
     public function updateStatus(Request $request, Transaction $transaction)
     {
         $validated = $request->validate([
-            'status' => 'required|in:pending,completed,cancelled',
+            'status' => 'required|in:pending,completed,cancelled,rejected',
             'notes' => 'nullable|string|max:1000'
         ]);
 
@@ -104,7 +104,7 @@ class AdminTransactionController extends Controller
     public function update(Request $request, Transaction $transaction)
     {
         $validated = $request->validate([
-            'status' => 'required|in:' . implode(',', Transaction::STATUSES),
+            'status' => 'required|in:pending,completed,cancelled,rejected',
             'notes' => 'nullable|string|max:1000'
         ]);
 

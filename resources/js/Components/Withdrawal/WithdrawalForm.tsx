@@ -101,7 +101,7 @@ export const WithdrawalForm = ({
         amount_usd: '',
         bank_id: '',
         bank_account: '',
-        type: 'withdrawal',
+        type: 'bank_withdrawal',
     });
 
     // Amount değişikliklerini parent componente bildir

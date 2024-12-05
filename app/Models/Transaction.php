@@ -12,24 +12,18 @@ class Transaction extends Model
     use HasFactory;
 
     // Status sabitleri
-    const STATUS_PENDING = 'waiting';
+    const STATUS_PENDING = 'pending';
     const STATUS_COMPLETED = 'completed';
     const STATUS_CANCELLED = 'cancelled';
     const STATUS_REJECTED = 'rejected';
-    const STATUS_APPROVED = 'approved';
-    const STATUS_WAITING = 'waiting';
 
     // Type sabitleri
-    const TYPE_WITHDRAWAL = 'withdrawal';
-    const TYPE_DEPOSIT = 'deposit';
-    const TYPE_TRANSFER = 'transfer';
+    const TYPE_BANK_WITHDRAWAL = 'bank_withdrawal';
     const TYPE_CRYPTO_WITHDRAWAL = 'crypto_withdrawal';
 
     // Tüm statüsler
     const STATUSES = [
         self::STATUS_PENDING,
-        self::STATUS_WAITING,
-        self::STATUS_APPROVED,
         self::STATUS_COMPLETED,
         self::STATUS_CANCELLED,
         self::STATUS_REJECTED,
@@ -37,9 +31,7 @@ class Transaction extends Model
 
     // Tüm tipler
     const TYPES = [
-        self::TYPE_WITHDRAWAL,
-        self::TYPE_DEPOSIT,
-        self::TYPE_TRANSFER,
+        self::TYPE_BANK_WITHDRAWAL,
         self::TYPE_CRYPTO_WITHDRAWAL,
     ];
 

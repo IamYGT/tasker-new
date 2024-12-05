@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Transaction;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\UserIban;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -17,36 +18,76 @@ class DashboardController extends Controller
         try {
             Log::info('Dashboard yükleniyor...');
 
-            // Stats verilerini hazırla
+            $user = auth()->user();
+
+            // İşlem istatistikleri - Query Builder'ı düzeltiyoruz
+            $transactions = Transaction::query()
+                ->where('user_id', $user->id);
+
+            $withdrawals = Transaction::query()
+                ->where('user_id', $user->id)
+                ->where('type', 'withdrawal')
+                ->where('status', 'completed');
+
+            // Ticket istatistikleri - Query Builder'ı düzeltiyoruz
+            $tickets = Ticket::query()
+                ->where('user_id', $user->id);
+
+            // IBAN'ları getir
+            $ibans = UserIban::query()
+                ->with('bank') // bank ilişkisini kontrol et
+                ->where('user_id', $user->id)
+                ->where('is_active', true)
+                ->get();
+
+            // Çekilmiş (withdrawn) toplam tutarı hesapla
+            $totalWithdrawn = Transaction::query()
+                ->where('user_id', $user->id)
+                ->whereIn('type', ['bank_withdrawal', 'crypto_withdrawal']) // Yeni tipleri kullan
+                ->where('status', 'completed') // Sadece tamamlanmış işlemleri al
+                ->sum('amount_usd');
+
+            $exchangeRate = $transactions->clone()
+                ->where('status', 'completed')
+                ->avg('exchange_rate');
+
             $stats = [
                 'transactions' => [
-                    'total' => (int)Transaction::count(),
-                    'pending' => (int)Transaction::where('status', 'pending')->count(),
-                    'completed' => (int)Transaction::where('status', 'completed')->count(),
-                    'totalAmount' => (float)Transaction::where('status', 'completed')->sum('amount') ?? 0,
-                    'totalAmount_usd' => (float)Transaction::where('status', 'completed')->sum('amount_usd') ?? 0,
-                    'exchange_rate' => (float)Transaction::avg('exchange_rate') ?? 0,
-                ],
-                'users' => [
-                    'total' => User::count(),
-                    'activeToday' => User::where('last_login_at', '>=', now()->subDay())->count(),
-                    'newThisWeek' => User::where('created_at', '>=', now()->subWeek())->count(),
+                    'total' => $transactions->count(),
+                    'pending' => $transactions->clone()
+                        ->whereIn('type', ['bank_withdrawal', 'crypto_withdrawal'])
+                        ->where('status', 'pending')
+                        ->count(),
+                    'completed' => $transactions->clone()
+                        ->whereIn('type', ['bank_withdrawal', 'crypto_withdrawal'])
+                        ->where('status', 'completed')
+                        ->count(),
+                    'totalAmount' => $transactions->sum('amount'),
+                    'totalAmount_usd' => $transactions->sum('amount_usd'),
+                    'totalWithdrawn_usd' => (float) $totalWithdrawn,
+                    'exchange_rate' => $exchangeRate ?? 30.0,
                 ],
                 'tickets' => [
-                    'total' => Ticket::count(),
-                    'open' => Ticket::where('status', 'open')->count(),
-                    'answered' => Ticket::where('status', 'answered')->count(),
-                    'closed' => Ticket::where('status', 'closed')->count(),
+                    'total' => $tickets->count(),
+                    'open' => $tickets->clone()
+                        ->whereIn('status', ['open', 'answered'])
+                        ->count(),
+                    'closed' => $tickets->clone()
+                        ->where('status', 'closed')
+                        ->count(),
                 ],
-                'recentActivity' => $this->getRecentActivity(),
+                'ibans' => $ibans->map(function ($iban) {
+                    return [
+                        'id' => $iban->id,
+                        'bank_name' => $iban->bank->name ?? 'Banka Adı Bulunamadı',
+                        'iban' => $iban->formatted_iban ?? $iban->iban,
+                        'is_default' => (bool) $iban->is_default,
+                    ];
+                }),
+                'recentActivity' => $this->getRecentActivity($user->id),
             ];
 
-            // Sayısal değerleri kontrol et
-            $stats['transactions'] = array_map(function($value) {
-                return is_numeric($value) ? (float)$value : $value;
-            }, $stats['transactions']);
-
-            Log::info('Dashboard verileri hazırlandı', ['stats' => $stats]);
+            Log::info('Dashboard başarıyla yüklendi', ['stats' => $stats]);
 
             return Inertia::render('Dashboard', [
                 'stats' => $stats,
@@ -59,6 +100,7 @@ class DashboardController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
+            // Hata durumunda varsayılan değerler
             return Inertia::render('Dashboard', [
                 'stats' => [
                     'transactions' => [
@@ -67,58 +109,57 @@ class DashboardController extends Controller
                         'completed' => 0,
                         'totalAmount' => 0,
                         'totalAmount_usd' => 0,
-                        'exchange_rate' => 0,
-                    ],
-                    'users' => [
-                        'total' => 0,
-                        'activeToday' => 0,
-                        'newThisWeek' => 0,
+                        'totalWithdrawn_usd' => 0,
+                        'exchange_rate' => 30.0,
                     ],
                     'tickets' => [
                         'total' => 0,
                         'open' => 0,
-                        'answered' => 0,
                         'closed' => 0,
                     ],
+                    'ibans' => [],
                     'recentActivity' => [],
                 ],
-                'error' => 'Veriler yüklenirken bir hata oluştu.'
+                'error' => 'Veriler yüklenirken bir hata oluştu: ' . $e->getMessage()
             ]);
         }
     }
 
-    private function getRecentActivity()
+    private function getRecentActivity($userId)
     {
-        try {
-            return collect([])
-                ->merge(Transaction::with('user')->latest()->take(5)->get())
-                ->merge(Ticket::with('user')->latest()->take(5)->get())
-                ->sortByDesc('created_at')
-                ->take(10)
-                ->map(function ($item) {
-                    $type = match (true) {
-                        $item instanceof Transaction => 'transaction',
-                        $item instanceof Ticket => 'ticket',
-                        default => 'unknown'
-                    };
+        $activities = collect([])
+            ->merge(Transaction::with('user')
+                ->where('user_id', $userId)
+                ->latest()
+                ->take(3)
+                ->get())
+            ->merge(Ticket::with('user')
+                ->where('user_id', $userId)
+                ->latest()
+                ->take(3)
+                ->get())
+            ->sortByDesc('created_at')
+            ->take(6);
 
-                    return [
-                        'id' => $item->id,
-                        'type' => $type,
-                        'user' => $item->user->name,
-                        'amount' => $item->amount ?? null,
-                        'amount_usd' => $item->amount_usd ?? null,
-                        'status' => $item->status,
-                        'created_at' => $item->created_at->diffForHumans(),
-                    ];
-                })
-                ->values()
-                ->all();
-        } catch (\Exception $e) {
-            Log::error('Son aktiviteler yüklenirken hata:', [
-                'error' => $e->getMessage()
-            ]);
+        if ($activities->isEmpty()) {
             return [];
         }
+
+        return $activities->map(function ($item) {
+            $type = $item instanceof Transaction ? 'transaction' : 'ticket';
+
+            return [
+                'id' => $item->id,
+                'type' => $type,
+                'user' => $item->user->name,
+                'amount' => $type === 'transaction' ? $item->amount : null,
+                'amount_usd' => $type === 'transaction' ? $item->amount_usd : null,
+                'status' => $item->status,
+                'created_at' => $item->created_at->diffForHumans(),
+                'message' => $type === 'transaction'
+                    ? translate('activity.transaction', ['amount' => '$' . number_format($item->amount_usd, 2)])
+                    : translate('activity.ticket')
+            ];
+        })->values()->all();
     }
 }

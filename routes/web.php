@@ -103,7 +103,6 @@ Route::middleware(['auth', 'verified', 'role:user'])->group(function () {
     // Transaction Routes
     Route::prefix('transactions')->name('transactions.')->group(function () {
         Route::get('/history', [TransactionController::class, 'history'])->name('history');
-        Route::get('/pending', [TransactionController::class, 'pending'])->name('pending');
     });
 
     // Ticket Routes
@@ -242,6 +241,5 @@ Route::middleware(['auth'])->group(function () {
     // Transactions
     Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
     Route::get('/transactions/history', [TransactionController::class, 'history'])->name('transactions.history');
-    Route::get('/transactions/pending', [TransactionController::class, 'pending'])->name('transactions.pending');
     Route::get('/transactions/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
 });

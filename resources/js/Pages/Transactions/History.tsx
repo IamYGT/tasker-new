@@ -13,13 +13,16 @@ import {
     FaClock,
     FaDollarSign,
     FaDownload,
+    FaMoneyBill,
     FaExchangeAlt,
     FaInfoCircle,
     FaLiraSign,
     FaMoneyBillWave,
     FaSearch,
     FaTimesCircle,
+    FaBitcoin,
 } from 'react-icons/fa';
+import { Link } from '@inertiajs/react';
 
 interface Transaction {
     id: number;
@@ -30,6 +33,7 @@ interface Transaction {
     status: string;
     description: string;
     bank_account?: string;
+    crypto_address?: string;
     reference_id: string;
     created_at: string;
     notes?: string;
@@ -61,19 +65,11 @@ interface Props {
     };
 }
 
-// Modal Props interface'i
-interface ModalProps {
-    transaction: Transaction | null;
-    onClose: () => void;
-}
-
 // İşlem kartı komponenti
 const TransactionCard = ({
     transaction,
-    onDetails,
 }: {
     transaction: Transaction;
-    onDetails: (transaction: Transaction) => void;
 }) => {
     const { t } = useTranslation();
 
@@ -82,10 +78,11 @@ const TransactionCard = ({
             case 'completed':
                 return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
             case 'pending':
-            case 'waiting':
                 return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300';
             case 'rejected':
                 return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300';
+            case 'cancelled':
+                return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
             default:
                 return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
         }
@@ -105,15 +102,14 @@ const TransactionCard = ({
         }
     };
 
-    const getTypeIcon = (type: string) => {
-        switch (type) {
-            case 'withdrawal':
-                return <FaArrowUp className="h-5 w-5 text-red-500" />;
-            case 'deposit':
-                return <FaArrowDown className="h-5 w-5 text-green-500" />;
-            default:
-                return <FaExchangeAlt className="h-5 w-5 text-blue-500" />;
+    const getTypeIcon = (type: string, transaction: Transaction) => {
+        if (type === 'bank_withdrawal') {
+            return <FaMoneyBill className="h-5 w-5 text-blue-500" />;
         }
+        if (type === 'crypto_withdrawal') {
+            return <FaBitcoin className="h-5 w-5 text-orange-500" />;
+        }
+        return <FaMoneyBillWave className="h-5 w-5 text-gray-500" />;
     };
 
     return (
@@ -126,16 +122,14 @@ const TransactionCard = ({
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                         <div className="rounded-full bg-gray-100 p-3 dark:bg-gray-700">
-                            {getTypeIcon(transaction.type)}
+                            {getTypeIcon(transaction.type, transaction)}
                         </div>
                         <div>
                             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
                                 {t(`transaction.type.${transaction.type}`)}
                             </h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {new Date(
-                                    transaction.created_at,
-                                ).toLocaleDateString('tr-TR', {
+                                {new Date(transaction.created_at).toLocaleDateString('tr-TR', {
                                     day: 'numeric',
                                     month: 'long',
                                     year: 'numeric',
@@ -160,7 +154,7 @@ const TransactionCard = ({
                 <div className="mt-4 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                         <span
-                            className={`inline-flex items-center space-x-1 rounded-full px-3 py-1 text-sm ${getStatusColor(transaction.status)}`}
+                            className={`inline-flex items-center space-x-1 rounded-full px-3 py-1 text-sm font-medium ${getStatusColor(transaction.status)}`}
                         >
                             {getStatusIcon(transaction.status)}
                             <span>{t(`status.${transaction.status}`)}</span>
@@ -169,174 +163,15 @@ const TransactionCard = ({
                             #{transaction.reference_id}
                         </span>
                     </div>
-                    <button
-                        onClick={() => onDetails(transaction)}
+                    <Link
+                        href={route('transactions.show', transaction.id)}
                         className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                     >
                         {t('common.details')}
-                    </button>
+                    </Link>
                 </div>
             </div>
         </motion.div>
-    );
-};
-
-// İşlem detay modalı
-const TransactionDetailModal = ({ transaction, onClose }: ModalProps) => {
-    const { t } = useTranslation();
-    const modalRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        // Modal açıldığında scroll'u en üste al ve kilitle
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        document.body.style.overflow = 'hidden';
-
-        // Modal kapandığında scroll'u serbest bırak
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, []);
-
-    if (!transaction) return null;
-
-    return (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm">
-            <div className="flex min-h-full items-center justify-center p-4">
-                <motion.div
-                    ref={modalRef}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ type: 'spring', duration: 0.3 }}
-                    className="relative w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl dark:bg-gray-800"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {/* Modal Header */}
-                    <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/95 p-6 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:border-gray-700 dark:bg-gray-800/95">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                                {t('transaction.details')}
-                            </h3>
-                            <button
-                                onClick={onClose}
-                                className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                            >
-                                <FaTimesCircle className="h-5 w-5" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Modal Content */}
-                    <div className="max-h-[calc(100vh-16rem)] overflow-y-auto p-6">
-                        {/* İşlem Detayları */}
-                        <div className="space-y-6">
-                            {/* Tutar Bilgileri */}
-                            <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700/30">
-                                <h4 className="mb-3 font-medium text-gray-900 dark:text-gray-100">
-                                    {t('transaction.amounts')}
-                                </h4>
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <div>
-                                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                                            {t('transaction.amountUSD')}
-                                        </div>
-                                        <div className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                            ${' '}
-                                            {typeof transaction.amount_usd ===
-                                            'number'
-                                                ? transaction.amount_usd.toFixed(
-                                                      2,
-                                                  )
-                                                : transaction.amount_usd}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                                            {t('transaction.amountTRY')}
-                                        </div>
-                                        <div className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                            ₺{' '}
-                                            {typeof transaction.amount ===
-                                            'number'
-                                                ? transaction.amount.toFixed(2)
-                                                : transaction.amount}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                    {t('transaction.exchangeRate')}:{' '}
-                                    {typeof transaction.exchange_rate ===
-                                    'number'
-                                        ? transaction.exchange_rate.toFixed(4)
-                                        : transaction.exchange_rate}
-                                </div>
-                            </div>
-
-                            {/* İşlem Bilgileri */}
-                            <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700/30">
-                                <h4 className="mb-3 font-medium text-gray-900 dark:text-gray-100">
-                                    {t('transaction.info')}
-                                </h4>
-                                <div className="space-y-3">
-                                    <div>
-                                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                                            {t('transaction.referenceId')}
-                                        </div>
-                                        <div className="mt-1 font-mono text-gray-900 dark:text-gray-100">
-                                            {transaction.reference_id}
-                                        </div>
-                                    </div>
-                                    {transaction.bank_account && (
-                                        <div>
-                                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                {t('transaction.bankAccount')}
-                                            </div>
-                                            <div className="mt-1 font-mono text-gray-900 dark:text-gray-100">
-                                                {transaction.bank_account}
-                                            </div>
-                                        </div>
-                                    )}
-                                    {transaction.description && (
-                                        <div>
-                                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                {t('transaction.description')}
-                                            </div>
-                                            <div className="mt-1 text-gray-900 dark:text-gray-100">
-                                                {transaction.description}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* İşlem Notları */}
-                            {transaction.notes && (
-                                <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700/30">
-                                    <h4 className="mb-3 font-medium text-gray-900 dark:text-gray-100">
-                                        {t('transaction.notes')}
-                                    </h4>
-                                    <div className="text-gray-700 dark:text-gray-300">
-                                        {transaction.notes}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Modal Footer */}
-                    <div className="sticky bottom-0 border-t border-gray-200 bg-gray-50/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 dark:border-gray-700 dark:bg-gray-800/95">
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={onClose}
-                                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                            >
-                                {t('common.close')}
-                            </button>
-                        </div>
-                    </div>
-                </motion.div>
-            </div>
-        </div>
     );
 };
 
@@ -346,8 +181,6 @@ export default function TransactionHistory({
     stats,
 }: Props) {
     const { t } = useTranslation();
-    const [selectedTransaction, setSelectedTransaction] =
-        useState<Transaction | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all');
 
@@ -360,10 +193,12 @@ export default function TransactionHistory({
             transaction.amount_usd.toString().includes(searchTerm) ||
             transaction.amount.toString().includes(searchTerm);
 
-        const matchesType =
-            filterType === 'all' || transaction.type === filterType;
+        const matchesFilter =
+            filterType === 'all' ||
+            transaction.status === filterType ||
+            transaction.type === filterType;
 
-        return matchesSearch && matchesType;
+        return matchesSearch && matchesFilter;
     });
 
     // CSV olarak dışa aktar
@@ -399,13 +234,6 @@ export default function TransactionHistory({
         link.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
         toast.success(t('transaction.exported'));
-    };
-
-    // Modal açma fonksiyonunu güncelle
-    const handleOpenModal = (transaction: Transaction) => {
-        // Önce scroll'u en üste al, sonra modalı aç
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        setSelectedTransaction(transaction);
     };
 
     return (
@@ -521,15 +349,16 @@ export default function TransactionHistory({
                                 className="rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
                             >
                                 <option value="all">{t('common.all')}</option>
-                                <option value="withdrawal">
-                                    {t('transaction.type.withdrawal')}
-                                </option>
-                                <option value="deposit">
-                                    {t('transaction.type.deposit')}
-                                </option>
-                                <option value="transfer">
-                                    {t('transaction.type.transfer')}
-                                </option>
+                                <optgroup label={t('transaction.statusGroup')}>
+                                    <option value="pending">{t('status.pending')}</option>
+                                    <option value="cancelled">{t('status.cancelled')}</option>
+                                    <option value="completed">{t('status.completed')}</option>
+                                    <option value="rejected">{t('status.rejected')}</option>
+                                </optgroup>
+                                <optgroup label={t('transaction.accountGroup')}>
+                                    <option value="crypto_withdrawal">{t('transaction.type.crypto')}</option>
+                                    <option value="bank_withdrawal">{t('transaction.type.bank')}</option>
+                                </optgroup>
                             </select>
                         </div>
                         <button
@@ -548,7 +377,6 @@ export default function TransactionHistory({
                                 <TransactionCard
                                     key={transaction.id}
                                     transaction={transaction}
-                                    onDetails={handleOpenModal}
                                 />
                             ))
                         ) : (
@@ -563,16 +391,6 @@ export default function TransactionHistory({
                             </div>
                         )}
                     </div>
-
-                    {/* Detay Modalı */}
-                    <AnimatePresence>
-                        {selectedTransaction && (
-                            <TransactionDetailModal
-                                transaction={selectedTransaction}
-                                onClose={() => setSelectedTransaction(null)}
-                            />
-                        )}
-                    </AnimatePresence>
                 </div>
             </div>
         </AuthenticatedLayout>

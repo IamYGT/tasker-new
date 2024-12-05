@@ -6,6 +6,7 @@ import {
     CheckCircleIcon,
     ClockIcon,
     CurrencyDollarIcon,
+    ChatBubbleLeftIcon,
 } from '@heroicons/react/24/outline';
 import { Head, Link, router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
@@ -30,6 +31,7 @@ interface DashboardStats {
         completed: number;
         totalAmount: number;
         totalAmount_usd: number;
+        totalWithdrawn_usd: number;
         exchange_rate: number;
     };
     users: {
@@ -43,6 +45,12 @@ interface DashboardStats {
         answered: number;
         closed: number;
     };
+    ibans: Array<{
+        id: number;
+        bank_name: string;
+        iban: string;
+        is_default: boolean;
+    }>;
     recentActivity: Array<{
         id: number;
         type: 'transaction' | 'ticket' | 'withdrawal';
@@ -104,9 +112,9 @@ const StatCard = ({
 }: StatCardProps) => (
     <motion.div
         whileHover={{ scale: 1.02 }}
-        className={`rounded-xl bg-gradient-to-br ${color} p-6 shadow-lg transition-all duration-300`}
+        className={`group relative overflow-hidden rounded-xl bg-gradient-to-br ${color} p-6 shadow-lg transition-all duration-300`}
     >
-        <div className="flex items-center justify-between">
+        <div className="relative z-10 flex items-center justify-between">
             <div>
                 <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">
                     {title}
@@ -122,8 +130,11 @@ const StatCard = ({
                     </p>
                 )}
             </div>
-            <Icon className="h-12 w-12 text-gray-400" />
+            <div className="rounded-full bg-white/20 p-3 shadow-inner transition-transform group-hover:scale-110 dark:bg-gray-800/20">
+                <Icon className="h-8 w-8 text-gray-700 dark:text-gray-300" />
+            </div>
         </div>
+        <div className="absolute -right-4 -top-4 h-32 w-32 rounded-full bg-white/10 transition-transform group-hover:scale-110" />
     </motion.div>
 );
 
@@ -134,57 +145,137 @@ const ActivityItem = ({
 }) => {
     const { t } = useTranslation();
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'completed':
-                return 'text-green-600';
-            case 'pending':
-                return 'text-yellow-600';
-            case 'cancelled':
-                return 'text-red-600';
+    // Durum renklerini ve arkaplan renklerini tanımlayalım
+    const getStatusStyles = (status: string) => {
+        const styles = {
+            completed: {
+                text: 'text-green-600 dark:text-green-400',
+                bg: 'bg-green-50 dark:bg-green-400/10',
+                icon: 'text-green-500 dark:text-green-400',
+                border: 'border-green-100 dark:border-green-400/20'
+            },
+            pending: {
+                text: 'text-amber-600 dark:text-amber-400',
+                bg: 'bg-amber-50 dark:bg-amber-400/10',
+                icon: 'text-amber-500 dark:text-amber-400',
+                border: 'border-amber-100 dark:border-amber-400/20'
+            },
+            cancelled: {
+                text: 'text-red-600 dark:text-red-400',
+                bg: 'bg-red-50 dark:bg-red-400/10',
+                icon: 'text-red-500 dark:text-red-400',
+                border: 'border-red-100 dark:border-red-400/20'
+            },
+            open: {
+                text: 'text-blue-600 dark:text-blue-400',
+                bg: 'bg-blue-50 dark:bg-blue-400/10',
+                icon: 'text-blue-500 dark:text-blue-400',
+                border: 'border-blue-100 dark:border-blue-400/20'
+            },
+            answered: {
+                text: 'text-purple-600 dark:text-purple-400',
+                bg: 'bg-purple-50 dark:bg-purple-400/10',
+                icon: 'text-purple-500 dark:text-purple-400',
+                border: 'border-purple-100 dark:border-purple-400/20'
+            },
+            closed: {
+                text: 'text-gray-600 dark:text-gray-400',
+                bg: 'bg-gray-50 dark:bg-gray-400/10',
+                icon: 'text-gray-500 dark:text-gray-400',
+                border: 'border-gray-100 dark:border-gray-400/20'
+            }
+        };
+        return styles[status as keyof typeof styles] || styles.pending;
+    };
+
+    // İkon seçimini yapalım
+    const getActivityIcon = (type: string) => {
+        switch (type) {
+            case 'transaction':
+                return <BanknotesIcon className="h-5 w-5" />;
+            case 'ticket':
+                return <ChatBubbleLeftIcon className="h-5 w-5" />;
+            case 'withdrawal':
+                return <ArrowTrendingUpIcon className="h-5 w-5" />;
             default:
-                return 'text-gray-600';
+                return <ClockIcon className="h-5 w-5" />;
         }
     };
 
+    // Tıklama yönlendirmesi için route belirleme
+    const getActivityRoute = (activity: DashboardStats['recentActivity'][0]) => {
+        switch (activity.type) {
+            case 'transaction':
+            case 'withdrawal':
+                return route('transactions.show', activity.id);
+            case 'ticket':
+                return route('tickets.show', activity.id);
+            default:
+                return '#';
+        }
+    };
+
+    // Mesaj formatını düzenleme
+    const getActivityMessage = (activity: DashboardStats['recentActivity'][0]) => {
+        switch (activity.type) {
+            case 'transaction':
+            case 'withdrawal':
+                return t('activity.transaction', {
+                    amount: activity.amount_usd
+                        ? new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'USD'
+                        }).format(activity.amount_usd)
+                        : '-'
+                });
+            case 'ticket':
+                return t('activity.ticket.created');
+            default:
+                return '';
+        }
+    };
+
+    const statusStyle = getStatusStyles(activity.status);
+
     return (
-        <div className="flex items-center space-x-4 rounded-lg border p-4 dark:border-gray-700">
-            <div
-                className={`rounded-full p-2 ${getStatusColor(activity.status)} bg-opacity-10`}
+        <Link href={getActivityRoute(activity)}>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.01 }}
+                className={`group flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-all duration-200 hover:bg-gray-50 hover:shadow-md dark:border-gray-700 dark:hover:bg-gray-800/50 ${statusStyle.border}`}
             >
-                {activity.type === 'transaction' && (
-                    <BanknotesIcon className="h-6 w-6" />
-                )}
-                {activity.type === 'ticket' && (
-                    <ClockIcon className="h-6 w-6" />
-                )}
-                {activity.type === 'withdrawal' && (
-                    <ArrowTrendingUpIcon className="h-6 w-6" />
-                )}
-            </div>
-            <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {activity.user}
-                </p>
-                <p className="text-sm text-gray-500">
-                    {t(`activity.${activity.type}`, {
-                        amount: activity.amount_usd
-                            ? `$${activity.amount_usd}`
-                            : '-',
-                    })}
-                </p>
-            </div>
-            <div className="text-right">
-                <span
-                    className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(activity.status)}`}
-                >
-                    {t(`status.${activity.status}`)}
-                </span>
-                <p className="mt-1 text-xs text-gray-500">
-                    {activity.created_at}
-                </p>
-            </div>
-        </div>
+                {/* İkon Alanı */}
+                <div className={`shrink-0 rounded-full p-2.5 ${statusStyle.bg} ${statusStyle.icon} transition-colors group-hover:bg-opacity-70`}>
+                    {getActivityIcon(activity.type)}
+                </div>
+
+                {/* İçerik Alanı */}
+                <div className="flex-1 space-y-1 overflow-hidden">
+                    <div className="flex items-center gap-2">
+                        <h4 className="truncate font-medium text-gray-900 dark:text-gray-100">
+                            {activity.user}
+                        </h4>
+                        <span className="shrink-0 text-sm text-gray-500 dark:text-gray-400">
+                            • {activity.created_at}
+                        </span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {getActivityMessage(activity)}
+                    </p>
+                </div>
+
+                {/* Durum Etiketi */}
+                <div className="shrink-0">
+                    <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${statusStyle.bg} ${statusStyle.text} transition-colors group-hover:bg-opacity-70`}
+                    >
+                        <span className={`h-1.5 w-1.5 rounded-full ${statusStyle.text}`}>•</span>
+                        {t(`status.${activity.status}`)}
+                    </span>
+                </div>
+            </motion.div>
+        </Link>
     );
 };
 
@@ -215,37 +306,41 @@ const SummaryCard = ({
     </div>
 );
 
-const TransactionChart = ({ data }: { data: ChartDataPoint[] }) => (
-    <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800">
-        <h3 className="mb-6 text-lg font-medium text-gray-900 dark:text-gray-100">
-            {t('dashboard.transactionTrend')}
-        </h3>
-        <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data}>
-                    <CartesianGrid
-                        strokeDasharray="3 3"
-                        className="stroke-gray-200 dark:stroke-gray-700"
-                    />
-                    <XAxis
-                        dataKey="name"
-                        className="text-gray-600 dark:text-gray-400"
-                    />
-                    <YAxis className="text-gray-600 dark:text-gray-400" />
-                    <Tooltip
-                        contentStyle={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                            border: 'none',
-                            borderRadius: '0.5rem',
-                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                        }}
-                    />
-                    <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-            </ResponsiveContainer>
+const TransactionChart = ({ data }: { data: ChartDataPoint[] }) => {
+    const { t } = useTranslation();
+
+    return (
+        <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800">
+            <h3 className="mb-6 text-lg font-medium text-gray-900 dark:text-gray-100">
+                {t('dashboard.transactionTrend')}
+            </h3>
+            <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data}>
+                        <CartesianGrid
+                            strokeDasharray="3 3"
+                            className="stroke-gray-200 dark:stroke-gray-700"
+                        />
+                        <XAxis
+                            dataKey="name"
+                            className="text-gray-600 dark:text-gray-400"
+                        />
+                        <YAxis className="text-gray-600 dark:text-gray-400" />
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                border: 'none',
+                                borderRadius: '0.5rem',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                            }}
+                        />
+                        <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const QuickActionButton = ({
     icon: Icon,
@@ -271,87 +366,118 @@ const QuickActionButton = ({
 const QuickActions = () => {
     const { t } = useTranslation();
 
-    const handleNavigate = (path: string) => {
-        router.visit(path);
-    };
+    const actions = [
+        {
+            icon: FaExchangeAlt,
+            label: t('dashboard.transactions'),
+            href: route('transactions.history'),
+            color: 'from-blue-500 to-blue-600',
+            hoverColor: 'hover:from-blue-600 hover:to-blue-700'
+        },
+        {
+            icon: CurrencyDollarIcon,
+            label: t('dashboard.withdrawal'),
+            href: route('withdrawal.request'),
+            color: 'from-green-500 to-green-600',
+            hoverColor: 'hover:from-green-600 hover:to-green-700'
+        },
+        {
+            icon: ChatBubbleLeftIcon,
+            label: t('dashboard.supportTickets'),
+            href: route('tickets.index'),
+            color: 'from-amber-500 to-amber-600',
+            hoverColor: 'hover:from-amber-600 hover:to-amber-700'
+        },
+        {
+            icon: BanknotesIcon,
+            label: t('dashboard.ibanManagement'),
+            href: route('profile.ibans.index'),
+            color: 'from-purple-500 to-purple-600',
+             hoverColor: 'hover:from-purple-600 hover:to-purple-700'
+        }
+    ];
+
+    return (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {actions.map((action, index) => (
+                <Link key={index} href={action.href}>
+                    <motion.div
+                        whileHover={{ scale: 1.03 }}
+                        className={`group relative overflow-hidden rounded-xl bg-gradient-to-br ${action.color} p-6 shadow-lg transition-all duration-300 ${action.hoverColor}`}
+                    >
+                        <div className="relative z-10 flex flex-col items-center space-y-3 text-white">
+                            <action.icon className="h-8 w-8 transition-transform group-hover:scale-110" />
+                            <span className="text-sm font-medium">{action.label}</span>
+                        </div>
+                        <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/10 transition-transform group-hover:scale-110" />
+                    </motion.div>
+                </Link>
+            ))}
+        </div>
+    );
+};
+
+const UserWelcome = ({ userName }: { userName: string }) => {
+    const { t } = useTranslation();
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 p-8 shadow-lg"
+        >
+            <div className="relative z-10">
+                <h1 className="text-3xl font-bold text-white">
+                    {t('dashboard.welcome', { name: userName })}
+                </h1>
+
+            </div>
+            <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/10" />
+            <div className="absolute -bottom-10 -left-10 h-64 w-64 rounded-full bg-white/10" />
+        </motion.div>
+    );
+};
+
+const IbanList = ({ ibans }: { ibans: DashboardStats['ibans'] }) => {
+    const { t } = useTranslation();
 
     return (
         <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800">
-            <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                    {t('dashboard.quickActions')}
-                </h3>
-                <Link
-                    href="/actions"
-                    className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                    {t('common.viewAll')}
-                </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                <QuickActionButton
-                    icon={FaExchangeAlt}
-                    label={t('dashboard.newTransaction')}
-                    color="text-blue-500"
-                    onClick={() => handleNavigate('/transactions/new')}
-                />
-                <QuickActionButton
-                    icon={FaUserPlus}
-                    label={t('dashboard.addUser')}
-                    color="text-green-500"
-                    onClick={() => handleNavigate('/users/new')}
-                />
-                <QuickActionButton
-                    icon={FaChartPie}
-                    label={t('dashboard.viewReports')}
-                    color="text-purple-500"
-                    onClick={() => handleNavigate('/reports')}
-                />
+            <h3 className="mb-4 text-lg font-medium text-gray-900 dark:text-gray-100">
+                {t('dashboard.myIbans')}
+            </h3>
+            <div className="space-y-4">
+                {ibans.map((iban) => (
+                    <motion.div
+                        key={iban.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="relative overflow-hidden rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                                <p className="font-medium text-gray-900 dark:text-gray-100">
+                                    {iban.bank_name}
+                                </p>
+                                <p className="mt-1 font-mono text-sm text-gray-600 dark:text-gray-400">
+                                    {iban.iban}
+                                </p>
+                            </div>
+                            {iban.is_default && (
+                                <span className="ml-2 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
+                                    {t('common.default')}
+                                </span>
+                            )}
+                        </div>
+                    </motion.div>
+                ))}
             </div>
         </div>
     );
 };
 
-export default function Dashboard({
-    auth,
-    stats,
-    showWelcomeToast,
-}: PageProps) {
+export default function Dashboard({ auth, stats }: PageProps) {
     const { t } = useTranslation();
-
-    useEffect(() => {
-        if (showWelcomeToast) {
-            toast.success(t('dashboard.welcomeMessage'), {
-                autoClose: 5000,
-                position: 'top-center' as const,
-            });
-        }
-    }, [showWelcomeToast, t]);
-
-    if (!stats) {
-        return (
-            <AuthenticatedLayout auth={auth}>
-                <div className="flex h-screen items-center justify-center">
-                    <div className="text-center">
-                        <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-gray-900"></div>
-                        <p className="mt-4 text-lg text-gray-600">
-                            {t('common.loading')}
-                        </p>
-                    </div>
-                </div>
-            </AuthenticatedLayout>
-        );
-    }
-
-    const chartData: ChartDataPoint[] = [
-        { name: 'Pzt', value: 30 },
-        { name: 'Sal', value: 45 },
-        { name: 'Çar', value: 35 },
-        { name: 'Per', value: 50 },
-        { name: 'Cum', value: 40 },
-        { name: 'Cmt', value: 60 },
-        { name: 'Paz', value: 45 },
-    ];
 
     return (
         <AuthenticatedLayout
@@ -366,6 +492,8 @@ export default function Dashboard({
 
             <div className="py-12">
                 <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+                    <UserWelcome userName={auth.user.name} />
+
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                         <StatCard
                             title={t('dashboard.totalTransactions')}
@@ -374,8 +502,13 @@ export default function Dashboard({
                             color="from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30"
                         />
                         <StatCard
-                            title={t('dashboard.totalAmount')}
-                            value={`$${stats.transactions.totalAmount_usd.toFixed(2)}`}
+                            title={t('dashboard.totalWithdrawn')}
+                            value={new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'USD',
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            }).format(stats.transactions.totalWithdrawn_usd)}
                             icon={CurrencyDollarIcon}
                             color="from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30"
                         />
@@ -383,63 +516,42 @@ export default function Dashboard({
                             title={t('dashboard.pendingTransactions')}
                             value={stats.transactions.pending}
                             icon={ClockIcon}
-                            color="from-yellow-50 to-yellow-100 dark:from-yellow-900/30 dark:to-yellow-800/30"
+                            color="from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30"
                         />
                         <StatCard
-                            title={t('dashboard.completedTransactions')}
-                            value={stats.transactions.completed}
-                            icon={CheckCircleIcon}
+                            title={t('dashboard.openTickets')}
+                            value={stats.tickets.open}
+                            icon={ChatBubbleLeftIcon}
                             color="from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30"
                         />
                     </div>
 
                     <div className="grid gap-6 lg:grid-cols-3">
                         <div className="lg:col-span-2">
-                            <TransactionChart data={chartData} />
+                            <div className="grid gap-6">
+                                <QuickActions />
+                                <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800">
+                                    <h3 className="mb-4 text-lg font-medium text-gray-900 dark:text-gray-100">
+                                        {t('dashboard.recentActivity')}
+                                    </h3>
+                                    <div className="space-y-4">
+                                        {stats.recentActivity.slice(0, 3).map((activity) => (
+                                            <ActivityItem
+                                                key={`${activity.type}-${activity.id}`}
+                                                activity={activity}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div>
-                            <QuickActions />
-                        </div>
-                    </div>
-
-                    <div className="grid gap-6 lg:grid-cols-2">
-                        <div className="grid gap-4">
-                            <SummaryCard
-                                title={t('dashboard.dailyAverage')}
-                                value={`$${(stats.transactions.totalAmount_usd / 30).toFixed(2)}`}
-                                description={t('dashboard.last30Days')}
-                                icon={CurrencyDollarIcon}
-                                color="text-emerald-500"
-                            />
-                            <SummaryCard
-                                title={t('dashboard.successRate')}
-                                value={`${((stats.transactions.completed / stats.transactions.total) * 100).toFixed(1)}%`}
-                                description={t('dashboard.completionRate')}
-                                icon={CheckCircleIcon}
-                                color="text-blue-500"
-                            />
-                        </div>
-
-                        <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800">
-                            <h3 className="mb-4 text-lg font-medium text-gray-900 dark:text-gray-100">
-                                {t('dashboard.recentActivity')}
-                            </h3>
-                            <div className="space-y-4">
-                                {stats.recentActivity.map((activity) => (
-                                    <ActivityItem
-                                        key={`${activity.type}-${activity.id}`}
-                                        activity={activity}
-                                    />
-                                ))}
-                            </div>
+                            <IbanList ibans={stats.ibans} />
                         </div>
                     </div>
                 </div>
             </div>
         </AuthenticatedLayout>
     );
-}
-function t(arg0: string): import("react").ReactNode {
-    throw new Error('Function not implemented.');
 }
 

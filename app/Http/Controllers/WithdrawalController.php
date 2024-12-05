@@ -61,45 +61,65 @@ class WithdrawalController extends Controller
     {
         $validated = $request->validate([
             'amount_usd' => 'required|numeric|min:1',
-            'bank_id' => 'required|string',
-            'bank_account' => 'required|string',
-            'type' => 'required|in:withdrawal'
+            'type' => 'required|in:bank_withdrawal,crypto_withdrawal',
+            'bank_id' => 'required_if:type,bank_withdrawal|string',
+            'bank_account' => 'required_if:type,bank_withdrawal|string|size:26',
+            'wallet_address' => 'required_if:type,crypto_withdrawal|string|max:255',
+            'network' => 'required_if:type,crypto_withdrawal|string|in:trc20',
         ]);
 
-        // Döviz kurunu al
-        $exchangeRate = Cache::remember('usd_try_rate', 3600, function () {
-            try {
-                $response = Http::get('https://api.exchangerate-api.com/v4/latest/USD');
-                return $response->json()['rates']['TRY'] ?? 30.0;
-            } catch (\Exception $e) {
-                \Log::error('Exchange rate API error: ' . $e->getMessage());
-                return 30.0;
-            }
-        });
-
         try {
-            // Benzersiz referans numarası oluştur
-            $referenceId = 'WD-' . strtoupper(Str::random(8));
+            // Döviz kurunu al
+            $exchangeRate = Cache::remember('usd_try_rate', 3600, function () {
+                try {
+                    $response = Http::get('https://api.exchangerate-api.com/v4/latest/USD');
+                    return $response->json()['rates']['TRY'] ?? 30.0;
+                } catch (\Exception $e) {
+                    \Log::error('Exchange rate API error: ' . $e->getMessage());
+                    return 30.0;
+                }
+            });
 
-            $transaction = Transaction::create([
+            // Benzersiz referans numarası oluştur
+            $prefix = $validated['type'] === 'crypto_withdrawal' ? 'CW-' : 'BW-';
+            $referenceId = $prefix . strtoupper(Str::random(8));
+
+            $transactionData = [
                 'user_id' => auth()->id(),
                 'amount_usd' => $validated['amount_usd'],
-                'amount' => $validated['amount_usd'] * $exchangeRate, // TL tutarı
+                'amount' => $validated['amount_usd'] * $exchangeRate,
                 'exchange_rate' => $exchangeRate,
-                'type' => Transaction::TYPE_WITHDRAWAL,
-                'status' => Transaction::STATUS_WAITING,
-                'bank_id' => $validated['bank_id'],
-                'bank_account' => $validated['bank_account'],
+                'type' => $validated['type'],
+                'status' => Transaction::STATUS_PENDING,
                 'reference_id' => $referenceId,
-            ]);
+            ];
+
+            // İşlem tipine göre ek alanları ekle
+            if ($validated['type'] === 'bank_withdrawal') {
+                $transactionData = array_merge($transactionData, [
+                    'bank_id' => $validated['bank_id'],
+                    'bank_account' => $validated['bank_account'],
+                ]);
+            } elseif ($validated['type'] === 'crypto_withdrawal') {
+                $transactionData = array_merge($transactionData, [
+                    'crypto_address' => $validated['wallet_address'],
+                    'crypto_network' => $validated['network'],
+                    'crypto_fee' => 1.00, // Sabit USDT ��creti
+                ]);
+            }
+
+            $transaction = Transaction::create($transactionData);
 
             // İşlem geçmişine ekle
-            $transaction->addToHistory('withdrawal.created', 'create', [
+            $historyMessage = $validated['type'] === 'crypto_withdrawal'
+                ? 'crypto_withdrawal.created'
+                : 'bank_withdrawal.created';
+
+            $transaction->addToHistory($historyMessage, 'create', [
                 'amount_usd' => $validated['amount_usd'],
                 'amount_try' => $transaction->amount
             ]);
 
-            // Yönlendirmeyi pending transactions sayfasına değiştir
             return redirect()
                 ->route('transactions.pending')
                 ->with('success', translate('withdrawal.requestCreated'));

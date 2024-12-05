@@ -41,11 +41,13 @@ class TicketController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         return Inertia::render('Tickets/Create', [
-            'priorities' => Ticket::PRIORITIES,
-            'categories' => Ticket::CATEGORIES
+            'subject' => $request->input('subject'),
+            'message' => $request->input('message'),
+            'priority' => $request->input('priority', 'medium'),
+            'category' => $request->input('category', 'general'),
         ]);
     }
 
