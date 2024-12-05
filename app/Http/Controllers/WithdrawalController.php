@@ -24,12 +24,32 @@ class WithdrawalController extends Controller
             }
         });
 
-        // Kullanıcının kayıtlı IBAN'larını getir
+        // Kullanıcının kayıtlı IBAN'larını getir ve banka detaylarını ekle
         $savedIbans = auth()->user()->ibans()
             ->where('is_active', true)
             ->orderBy('is_default', 'desc')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($iban) {
+                // Banka bilgilerini ekle
+                $banksJson = file_get_contents(resource_path('js/Data/turkey_banks.json'));
+                $banks = json_decode($banksJson, true)['banks'];
+                $bankDetails = collect($banks)->firstWhere('id', $iban->bank_id);
+
+                return [
+                    'id' => $iban->id,
+                    'bank_id' => $iban->bank_id,
+                    'iban' => $iban->iban,
+                    'title' => $iban->title,
+                    'is_default' => $iban->is_default,
+                    'is_active' => $iban->is_active,
+                    'bank_details' => [
+                        'name' => $bankDetails['name'] ?? '',
+                        'code' => $bankDetails['code'] ?? '',
+                        'swift' => $bankDetails['swift'] ?? ''
+                    ]
+                ];
+            });
 
         return Inertia::render('Withdrawal/Create', [
             'exchangeRate' => $exchangeRate,
@@ -41,15 +61,9 @@ class WithdrawalController extends Controller
     {
         $validated = $request->validate([
             'amount_usd' => 'required|numeric|min:1',
-            'bank_id' => 'required|string|max:50',
-            'bank_account' => [
-                'required',
-                'string',
-                'max:26',
-                'regex:/^TR[0-9]{24}$/', // IBAN formatı kontrolü
-            ]
-        ], [
-            'bank_account.regex' => translate('withdrawal.invalidIBAN')
+            'bank_id' => 'required|string',
+            'bank_account' => 'required|string',
+            'type' => 'required|in:withdrawal'
         ]);
 
         // Döviz kurunu al
@@ -85,8 +99,9 @@ class WithdrawalController extends Controller
                 'amount_try' => $transaction->amount
             ]);
 
+            // Yönlendirmeyi pending transactions sayfasına değiştir
             return redirect()
-                ->route('transactions.history')
+                ->route('transactions.pending')
                 ->with('success', translate('withdrawal.requestCreated'));
 
         } catch (\Exception $e) {

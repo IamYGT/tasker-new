@@ -2,7 +2,6 @@ import { createInertiaApp } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import ReactDOMServer from 'react-dom/server';
-import { RouteName } from 'ziggy-js';
 import { route as ziggyRoute } from '../../vendor/tightenco/ziggy';
 import { PageProps } from '@/types';
 

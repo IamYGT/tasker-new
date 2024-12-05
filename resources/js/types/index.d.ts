@@ -50,6 +50,10 @@ export interface Transaction {
     created_at: string;
     updated_at: string;
     notes?: string;
+    processed_at?: string;
+    crypto_address?: string;
+    crypto_network?: string;
+    crypto_fee?: string | number;
     user: {
         id: number;
         name: string;
@@ -58,7 +62,7 @@ export interface Transaction {
     };
 }
 
-export type TransactionType = 'withdrawal' | 'deposit' | 'transfer';
+export type TransactionType = 'withdrawal' | 'crypto_withdrawal' | 'deposit' | 'transfer';
 
 export type TransactionStatus =
     | 'pending'
@@ -139,11 +143,16 @@ export interface RecentActivity {
 }
 
 interface Network {
-    [x: string]: string;
     id: string;
     name: string;
     symbol: string;
     chain: string;
+    validation_regex: string;
+    explorer_url: string;
+    icon?: string;
+    fee?: string;
+    min_amount?: string;
+    max_amount?: string;
 }
 
 interface UserCrypto {
@@ -154,4 +163,47 @@ interface UserCrypto {
     is_default: boolean;
     is_active: boolean;
     network_details: Network;
+}
+
+export interface Bank {
+    id: string;
+    name: string;
+    code: string;
+    swift: string;
+}
+
+export interface UserIban {
+    id: number;
+    bank_id: string;
+    iban: string;
+    title: string | null;
+    is_default: boolean;
+    is_active: boolean;
+    bank_details: {
+        name: string;
+        code: string;
+        swift: string;
+    };
+}
+
+export interface CryptoNetwork {
+    id: string;
+    name: string;
+    fee: string;
+    validation_regex: string;
+    min_amount: string;
+    max_amount: string;
+}
+
+export interface CryptoWithdrawalFormData {
+    amount_usd: string;
+    wallet_address: string;
+    network: string;
+    type: 'crypto_withdrawal';
+}
+
+export interface CryptoWithdrawalFormProps {
+    exchangeRate: number;
+    onAmountChange: (amount: string) => void;
+    onProcessingChange: (status: boolean) => void;
 }

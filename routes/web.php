@@ -82,6 +82,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
         ->name('admin.dashboard')
         ->middleware('role:admin');
+
+    // Para Çekme İşlemleri
+    Route::get('/withdrawal/request', [WithdrawalController::class, 'create'])->name('withdrawal.create');
+    Route::post('/withdrawal/store', [WithdrawalController::class, 'store'])->name('withdrawal.store');
 });
 
 /*
@@ -93,7 +97,7 @@ Route::middleware(['auth', 'verified', 'role:user'])->group(function () {
     // Withdrawal Routes
     Route::prefix('withdrawal')->name('withdrawal.')->group(function () {
         Route::get('/request', [WithdrawalController::class, 'create'])->name('request');
-        Route::post('/request', [WithdrawalController::class, 'store'])->name('store');
+        Route::post('/store', [TransactionController::class, 'store'])->name('store');
     });
 
     // Transaction Routes

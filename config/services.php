@@ -55,4 +55,9 @@ return [
         'redirect' => env('GITHUB_REDIRECT_URI'),
     ],
 
+    'exchange_rate' => [
+        'api_key' => env('EXCHANGE_RATE_API_KEY'),
+        'cache_duration' => env('EXCHANGE_RATE_CACHE_DURATION', 300), // 5 dakika
+    ],
+
 ];

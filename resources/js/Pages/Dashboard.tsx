@@ -218,7 +218,7 @@ const SummaryCard = ({
 const TransactionChart = ({ data }: { data: ChartDataPoint[] }) => (
     <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800">
         <h3 className="mb-6 text-lg font-medium text-gray-900 dark:text-gray-100">
-            İşlem Trendi
+            {t('dashboard.transactionTrend')}
         </h3>
         <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -439,3 +439,7 @@ export default function Dashboard({
         </AuthenticatedLayout>
     );
 }
+function t(arg0: string): import("react").ReactNode {
+    throw new Error('Function not implemented.');
+}
+
