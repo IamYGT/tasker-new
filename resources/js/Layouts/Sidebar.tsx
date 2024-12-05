@@ -1,11 +1,12 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import { useTranslation } from '@/Contexts/TranslationContext';
+
 import Tippy from '@tippyjs/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useCallback, useEffect, useState } from 'react';
+
 import {
     MdAccountBalance,
-    MdAccountBalanceWallet,
     MdClose,
     MdConfirmationNumber,
     MdDashboard,
@@ -55,13 +56,8 @@ const userMenuItems: MenuItem[] = [
     },
     {
         name: 'sidebar.ibans',
-        route: 'profile.ibans',
+        route: 'profile.ibans.index',
         icon: <MdAccountBalance className="h-5 w-5 sm:h-6 sm:w-6" />,
-    },
-    {
-        name: 'sidebar.cryptos',
-        route: 'profile.cryptos',
-        icon: <MdAccountBalanceWallet className="h-5 w-5 sm:h-6 sm:w-6" />,
     },
 ];
 
@@ -192,30 +188,21 @@ const Sidebar: React.FC<SidebarProps> = ({
                         {/* Logo and Title */}
                         <motion.div
                             variants={contentVariants}
-                            transition={{ duration: 0.05 }} // Hızlandırıldı
-                            className={`flex items-center overflow-hidden ${collapsed && !isMobile ? 'w-full justify-center' : ''}`}
+                            transition={{ duration: 0.05 }}
+                            className={`flex w-full items-center justify-center overflow-hidden`}
                         >
                             <motion.div
                                 variants={logoVariants}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
+                                className="flex w-full justify-center"
                             >
                                 <ApplicationLogo
                                     mode={darkMode ? 'dark' : 'light'}
-                                    className={`h-8 w-8 sm:h-10 sm:w-10 ${isMobile || !collapsed ? 'mr-3 sm:mr-4' : ''}`}
+                                    size="large"
+                                    className={`${collapsed ? 'h-10 sm:h-12' : 'h-12 sm:h-16'} w-auto transition-all duration-200`}
                                 />
                             </motion.div>
-                            {(!collapsed || isMobile) && (
-                                <motion.span
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    transition={{ duration: 0.05 }}
-                                    className="text-lg font-semibold sm:text-xl"
-                                >
-                                    {import.meta.env.VITE_APP_NAME}
-                                </motion.span>
-                            )}
                         </motion.div>
                         {/* Close Button (Mobile Only) */}
                         {isMobile && (

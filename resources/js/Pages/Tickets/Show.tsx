@@ -5,7 +5,6 @@ import { formatDate } from '@/Utils/ticket_format';
 import { Head, router, useForm } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import React, { useState } from 'react';
-import { toast } from 'react-hot-toast';
 import {
     FaCheckCircle,
     FaDownload,
@@ -16,6 +15,7 @@ import {
     FaTimes,
     FaUser,
 } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
 interface HistoryParams {
     from?: string;

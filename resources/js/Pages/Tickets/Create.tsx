@@ -4,8 +4,8 @@ import { formatFileSize } from '@/Utils/ticket_format';
 import { Head, useForm } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import React, { useState } from 'react';
-import { toast } from 'react-hot-toast';
 import { FaTicketAlt, FaTimes, FaUpload } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
 interface Props {
     auth: {

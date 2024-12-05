@@ -176,4 +176,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserIban::class);
     }
+
+    /**
+     * Get the user's crypto addresses.
+     */
+    public function cryptos(): HasMany
+    {
+        return $this->hasMany(UserCrypto::class);
+    }
 }

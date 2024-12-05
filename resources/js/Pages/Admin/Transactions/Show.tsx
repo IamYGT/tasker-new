@@ -10,7 +10,6 @@ import {
 import { Head, Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import React from 'react';
-import { toast } from 'react-hot-toast';
 import {
     FaArrowLeft,
     FaCalendar,
@@ -25,6 +24,7 @@ import {
     FaUser,
     FaUserEdit,
 } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
 interface HistoryItem {
     type: 'status_change' | 'notes_update' | 'info';

@@ -11,8 +11,8 @@ import { Head, Link, router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { useEffect } from 'react';
 import 'react-circular-progressbar/dist/styles.css';
-import { toast } from 'react-hot-toast';
 import { FaChartPie, FaExchangeAlt, FaUserPlus } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 import {
     Bar,
     BarChart,
@@ -322,8 +322,8 @@ export default function Dashboard({
     useEffect(() => {
         if (showWelcomeToast) {
             toast.success(t('dashboard.welcomeMessage'), {
-                duration: 5000,
-                position: 'top-center',
+                autoClose: 5000,
+                position: 'top-center' as const,
             });
         }
     }, [showWelcomeToast, t]);

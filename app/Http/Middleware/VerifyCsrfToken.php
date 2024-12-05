@@ -12,6 +12,7 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        'admin/tickets/*/status',
+        // ... diğer muaf tutulan route'lar ...
     ];
-} 
+}

@@ -23,6 +23,7 @@ class Transaction extends Model
     const TYPE_WITHDRAWAL = 'withdrawal';
     const TYPE_DEPOSIT = 'deposit';
     const TYPE_TRANSFER = 'transfer';
+    const TYPE_CRYPTO_WITHDRAWAL = 'crypto_withdrawal';
 
     // Tüm statüsler
     const STATUSES = [
@@ -39,6 +40,7 @@ class Transaction extends Model
         self::TYPE_WITHDRAWAL,
         self::TYPE_DEPOSIT,
         self::TYPE_TRANSFER,
+        self::TYPE_CRYPTO_WITHDRAWAL,
     ];
 
     // Status çevirileri
@@ -65,7 +67,11 @@ class Transaction extends Model
         'reference_id',
         'processed_at',
         'notes',
-        'history'
+        'history',
+        'crypto_address',
+        'crypto_network',
+        'crypto_fee',
+        'crypto_txid'
     ];
 
     protected $casts = [

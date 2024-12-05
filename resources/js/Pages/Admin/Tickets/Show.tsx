@@ -2,7 +2,6 @@ import { useTranslation } from '@/Contexts/TranslationContext';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 import React, { useRef, useState } from 'react';
-import { toast } from 'react-hot-toast';
 import {
     FaDownload,
     FaEye,
@@ -17,6 +16,7 @@ import {
     FaTimes,
     FaUser,
 } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 import { PriorityBadge } from './Components/Badges';
 import PreviewModal from './Components/PreviewModal';
 import StatusSelect from './Components/StatusSelect';
@@ -110,8 +110,6 @@ const MessageBubble = ({
     attachments,
     quote,
     onPreviewImage,
-    onQuote,
-    t,
 }: MessageBubbleProps) => {
     return (
         <div
@@ -200,10 +198,10 @@ export default function Show({ auth, ticket, statuses }: Props) {
     const [isReplying, setIsReplying] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [currentStatus, setCurrentStatus] = useState(ticket.status);
+    const [, setCurrentStatus] = useState(ticket.status);
     const [isStatusUpdating, setIsStatusUpdating] = useState(false);
 
-    const { data, setData, post, processing, reset } = useForm({
+    const { data, setData, processing, reset } = useForm({
         message: '',
         status: ticket.status,
         attachments: [] as File[],
@@ -359,11 +357,12 @@ export default function Show({ auth, ticket, statuses }: Props) {
                             <div className="flex items-center gap-4">
                                 <PriorityBadge priority={ticket.priority} />
                                 <StatusSelect
-                                    currentStatus={currentStatus}
+                                    currentStatus={ticket.status}
                                     statuses={statuses}
                                     onChange={handleStatusChange}
                                     isLoading={isStatusUpdating}
                                     t={t}
+                                    ticketId={ticket.id}
                                 />
                             </div>
                         </div>

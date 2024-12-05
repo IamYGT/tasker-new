@@ -54,7 +54,6 @@ Route::get('/language/{lang}', [LanguageController::class, 'switchLanguage'])
 |--------------------------------------------------------------------------
 */
 Route::middleware('guest')->group(function () {
-    // Ana sayfa direkt login'e yönlendirilsin
     Route::get('/', function () {
         return redirect()->route('login');
     });
@@ -62,129 +61,109 @@ Route::middleware('guest')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Authenticated Routes
+| Auth Check & Redirect
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Ana dashboard route'u - role göre yönlendirme yapar
+    Route::get('/dashboard', function () {
+        if (auth()->user()->hasRole('admin')) {
+            return redirect()->route('admin.dashboard');
+        }
+        return redirect()->route('user.dashboard');
+    })->name('dashboard');
 
-    /*
-    |--------------------------------------------------------------------------
-    | User Routes
-    |--------------------------------------------------------------------------
-    */
-    Route::middleware(['role:user'])->group(function () {
-        // Withdrawal Routes
-        Route::prefix('withdrawal')->name('withdrawal.')->group(function () {
-            Route::get('/request', [WithdrawalController::class, 'create'])->name('request');
-            Route::post('/request', [WithdrawalController::class, 'store'])->name('store');
-        });
+    // User Dashboard - Sadece normal kullanıcılar için
+    Route::get('/user/dashboard', [DashboardController::class, 'index'])
+        ->name('user.dashboard')
+        ->middleware('role:user');
 
-        // Transaction Routes
-        Route::prefix('transactions')->name('transactions.')->group(function () {
-            Route::get('/history', [TransactionController::class, 'history'])->name('history');
-            Route::get('/pending', [TransactionController::class, 'pending'])->name('pending');
-        });
-
-        // Ticket Routes
-        Route::prefix('tickets')->name('tickets.')->group(function () {
-            Route::get('/', [TicketController::class, 'index'])->name('index');
-            Route::get('/create', [TicketController::class, 'create'])->name('create');
-            Route::post('/', [TicketController::class, 'store'])->name('store');
-            Route::get('/{ticket}', [TicketController::class, 'show'])->name('show');
-            Route::post('/{ticket}/reply', [TicketController::class, 'reply'])->name('reply');
-        });
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | Admin Routes
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
-        // Dashboard
-        Route::get('/dashboard', [AdminDashboardController::class, 'index'])
-            ->name('admin.dashboard');
-
-        // Transactions
-        Route::prefix('transactions')->name('admin.transactions.')->group(function () {
-            Route::get('/', [AdminTransactionController::class, 'index'])->name('index');
-            Route::get('/{transaction}', [AdminTransactionController::class, 'show'])->name('show');
-            Route::get('/{transaction}/edit', [AdminTransactionController::class, 'edit'])->name('edit');
-            Route::put('/{transaction}', [AdminTransactionController::class, 'update'])->name('update');
-            Route::put('/{transaction}/status', [AdminTransactionController::class, 'updateStatus'])->name('update-status');
-        });
-
-        // Tickets
-        Route::prefix('tickets')->name('admin.tickets.')->group(function () {
-            Route::get('/', [AdminTicketController::class, 'index'])->name('index');
-            Route::get('/{ticket}', [AdminTicketController::class, 'show'])->name('show');
-            Route::post('/{ticket}/reply', [AdminTicketController::class, 'reply'])->name('reply');
-            Route::put('/{ticket}/status', [AdminTicketController::class, 'updateStatus'])->name('update-status');
-            Route::post('/create-for-user/{user}', [AdminTicketController::class, 'createForUser'])->name('create-for-user');
-        });
-
-        // Users
-        Route::prefix('users')->name('admin.users.')->group(function () {
-            Route::get('/', [AdminUserController::class, 'index'])->name('index');
-            Route::get('/create', [AdminUserController::class, 'create'])->name('create');
-            Route::post('/', [AdminUserController::class, 'store'])->name('store');
-            Route::get('/{user}', [AdminUserController::class, 'show'])->name('show');
-            Route::get('/{user}/edit', [AdminUserController::class, 'edit'])->name('edit');
-            Route::put('/{user}', [AdminUserController::class, 'update'])->name('update');
-            Route::delete('/{user}', [AdminUserController::class, 'destroy'])->name('destroy');
-
-            // Şifre işlemleri
-            Route::post('/store-password', [AdminUserController::class, 'storePassword'])->name('store-password');
-            Route::post('/{user}/send-credentials', [AdminUserController::class, 'sendCredentials'])->name('send-credentials');
-            Route::get('/{user}/reset-password', [AdminUserController::class, 'resetPasswordForm'])->name('reset-password-form');
-            Route::post('/{user}/reset-password', [AdminUserController::class, 'resetPassword'])->name('reset-password.update');
-        });
-
-        // Withdrawals
-        Route::prefix('withdrawals')->name('admin.withdrawals.')->group(function () {
-            Route::get('/', [AdminWithdrawalController::class, 'index'])->name('index');
-            Route::get('/{withdrawal}', [AdminWithdrawalController::class, 'show'])->name('show');
-            Route::put('/{withdrawal}/status', [AdminWithdrawalController::class, 'updateStatus'])->name('update-status');
-        });
-
-        // Admin API Routes
-        Route::prefix('api')->group(function () {
-            Route::get('/dashboard/stats', [AdminDashboardController::class, 'getStats']);
-        });
-    });
-
-    Route::middleware(['auth', 'role:admin'])->prefix('api/admin')->group(function () {
-        Route::get('/dashboard/stats', [AdminDashboardController::class, 'getStats']);
-    });
-
-    Route::prefix('profile')->name('profile.')->group(function () {
-        Route::get('/ibans', [UserIbanController::class, 'index'])->name('ibans');
-        Route::post('/ibans', [UserIbanController::class, 'store'])->name('ibans.store');
-        Route::put('/ibans/{iban}', [UserIbanController::class, 'update'])->name('ibans.update');
-        Route::delete('/ibans/{iban}', [UserIbanController::class, 'destroy'])->name('ibans.destroy');
-
-        Route::get('/cryptos', [UserCryptoController::class, 'index'])->name('cryptos');
-        Route::post('/cryptos', [UserCryptoController::class, 'store'])->name('cryptos.store');
-        Route::put('/cryptos/{crypto}', [UserCryptoController::class, 'update'])->name('cryptos.update');
-        Route::delete('/cryptos/{crypto}', [UserCryptoController::class, 'destroy'])->name('cryptos.destroy');
-    });
-
-    Route::get('/profile/ibans', [UserIbanController::class, 'index'])
-        ->name('profile.ibans');
-    Route::post('/profile/ibans', [UserIbanController::class, 'store'])
-        ->name('profile.ibans.store');
+    // Admin Dashboard - Sadece adminler için
+    Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
+        ->name('admin.dashboard')
+        ->middleware('role:admin');
 });
 
-Route::middleware(['auth'])->group(function () {
-    // ... diğer route'lar
+/*
+|--------------------------------------------------------------------------
+| User Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'verified', 'role:user'])->group(function () {
+    // Withdrawal Routes
+    Route::prefix('withdrawal')->name('withdrawal.')->group(function () {
+        Route::get('/request', [WithdrawalController::class, 'create'])->name('request');
+        Route::post('/request', [WithdrawalController::class, 'store'])->name('store');
+    });
 
-    // Transaction routes
-    Route::get('/transactions/{transaction}', [TransactionController::class, 'show'])
-        ->name('transactions.show');
+    // Transaction Routes
+    Route::prefix('transactions')->name('transactions.')->group(function () {
+        Route::get('/history', [TransactionController::class, 'history'])->name('history');
+        Route::get('/pending', [TransactionController::class, 'pending'])->name('pending');
+    });
 
-    Route::post('/profile/ibans', [UserIbanController::class, 'store'])
-        ->name('profile.ibans.store');
+    // Ticket Routes
+    Route::prefix('tickets')->name('tickets.')->group(function () {
+        Route::get('/', [TicketController::class, 'index'])->name('index');
+        Route::get('/create', [TicketController::class, 'create'])->name('create');
+        Route::post('/', [TicketController::class, 'store'])->name('store');
+        Route::get('/{ticket}', [TicketController::class, 'show'])->name('show');
+        Route::post('/{ticket}/reply', [TicketController::class, 'reply'])->name('reply');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    // Transactions
+    Route::prefix('transactions')->name('transactions.')->group(function () {
+        Route::get('/', [AdminTransactionController::class, 'index'])->name('index');
+        Route::get('/{transaction}', [AdminTransactionController::class, 'show'])->name('show');
+        Route::get('/{transaction}/edit', [AdminTransactionController::class, 'edit'])->name('edit');
+        Route::put('/{transaction}', [AdminTransactionController::class, 'update'])->name('update');
+        Route::put('/{transaction}/status', [AdminTransactionController::class, 'updateStatus'])->name('update-status');
+    });
+
+    // Tickets
+    Route::prefix('tickets')->name('tickets.')->group(function () {
+        Route::get('/', [AdminTicketController::class, 'index'])->name('index');
+        Route::get('/{ticket}', [AdminTicketController::class, 'show'])->name('show');
+        Route::post('/{ticket}/reply', [AdminTicketController::class, 'reply'])->name('reply');
+        Route::put('/{ticket}/status', [AdminTicketController::class, 'updateStatus'])->name('update-status');
+        Route::post('/create-for-user/{user}', [AdminTicketController::class, 'createForUser'])->name('create-for-user');
+    });
+
+    // Users
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/', [AdminUserController::class, 'index'])->name('index');
+        Route::get('/create', [AdminUserController::class, 'create'])->name('create');
+        Route::post('/', [AdminUserController::class, 'store'])->name('store');
+        Route::get('/{user}', [AdminUserController::class, 'show'])->name('show');
+        Route::get('/{user}/edit', [AdminUserController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [AdminUserController::class, 'update'])->name('update');
+        Route::delete('/{user}', [AdminUserController::class, 'destroy'])->name('destroy');
+
+        // Şifre işlemleri
+        Route::post('/store-password', [AdminUserController::class, 'storePassword'])->name('store-password');
+        Route::post('/{user}/send-credentials', [AdminUserController::class, 'sendCredentials'])->name('send-credentials');
+        Route::get('/{user}/reset-password', [AdminUserController::class, 'resetPasswordForm'])->name('reset-password-form');
+        Route::post('/{user}/reset-password', [AdminUserController::class, 'resetPassword'])->name('reset-password.update');
+    });
+
+    // Withdrawals
+    Route::prefix('withdrawals')->name('withdrawals.')->group(function () {
+        Route::get('/', [AdminWithdrawalController::class, 'index'])->name('index');
+        Route::get('/{withdrawal}', [AdminWithdrawalController::class, 'show'])->name('show');
+        Route::put('/{withdrawal}/status', [AdminWithdrawalController::class, 'updateStatus'])->name('update-status');
+    });
+
+    // Admin API Routes
+    Route::prefix('api')->group(function () {
+        Route::get('/dashboard/stats', [AdminDashboardController::class, 'getStats']);
+    });
 });
 
 /*
@@ -231,19 +210,34 @@ Route::get('storage/ticket-attachments/{year}/{month}/{day}/{filename}', functio
     'day' => '[0-9]{2}',
     'filename' => '[a-zA-Z0-9_\-\.]+',
 ])->middleware(['auth', 'verified']);
-
 // Auth Routes
 require __DIR__.'/auth.php';
 
 /*
 |--------------------------------------------------------------------------
-| Test Route
+| User Profile Routes
 |--------------------------------------------------------------------------
 */
-Route::match(['get', 'post'], '/test', function () {
-    return Inertia::render('Test');
-})->name('test');
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
+        Route::patch('/', [ProfileController::class, 'update'])->name('update');
+        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
 
-Route::delete('/profile/ibans/{iban}', [UserIbanController::class, 'destroy'])
-    ->name('profile.ibans.destroy')
-    ->middleware(['auth', 'verified']);
+        // IBAN Routes
+        Route::prefix('ibans')->name('ibans.')->group(function () {
+            Route::get('/', [UserIbanController::class, 'index'])->name('index');
+            Route::post('/', [UserIbanController::class, 'store'])->name('store');
+            Route::put('/{iban}', [UserIbanController::class, 'update'])->name('update');
+            Route::delete('/{iban}', [UserIbanController::class, 'destroy'])->name('destroy');
+        });
+    });
+});
+
+Route::middleware(['auth'])->group(function () {
+    // Transactions
+    Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
+    Route::get('/transactions/history', [TransactionController::class, 'history'])->name('transactions.history');
+    Route::get('/transactions/pending', [TransactionController::class, 'pending'])->name('transactions.pending');
+    Route::get('/transactions/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
+});

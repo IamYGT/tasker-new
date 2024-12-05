@@ -120,14 +120,11 @@ class AdminTicketController extends Controller
     public function updateStatus(Request $request, Ticket $ticket)
     {
         $validated = $request->validate([
-            'status' => 'required|in:' . implode(',', Ticket::STATUSES)
+            'status' => 'required|string|in:open,answered,closed',
         ]);
 
         $oldStatus = $ticket->status;
-        $ticket->update([
-            'status' => $validated['status'],
-            'last_reply_at' => now(),
-        ]);
+        $ticket->update(['status' => $validated['status']]);
 
         $ticket->addToHistory('ticket.statusChanged', 'info', [
             'old' => $oldStatus,
