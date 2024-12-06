@@ -1,4 +1,4 @@
-import { useRole } from '@/hooks/useRole';
+import { useRole } from '@/Hooks/useRole';
 import { User } from '@/types';
 import { getTheme, setTheme } from '@/Utils/themeManager';
 import { router, usePage } from '@inertiajs/react';

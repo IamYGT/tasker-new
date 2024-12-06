@@ -1,6 +1,6 @@
 import { useTranslation } from '@/Contexts/TranslationContext';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { parseAmount } from '@/utils/format';
+import { parseAmount } from '@/format';
 import { Head } from '@inertiajs/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';

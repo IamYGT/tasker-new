@@ -1,7 +1,7 @@
 import { useTranslation } from '@/Contexts/TranslationContext';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { TransactionStatus } from '@/types';
-import { formatDate, getStatusColor, parseAmount } from '@/utils/format';
+import { formatDate, getStatusColor, parseAmount } from '@/format';
 import { Head, Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 
