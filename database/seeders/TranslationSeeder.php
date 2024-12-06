@@ -105,6 +105,100 @@ class TranslationSeeder extends Seeder
                 'key' => 'common.viewAll',
                 'tr' => 'Tümünü Gör',
                 'en' => 'View All'
+            ],
+
+            // Ticket işlem çevirileri
+            [
+                'key' => 'ticket.actions.replied',
+                'tr' => 'destek talebini yanıtladı',
+                'en' => 'replied to the ticket'
+            ],
+            [
+                'key' => 'ticket.actions.statusChanged',
+                'tr' => 'durumu {from} -> {to} olarak değiştirildi',
+                'en' => 'changed status from {from} to {to}'
+            ],
+            [
+                'key' => 'ticket.actions.created',
+                'tr' => 'destek talebi oluşturdu',
+                'en' => 'created a ticket'
+            ],
+            [
+                'key' => 'ticket.actions.priorityChanged',
+                'tr' => 'önceliği {from} -> {to} olarak değiştirildi',
+                'en' => 'changed priority from {from} to {to}'
+            ],
+            [
+                'key' => 'ticket.actions.categoryChanged',
+                'tr' => 'kategoriyi {from} -> {to} olarak değiştirildi',
+                'en' => 'changed category from {from} to {to}'
+            ],
+            [
+                'key' => 'ticket.noHistory',
+                'tr' => 'Henüz işlem geçmişi bulunmuyor',
+                'en' => 'No history available yet'
+            ],
+            [
+                'key' => 'ticket.history',
+                'tr' => 'İşlem Geçmişi',
+                'en' => 'Ticket History'
+            ],
+
+            // Kullanıcı işlemleri için çeviriler
+            [
+                'key' => 'users.currentPassword',
+                'tr' => 'Mevcut Şifre',
+                'en' => 'Current Password'
+            ],
+            [
+                'key' => 'users.noStoredPassword',
+                'tr' => 'Şifre kaydedilmemiş',
+                'en' => 'No stored password'
+            ],
+            [
+                'key' => 'users.notAvailable',
+                'tr' => 'Mevcut değil',
+                'en' => 'Not available'
+            ],
+            [
+                'key' => 'users.generateNewPassword',
+                'tr' => 'Yeni şifre oluştur',
+                'en' => 'Generate new password'
+            ],
+            [
+                'key' => 'users.lastUpdated',
+                'tr' => 'Son güncelleme',
+                'en' => 'Last updated'
+            ],
+            [
+                'key' => 'users.passwordNote',
+                'tr' => 'Not: Şifreler güvenli bir şekilde saklanır ve sadece yetkili personel tarafından görüntülenebilir.',
+                'en' => 'Note: Passwords are stored securely and can only be viewed by authorized personnel.'
+            ],
+            [
+                'key' => 'password.weak',
+                'tr' => 'Zayıf: En az 8 karakter',
+                'en' => 'Weak: Minimum 8 characters'
+            ],
+            [
+                'key' => 'password.medium',
+                'tr' => 'Orta: Harf ve rakam içermeli',
+                'en' => 'Medium: Must include letters and numbers'
+            ],
+            [
+                'key' => 'password.strong',
+                'tr' => 'Güçlü: Özel karakter içermeli',
+                'en' => 'Strong: Must include special characters'
+            ],
+            [
+                'key' => 'users.generatePassword',
+                'tr' => 'Otomatik Şifre Oluştur',
+                'en' => 'Generate Password'
+            ],
+            [
+                'key' => 'users.passwordGenerated',
+                'tr' => 'Güçlü şifre oluşturuldu',
+                'en' => 'Strong password generated'
             ]
         ];
 

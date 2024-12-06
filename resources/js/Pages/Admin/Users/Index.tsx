@@ -21,17 +21,18 @@ interface User {
     id: number;
     name: string;
     email: string;
-    created_at: string;
-    current_password?: string;
-    password_updated_at?: string;
     roles: Array<{
         id: number;
         name: string;
     }>;
+    created_at: string;
+    current_password: string | null;
+    has_encrypted_password: boolean;
+    password_updated_at: string | null;
 }
 
-interface SelectedUser extends User {
-    current_password?: string;
+interface SelectedUser extends Omit<User, 'current_password'> {
+    current_password?: string | null;
 }
 
 interface Props {
@@ -108,6 +109,19 @@ export default function Index({ auth, users }: Props) {
                 onError: () => toast.error(t('tickets.error')),
             },
         );
+    };
+
+    const sendCredentials = (userId: number) => {
+        router.post(route('admin.users.send-credentials', userId), {}, {
+            onSuccess: () => {
+                toast.success(t('users.credentialsSent'));
+                setShowUserModal(false);
+                router.reload();
+            },
+            onError: () => {
+                toast.error(t('users.credentialsError'));
+            },
+        });
     };
 
     return (
@@ -270,7 +284,10 @@ export default function Index({ auth, users }: Props) {
                                                             <button
                                                                 onClick={() => {
                                                                     setSelectedUser(
-                                                                        user,
+                                                                        {
+                                                                            ...user,
+                                                                            current_password: user.current_password
+                                                                        }
                                                                     );
                                                                     setShowUserModal(
                                                                         true,
@@ -356,43 +373,50 @@ export default function Index({ auth, users }: Props) {
                             {/* Şifre Bilgisi */}
                             <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-900/50 dark:bg-yellow-900/20">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                                        {t('users.currentPassword')}
-                                    </label>
-                                    <div className="flex items-center justify-between rounded-md bg-white p-2 dark:bg-gray-800">
-                                        <span
-                                            className={`text-gray-900 dark:text-gray-100 ${
-                                                selectedUser.current_password
-                                                    ? 'font-mono'
-                                                    : ''
-                                            }`}
-                                        >
-                                            {selectedUser.current_password ||
-                                                t('users.notAvailable')}
-                                        </span>
-                                        {selectedUser.current_password && (
-                                            <button
-                                                onClick={() =>
-                                                    copyToClipboard(
-                                                        selectedUser.current_password ||
-                                                            '',
-                                                    )
-                                                }
-                                                className="ml-2 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700"
-                                            >
-                                                <FaCopy className="h-4 w-4" />
-                                            </button>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                            {t('users.currentPassword')}
+                                        </label>
+                                        {!selectedUser.has_encrypted_password && (
+                                            <span className="text-xs text-yellow-600 dark:text-yellow-400">
+                                                {t('users.noStoredPassword')}
+                                            </span>
                                         )}
                                     </div>
-                                    {selectedUser.current_password &&
-                                        selectedUser.password_updated_at && (
-                                            <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
-                                                {t('users.lastUpdated')}:{' '}
-                                                {new Date(
-                                                    selectedUser.password_updated_at,
-                                                ).toLocaleString()}
-                                            </p>
-                                        )}
+                                    <div className="flex items-center justify-between rounded-md bg-white p-2 dark:bg-gray-800">
+                                        <span className="text-gray-900 dark:text-gray-100 font-mono">
+                                            {selectedUser.current_password || t('users.notAvailable')}
+                                        </span>
+                                        <div className="flex items-center space-x-2">
+                                            {selectedUser.current_password && (
+                                                <button
+                                                    onClick={() => selectedUser.current_password && copyToClipboard(selectedUser.current_password)}
+                                                    className="ml-2 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700"
+                                                    title={t('common.copy')}
+                                                >
+                                                    <FaCopy className="h-4 w-4" />
+                                                </button>
+                                            )}
+                                            {!selectedUser.current_password && selectedUser.id && (
+                                                <button
+                                                    onClick={() => sendCredentials(selectedUser.id)}
+                                                    className="ml-2 rounded-full p-1 text-yellow-400 hover:bg-yellow-100 hover:text-yellow-600 dark:hover:bg-yellow-700"
+                                                    title={t('users.generateNewPassword')}
+                                                >
+                                                    <FaKey className="h-4 w-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {selectedUser.password_updated_at && (
+                                        <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
+                                            {t('users.lastUpdated')}:{' '}
+                                            {new Date(selectedUser.password_updated_at).toLocaleString()}
+                                        </p>
+                                    )}
+                                    <div className="mt-2 text-xs text-yellow-600 dark:text-yellow-400">
+                                        <p>{t('users.passwordNote')}</p>
+                                    </div>
                                 </div>
                             </div>
 

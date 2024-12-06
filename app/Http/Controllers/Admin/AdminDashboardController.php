@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Models\Withdrawal;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -110,27 +109,28 @@ class AdminDashboardController extends Controller
     {
         return Cache::remember('recent_activity', 60, function () {
             return collect([])
-                ->merge(Transaction::with('user')->latest()->take(5)->get())
-                ->merge(Ticket::with('user')->latest()->take(5)->get())
-                ->merge(Withdrawal::with('user')->latest()->take(5)->get())
+                ->merge(Transaction::with(['user'])->latest()->take(5)->get())
+                ->merge(Ticket::with(['user', 'histories'])->latest()->take(5)->get())
                 ->sortByDesc('created_at')
                 ->take(10)
                 ->map(function ($item) {
                     $type = match (true) {
                         $item instanceof Transaction => 'transaction',
                         $item instanceof Ticket => 'ticket',
-                        $item instanceof Withdrawal => 'withdrawal',
+                        default => 'unknown'
                     };
 
                     return [
                         'id' => $item->id,
                         'type' => $type,
-                        'user' => $item->user->name,
-                        'amount' => $item->amount ? (float)$item->amount : null,
-                        'amount_usd' => $item->amount_usd ? (float)$item->amount_usd : null,
-                        'exchange_rate' => $item->exchange_rate ? (float)$item->exchange_rate : null,
-                        'status' => $item->status,
+                        'user_name' => $item->user->name,
+                        'description' => $this->getActivityDescription($item),
                         'created_at' => $item->created_at->diffForHumans(),
+                        'status' => $item->status ?? 'unknown',
+                        'amount' => $item instanceof Transaction ? (float) $item->amount : null,
+                        'amount_usd' => $item instanceof Transaction ? (float) $item->amount_usd : null,
+                        'exchange_rate' => $item instanceof Transaction ? (float) $item->exchange_rate : null,
+                        'history' => $item instanceof Transaction ? $item->history : []
                     ];
                 })
                 ->values()
@@ -138,13 +138,23 @@ class AdminDashboardController extends Controller
         });
     }
 
-    private function getActivityRoute($item, $type)
+    private function getActivityDescription($item)
     {
-        return match ($type) {
-            'transaction' => route('admin.transactions.show', $item),
-            'ticket' => route('admin.tickets.show', $item),
-            'withdrawal' => route('admin.withdrawals.show', $item),
-        };
+        if ($item instanceof Transaction) {
+            return translate('dashboard.activity.transaction', [
+                'type' => $item->type,
+                'amount' => number_format($item->amount, 2),
+                'currency' => 'TL'
+            ]);
+        }
+
+        if ($item instanceof Ticket) {
+            return translate('dashboard.activity.ticket', [
+                'subject' => $item->subject
+            ]);
+        }
+
+        return translate('dashboard.activity.unknown');
     }
 
     public function getStats(): JsonResponse
@@ -186,14 +196,5 @@ class AdminDashboardController extends Controller
 
             return $respondedTickets > 0 ? round($totalResponseTime / $respondedTickets) : 0;
         });
-    }
-
-    private function getActivityDescription($item)
-    {
-        if ($item instanceof Transaction) {
-            return "New {$item->type} transaction ({$item->amount} TL)";
-        }
-
-        return "New ticket: {$item->subject}";
     }
 }

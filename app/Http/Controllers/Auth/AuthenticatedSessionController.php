@@ -13,6 +13,7 @@ use Inertia\Response;
 use App\Models\LanguageWord;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -41,7 +42,7 @@ class AuthenticatedSessionController extends Controller
                     ->withInput($request->except('password'));
             }
 
-            if (!\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+            if (!Hash::check($request->password, $user->password)) {
                 return back()
                     ->with('message', $this->getTranslation('login.invalidPassword'))
                     ->with('type', 'error')

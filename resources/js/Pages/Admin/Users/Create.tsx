@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 import { useTranslation } from '@/Contexts/TranslationContext';
-import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaSpinner, FaUserPlus, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaSpinner, FaUserPlus, FaCheckCircle, FaTimesCircle, FaKey } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import InputError from '@/Components/InputError';
@@ -159,10 +159,10 @@ export default function CreateUser({ auth, languages, secili_dil }: CreateUserPr
                             setPasswordStrength(checkPasswordStrength(e.target.value));
                         }
                     }}
-                    className={`block w-full pl-10 pr-${showPasswordToggle ? '10' : '3'} py-2 sm:text-sm rounded-md 
-                        focus:ring-blue-500 focus:border-blue-500 
-                        dark:focus:ring-blue-400 dark:focus:border-blue-400 
-                        dark:bg-gray-700 dark:text-white bg-white text-gray-900 
+                    className={`block w-full pl-10 pr-${showPasswordToggle ? '10' : '3'} py-2 sm:text-sm rounded-md
+                        focus:ring-blue-500 focus:border-blue-500
+                        dark:focus:ring-blue-400 dark:focus:border-blue-400
+                        dark:bg-gray-700 dark:text-white bg-white text-gray-900
                         border-gray-300 dark:border-gray-600 transition duration-200
                         ${name === 'password_confirmation' && !passwordsMatch && data.password_confirmation ? 'border-red-500' : ''}`}
                     required
@@ -176,8 +176,8 @@ export default function CreateUser({ auth, languages, secili_dil }: CreateUserPr
                             onClick={() => name === 'password' ? setShowPassword(!showPassword) : setShowConfirmPassword(!showConfirmPassword)}
                             className="text-gray-400 hover:text-gray-500 focus:outline-none"
                         >
-                            {(name === 'password' ? showPassword : showConfirmPassword) ? 
-                                <FaEyeSlash className="h-5 w-5" /> : 
+                            {(name === 'password' ? showPassword : showConfirmPassword) ?
+                                <FaEyeSlash className="h-5 w-5" /> :
                                 <FaEye className="h-5 w-5" />}
                         </motion.button>
                     </div>
@@ -198,6 +198,92 @@ export default function CreateUser({ auth, languages, secili_dil }: CreateUserPr
                 <p className="text-xs mt-1 text-red-500">{t('users.passwordsDontMatch')}</p>
             )}
         </motion.div>
+    );
+
+    const togglePasswordVisibility = (field: 'password' | 'password_confirmation') => {
+        if (field === 'password') {
+            setShowPassword(!showPassword);
+        } else {
+            setShowConfirmPassword(!showConfirmPassword);
+        }
+    };
+
+    const generatePassword = () => {
+        const length = 12;
+        const charset = {
+            numbers: '0123456789',
+            lowercase: 'abcdefghijklmnopqrstuvwxyz',
+            uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            special: '!@#$%^&*'
+        };
+
+        let password = '';
+        password += charset.lowercase.charAt(Math.floor(Math.random() * charset.lowercase.length));
+        password += charset.uppercase.charAt(Math.floor(Math.random() * charset.uppercase.length));
+        password += charset.numbers.charAt(Math.floor(Math.random() * charset.numbers.length));
+        password += charset.special.charAt(Math.floor(Math.random() * charset.special.length));
+
+        const allChars = Object.values(charset).join('');
+        for (let i = password.length; i < length; i++) {
+            password += allChars.charAt(Math.floor(Math.random() * allChars.length));
+        }
+
+        password = password.split('').sort(() => Math.random() - 0.5).join('');
+
+        setData(prevData => ({
+            ...prevData,
+            password: password,
+            password_confirmation: password
+        }));
+
+        setPasswordStrength(checkPasswordStrength(password));
+        setPasswordsMatch(true);
+
+        toast.success(t('users.passwordGenerated'), {
+            position: "top-right",
+            autoClose: 2000
+        });
+    };
+
+    const renderPasswordField = () => (
+        <div className="mt-4">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {t('users.password')}
+            </label>
+            <div className="relative mt-1 flex">
+                <div className="relative flex-1">
+                    <input
+                        type={showPassword ? 'text' : 'password'}
+                        name="password"
+                        id="password"
+                        value={data.password}
+                        onChange={(e) => {
+                            setData('password', e.target.value);
+                            setPasswordStrength(checkPasswordStrength(e.target.value));
+                        }}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 sm:text-sm pr-10"
+                    />
+                    <button
+                        onClick={() => togglePasswordVisibility('password')}
+                        type="button"
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-500"
+                    >
+                        {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                    </button>
+                </div>
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={generatePassword}
+                    className="ml-2 inline-flex items-center rounded-md border border-transparent bg-indigo-100 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:bg-indigo-900 dark:text-indigo-200 dark:hover:bg-indigo-800"
+                >
+                    <FaKey className="mr-2 h-4 w-4" />
+                    {t('users.generatePassword')}
+                </motion.button>
+            </div>
+            <InputError message={errors.password} className="mt-2" />
+            {data.password && renderPasswordStrengthBar()}
+        </div>
     );
 
     return (
@@ -234,13 +320,7 @@ export default function CreateUser({ auth, languages, secili_dil }: CreateUserPr
                                     type: 'email',
                                     placeholder: 'email'
                                 })}
-                                {renderInput({
-                                    name: 'password',
-                                    icon: <FaLock className="h-5 w-5 text-gray-400" />,
-                                    type: 'password',
-                                    placeholder: 'password',
-                                    showPasswordToggle: true
-                                })}
+                                {renderPasswordField()}
                                 {renderInput({
                                     name: 'password_confirmation',
                                     icon: <FaLock className="h-5 w-5 text-gray-400" />,
@@ -257,7 +337,7 @@ export default function CreateUser({ auth, languages, secili_dil }: CreateUserPr
                                     type="submit"
                                     disabled={processing || !isValidEmail || passwordStrength < 3 || !passwordsMatch}
                                     className={`
-                                        w-full flex justify-center items-center py-3 px-4 
+                                        w-full flex justify-center items-center py-3 px-4
                                         text-sm font-medium text-white rounded-lg
                                         transition-all duration-200 ease-in-out
                                         ${processing || !isValidEmail || passwordStrength < 3 || !passwordsMatch
@@ -280,4 +360,4 @@ export default function CreateUser({ auth, languages, secili_dil }: CreateUserPr
             </motion.div>
         </AuthenticatedLayout>
     );
-} 
+}

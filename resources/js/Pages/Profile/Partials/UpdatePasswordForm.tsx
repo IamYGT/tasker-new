@@ -9,6 +9,7 @@ import { useTranslation } from '@/Contexts/TranslationContext';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-toastify';
+import { motion } from 'framer-motion';
 
 export default function UpdatePasswordForm({
     className = '',
@@ -20,7 +21,7 @@ export default function UpdatePasswordForm({
     const { t } = useTranslation();
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
-    
+
     // Şifre görünürlüğü için state'ler
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
@@ -46,18 +47,40 @@ export default function UpdatePasswordForm({
     // Şifre gereksinimlerini kontrol et
     const checkPasswordRequirements = (password: string) => {
         setPasswordRequirements({
-            minLength: password.length >= 6,
+            minLength: password.length >= 8,
             hasNumber: /\d/.test(password),
             hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password),
             hasLetter: /[a-zA-Z]/.test(password),
         });
     };
 
+    // Şifre gücünü kontrol et (1-3 arası)
+    const checkPasswordStrength = (password: string): number => {
+        let strength = 0;
+
+        // Seviye 1 - Zayıf (minimum gereksinimler)
+        if (password.length >= 8) {
+            strength = 1;
+        }
+
+        // Seviye 2 - Orta (harf ve rakam)
+        if (strength === 1 && /[a-zA-Z]/.test(password) && /\d/.test(password)) {
+            strength = 2;
+        }
+
+        // Seviye 3 - Güçlü (özel karakter)
+        if (strength === 2 && /[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+            strength = 3;
+        }
+
+        return strength;
+    };
+
     // Şifre eşleşmesini kontrol et
     useEffect(() => {
         setPasswordsMatch(
-            data.password === data.password_confirmation && 
-            data.password.length > 0 && 
+            data.password === data.password_confirmation &&
+            data.password.length > 0 &&
             data.password_confirmation.length > 0
         );
     }, [data.password, data.password_confirmation]);
@@ -143,6 +166,49 @@ export default function UpdatePasswordForm({
     // Input'a tıklanma durumunu kontrol etmek için yeni state
     const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
+    const renderPasswordStrengthBar = () => {
+        const strength = checkPasswordStrength(data.password);
+        const strengthColors = ['#EF4444', '#F59E0B', '#22C55E'];
+        const strengthTexts = [
+            t('password.weak'),
+            t('password.medium'),
+            t('password.strong')
+        ];
+
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="mt-2"
+            >
+                <div className="flex mb-1">
+                    {[1, 2, 3].map((level) => (
+                        <motion.div
+                            key={level}
+                            className="h-2 w-1/3 mr-1 rounded-full"
+                            initial={{ scaleX: 0 }}
+                            animate={{
+                                scaleX: strength >= level ? 1 : 0,
+                                backgroundColor: strengthColors[strength - 1]
+                            }}
+                            transition={{ duration: 0.2, delay: level * 0.05 }}
+                        />
+                    ))}
+                </div>
+                <motion.p
+                    className="text-xs mt-1"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ color: strengthColors[strength - 1] }}
+                >
+                    {strengthTexts[strength - 1]}
+                </motion.p>
+            </motion.div>
+        );
+    };
+
     return (
         <section className={`${className} p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm`}>
             <header className="mb-4">
@@ -207,7 +273,7 @@ export default function UpdatePasswordForm({
                         </button>
                     </div>
                     <InputError message={errors.password ? t(errors.password) : ''} className="mt-1" />
-                    
+
                     {isPasswordFocused && (
                         <div className="mt-2 space-y-1">
                             {renderRequirement(passwordRequirements.minLength, t('password_min_length_6'))}
@@ -246,7 +312,7 @@ export default function UpdatePasswordForm({
                 </div>
 
                 <div className="flex items-center gap-4 pt-2">
-                    <PrimaryButton 
+                    <PrimaryButton
                         disabled={isSubmitDisabled()}
                         className={`px-3 py-1.5 ${isSubmitDisabled() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-500'}`}
                     >

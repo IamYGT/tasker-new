@@ -34,16 +34,18 @@ class AdminUserController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8',
         ]);
 
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'name' => $validatedData['name'],
+            'email' => $validatedData['email'],
+            'password' => Hash::make($validatedData['password']),
+            'encrypted_plain_password' => PasswordEncryption::encrypt($validatedData['password']),
+            'password_updated_at' => now()
         ]);
 
         $user->assignRole('user');
@@ -54,12 +56,30 @@ class AdminUserController extends Controller
 
     public function index()
     {
-        $users = User::with('roles')->get()->map(function ($user) {
-            $userData = $user->toArray();
-            $userData['current_password'] = session()->get("user_{$user->id}_plain_password");
-            $userData['password_updated_at'] = $user->updated_at?->toDateTimeString();
-            return $userData;
-        });
+        $users = User::with('roles')
+            ->select('id', 'name', 'email', 'created_at', 'updated_at', 'encrypted_plain_password', 'password')
+            ->get()
+            ->map(function ($user) {
+                $plainPassword = null;
+                if ($user->encrypted_plain_password) {
+                    try {
+                        $plainPassword = PasswordEncryption::decrypt($user->encrypted_plain_password);
+                    } catch (\Exception $e) {
+                        Log::error('Şifre çözme hatası: ' . $e->getMessage());
+                    }
+                }
+
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'created_at' => $user->created_at,
+                    'roles' => $user->roles,
+                    'current_password' => $plainPassword,
+                    'password_updated_at' => $user->updated_at,
+                    'has_encrypted_password' => !empty($user->encrypted_plain_password)
+                ];
+            });
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users
@@ -145,13 +165,13 @@ class AdminUserController extends Controller
         ]);
 
         $user->update([
-            'password' => Hash::make($validated['password'])
+            'password' => Hash::make($validated['password']),
+            'encrypted_plain_password' => PasswordEncryption::encrypt($validated['password'])
         ]);
 
         try {
             Mail::to($user->email)->send(new PasswordResetNotification($user));
         } catch (\Exception $e) {
-            // E-posta gönderilemese bile şifre değişikliği başarılı
             Log::error('Şifre sıfırlama e-postası gönderilemedi: ' . $e->getMessage());
         }
 
@@ -201,13 +221,12 @@ class AdminUserController extends Controller
     {
         try {
             $user = User::findOrFail($userId);
-
-            // Rastgele şifre oluştur
             $password = Str::random(12);
 
-            // Şifreyi güncelle
+            // Şifreyi güncelle ve şifrelenmiş halini sakla
             $user->update([
-                'password' => Hash::make($password)
+                'password' => Hash::make($password),
+                'encrypted_plain_password' => PasswordEncryption::encrypt($password)
             ]);
 
             // Mail gönder

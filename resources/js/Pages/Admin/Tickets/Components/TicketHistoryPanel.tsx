@@ -24,6 +24,16 @@ interface TicketHistoryPanelProps {
 export default function TicketHistoryPanel({ history }: TicketHistoryPanelProps) {
     const { t } = useTranslation();
 
+    if (!history || history.length === 0) {
+        return (
+            <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                    {t('ticket.noHistory')}
+                </p>
+            </div>
+        );
+    }
+
     const getIcon = (type: string) => {
         switch (type) {
             case 'status':
@@ -83,7 +93,7 @@ export default function TicketHistoryPanel({ history }: TicketHistoryPanelProps)
                                         {item.user.name}
                                     </span>
                                     {' '}
-                                    {t(`ticket.actions.${item.action}`, item.params)}
+                                    {t(`ticket.actions.${item.action.replace('ticket.', '')}`, item.params)}
                                 </p>
                                 <span className="text-xs text-gray-500">
                                     {formatTime(item.created_at)}
@@ -95,4 +105,4 @@ export default function TicketHistoryPanel({ history }: TicketHistoryPanelProps)
             ))}
         </div>
     );
-} 
+}

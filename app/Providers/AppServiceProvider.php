@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\{
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
 use App\Models\Language;
+use App\Helpers\PasswordEncryption;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +33,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        PasswordEncryption::initialize();
+
         $this->configureVite();
         $this->configureBladeDirectives();
         $this->configureInertia();
@@ -96,8 +99,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Seçili dili önbellekle
         $selectedLanguage = Cache::remember(
-            'selected_language_' . app()->getLocale(), 
-            60 * 24, 
+            'selected_language_' . app()->getLocale(),
+            60 * 24,
             function () {
                 return Language::where('dil_kod', app()->getLocale())->first();
             }
@@ -108,8 +111,8 @@ class AppServiceProvider extends ServiceProvider
         View::share('secili_dil', $selectedLanguage);
 
         // Uygulama dilini ayarla
-        $locale = request()->cookie('locale') 
-            ?? session('locale') 
+        $locale = request()->cookie('locale')
+            ?? session('locale')
             ?? config('app.locale');
         App::setLocale($locale);
     }
@@ -137,8 +140,8 @@ class AppServiceProvider extends ServiceProvider
      */
     private function shouldLogSqlQueries(): bool
     {
-        return config('app.debug') 
-            && config('app.env') === 'local' 
+        return config('app.debug')
+            && config('app.env') === 'local'
             && config('logging.sql_queries', false);
     }
 

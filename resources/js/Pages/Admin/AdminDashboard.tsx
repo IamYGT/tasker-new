@@ -1,7 +1,7 @@
 import { useTranslation } from '@/Contexts/TranslationContext';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
-import { useCallback, useEffect, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useState } from 'react';
 import {
     FaExchangeAlt,
     FaMoneyBillWave,
@@ -10,8 +10,9 @@ import {
 } from 'react-icons/fa';
 
 interface RecentActivity {
+    [x: string]: ReactNode;
     id: number;
-    type: 'transaction' | 'ticket' | 'withdrawal';
+    type: 'transaction' | 'ticket';
     user: string;
     amount: number | null;
     amount_usd: number | null;
@@ -484,22 +485,20 @@ export default function Dashboard({ auth, stats }: DashboardProps) {
 
                         {/* Aktiviteler Listesi */}
                         <div
-                            className={`${
-                                viewMode === 'grid'
+                            className={`${viewMode === 'grid'
                                     ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'
                                     : 'space-y-4'
-                            }`}
+                                }`}
                         >
                             {filteredActivities.length > 0 ? (
                                 filteredActivities.map(
                                     (activity: RecentActivity) => (
                                         <div
                                             key={`${activity.type}-${activity.id}`}
-                                            className={`group cursor-pointer rounded-lg border p-4 transition-all hover:border-blue-500 hover:bg-blue-50/50 dark:border-gray-700 dark:hover:border-blue-500/50 dark:hover:bg-blue-900/20 ${
-                                                viewMode === 'grid'
+                                            className={`group cursor-pointer rounded-lg border p-4 transition-all hover:border-blue-500 hover:bg-blue-50/50 dark:border-gray-700 dark:hover:border-blue-500/50 dark:hover:bg-blue-900/20 ${viewMode === 'grid'
                                                     ? 'flex flex-col space-y-3'
                                                     : 'flex items-center justify-between'
-                                            }`}
+                                                }`}
                                             onClick={() =>
                                                 handleActivityClick(activity)
                                             }
@@ -510,23 +509,20 @@ export default function Dashboard({ auth, stats }: DashboardProps) {
                                                 <div className="rounded-full bg-gray-100 p-2 transition-colors group-hover:bg-white dark:bg-gray-700 dark:group-hover:bg-gray-600">
                                                     {activity.type ===
                                                         'transaction' && (
-                                                        <FaExchangeAlt className="h-5 w-5 text-green-500" />
-                                                    )}
+                                                            <FaExchangeAlt className="h-5 w-5 text-green-500" />
+                                                        )}
                                                     {activity.type ===
                                                         'ticket' && (
-                                                        <FaTicketAlt className="h-5 w-5 text-amber-500" />
-                                                    )}
-                                                    {activity.type ===
-                                                        'withdrawal' && (
-                                                        <FaMoneyBillWave className="h-5 w-5 text-blue-500" />
-                                                    )}
+                                                            <FaTicketAlt className="h-5 w-5 text-amber-500" />
+                                                        )}
+
                                                 </div>
                                                 <div
                                                     className={`${viewMode === 'grid' ? 'ml-3 flex-1' : ''}`}
                                                 >
-                                                    <p className="font-medium text-gray-900 dark:text-gray-100">
-                                                        {activity.user}
-                                                    </p>
+                                                    <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                                                        {activity.user_name}
+                                                    </h4>
                                                     <div
                                                         className={`flex ${viewMode === 'grid' ? 'mt-1 flex-col space-y-2' : 'items-center space-x-2'}`}
                                                     >
@@ -556,7 +552,7 @@ export default function Dashboard({ auth, stats }: DashboardProps) {
                                                             },
                                                         ).format(
                                                             activity.amount_usd ??
-                                                                0,
+                                                            0,
                                                         )}
                                                     </span>
                                                     <span className="text-xs text-gray-500">
@@ -576,9 +572,7 @@ export default function Dashboard({ auth, stats }: DashboardProps) {
                                                                 'transaction.rate',
                                                             )}
                                                             :{' '}
-                                                            {activity.exchange_rate.toFixed(
-                                                                4,
-                                                            )}
+                                                            {typeof activity.exchange_rate === 'number' ? activity.exchange_rate.toFixed(4) : activity.exchange_rate}
                                                         </span>
                                                     )}
                                                 </div>

@@ -50,6 +50,7 @@ class RegisteredUserController extends Controller
 
             return Inertia::location(route('dashboard', ['showWelcomeToast' => true]));
         } catch (\Exception $e) {
+            Log::error('Registration error: ' . $e->getMessage());
             return back()->withErrors(['error' => $e->getMessage()]);
         }
     }

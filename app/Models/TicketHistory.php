@@ -8,14 +8,14 @@ class TicketHistory extends Model
 {
     protected $fillable = [
         'ticket_id',
-        'user_id',
         'action',
         'type',
-        'params'
+        'data',
+        'user_id'
     ];
 
     protected $casts = [
-        'params' => 'array'
+        'data' => 'json'
     ];
 
     public function user()
@@ -27,4 +27,4 @@ class TicketHistory extends Model
     {
         return $this->belongsTo(Ticket::class);
     }
-} 
+}

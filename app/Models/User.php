@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Permission\Traits\HasRoles;
+use App\Helpers\PasswordEncryption;
 
 /**
  * @property int $id
@@ -56,16 +57,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'encrypted_plain_password',
         'google_id',
-        'avatar',
-        'google_refresh_token',
-        'last_login_at',
-        'facebook_id',
-        'github_id',
-        'social_login',
-        'last_social_login',
-        'social_registration',
-        'is_active'
+        'is_active',
     ];
 
     /**
@@ -76,7 +70,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-        'google_refresh_token'
+        'encrypted_plain_password',
     ];
 
     /**
@@ -87,13 +81,12 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'social_login' => 'boolean',
-        'social_registration' => 'boolean',
         'is_active' => 'boolean',
     ];
 
-    protected $attributes = [
-        'is_active' => true,
+    protected $appends = [
+        'current_password',
+        'has_encrypted_password'
     ];
 
     public function sendPasswordResetNotification($token)
@@ -167,11 +160,6 @@ class User extends Authenticatable
         return $this->hasMany(Ticket::class);
     }
 
-    public function storedPassword()
-    {
-        return $this->hasOne(UserPassword::class);
-    }
-
     public function ibans()
     {
         return $this->hasMany(UserIban::class);
@@ -183,5 +171,33 @@ class User extends Authenticatable
     public function cryptos(): HasMany
     {
         return $this->hasMany(UserCrypto::class);
+    }
+
+    /**
+     * Şifrenin şifrelenmiş olup olmadığını kontrol et
+     */
+    public function getHasEncryptedPasswordAttribute(): bool
+    {
+        return !empty($this->encrypted_plain_password);
+    }
+
+    /**
+     * Mevcut şifreyi çöz ve döndür
+     */
+    public function getCurrentPasswordAttribute(): ?string
+    {
+        if (!$this->encrypted_plain_password) {
+            return null;
+        }
+
+        try {
+            return PasswordEncryption::decrypt($this->encrypted_plain_password);
+        } catch (\Exception $e) {
+            Log::error('Şifre çözme hatası:', [
+                'user_id' => $this->id,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
     }
 }
