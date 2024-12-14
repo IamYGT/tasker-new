@@ -10,21 +10,24 @@ class CheckRole
 {
     public function handle(Request $request, Closure $next, $role)
     {
-        if (!$request->user() || !$request->user()->roles()->where('name', $role)->exists()) {
-            session()->flash('error', 'Bu sayfaya erişim yetkiniz yok.');
-            
-            $user = Auth::user();
-            if ($user) {
-                if ($user->hasRole('admin')) {
-                    return redirect()->route('admin.dashboard');
-                } else if ($user->hasRole('user')) {
-                    return redirect()->route('dashboard');
-                }
-            }
-            
+        if (!$request->user()) {
             return redirect()->route('login');
+        }
+
+        if (!$request->user()->hasRole($role)) {
+            if ($request->user()->hasRole('admin')) {
+                return redirect()->route('admin.dashboard');
+            }
+
+            if ($request->user()->hasRole('user')) {
+                return redirect()->route('user.dashboard');
+            }
+
+            // Eğer rol atanmamışsa varsayılan olarak user rolü ata
+            $request->user()->assignRole('user');
+            return redirect()->route('user.dashboard');
         }
 
         return $next($request);
     }
-} 
+}

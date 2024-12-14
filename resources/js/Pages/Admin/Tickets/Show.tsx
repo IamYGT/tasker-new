@@ -1,7 +1,7 @@
 import { useTranslation } from '@/Contexts/TranslationContext';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm } from '@inertiajs/react';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import {
     FaDownload,
     FaEye,
@@ -681,16 +681,39 @@ const AttachmentItem = ({ attachment, onPreview }: AttachmentItemProps) => {
     );
 };
 
-const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('tr-TR', {
+const formatDate = useCallback((date: string) => {
+    const { locale } = useTranslation();
+
+    const options: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false,
-    });
-};
+        hour12: false
+    };
+
+    const dateFormats = {
+        'tr': {
+            ...options,
+            timeZone: 'Europe/Istanbul'
+        },
+        'en': {
+            ...options,
+            timeZone: 'UTC'
+        }
+    };
+
+    try {
+        return new Date(date).toLocaleDateString(
+            locale === 'tr' ? 'tr-TR' : 'en-US',
+            dateFormats[locale as keyof typeof dateFormats]
+        );
+    } catch (error) {
+        console.error('Date formatting error:', error);
+        return date;
+    }
+}, [useTranslation().locale]);
 
 const formatFileSize = (size: number) => {
     if (size < 1024) {

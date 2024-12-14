@@ -13,6 +13,14 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Permission\Traits\HasRoles;
 use App\Helpers\PasswordEncryption;
+use App\Models\{
+    Role,
+    Transaction,
+    Ticket,
+    UserSetting,
+    UserIban,
+    UserCrypto
+};
 
 /**
  * @property int $id

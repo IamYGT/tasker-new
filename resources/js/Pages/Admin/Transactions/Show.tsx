@@ -287,7 +287,7 @@ export default function Show({ auth, transaction }: Props) {
                                         </span>
                                     </div>
                                     <span className={`rounded-lg px-4 py-1.5 text-sm font-medium ${getTypeColor(transaction.type)}`}>
-                                        {t(`transaction.${transaction.type}`)}
+                                        {t(`transaction.type.${transaction.type}`)}
                                     </span>
                                 </div>
                             </div>

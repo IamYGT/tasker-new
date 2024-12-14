@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\{
     NewPasswordController,
     PasswordController,
     PasswordResetLinkController,
+    RegisteredUserController,
     VerifyEmailController
 };
 
@@ -27,6 +28,12 @@ Route::middleware('guest')->group(function () {
         Route::get('login', 'create')->name('login');
         Route::post('login', 'store');
     });
+
+    // Registration Routes
+    Route::get('register', [RegisteredUserController::class, 'create'])
+        ->name('register');
+    Route::post('register', [RegisteredUserController::class, 'store'])
+        ->name('kayit_oldu');
 
     // Password Reset Routes
     Route::controller(PasswordResetLinkController::class)->group(function () {

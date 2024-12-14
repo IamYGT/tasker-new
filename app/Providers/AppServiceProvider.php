@@ -97,12 +97,17 @@ class AppServiceProvider extends ServiceProvider
             return Language::where('dil_durum', 1)->get();
         });
 
+        // Varsayılan dili önbellekle
+        $defaultLanguage = Cache::remember('default_language', 60 * 24, function () {
+            return Language::where('dil_varsayilan', true)->first();
+        });
+
         // Seçili dili önbellekle
         $selectedLanguage = Cache::remember(
             'selected_language_' . app()->getLocale(),
             60 * 24,
-            function () {
-                return Language::where('dil_kod', app()->getLocale())->first();
+            function () use ($defaultLanguage) {
+                return Language::where('dil_kod', app()->getLocale())->first() ?? $defaultLanguage;
             }
         );
 
@@ -113,6 +118,7 @@ class AppServiceProvider extends ServiceProvider
         // Uygulama dilini ayarla
         $locale = request()->cookie('locale')
             ?? session('locale')
+            ?? $defaultLanguage->dil_kod
             ?? config('app.locale');
         App::setLocale($locale);
     }

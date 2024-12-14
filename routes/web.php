@@ -2,10 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Role;
 
 // Controllers
 use App\Http\Controllers\{
@@ -17,6 +19,7 @@ use App\Http\Controllers\{
     TicketController,
     UserIbanController,
     UserCryptoController
+
 };
 
 // Admin Controllers
@@ -67,10 +70,33 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Ana dashboard route'u - role göre yönlendirme yapar
     Route::get('/dashboard', function () {
-        if (auth()->user()->hasRole('admin')) {
-            return redirect()->route('admin.dashboard');
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login');
         }
-        return redirect()->route('user.dashboard');
+
+        try {
+            if ($user->hasRole('admin')) {
+                return redirect()->route('admin.dashboard');
+            }
+
+            if ($user->hasRole('user')) {
+                return redirect()->route('user.dashboard');
+            }
+
+            // Eğer rol atanmamışsa varsayılan olarak user rolü ata
+            $userRole = Role::where('name', 'user')->firstOrFail();
+            $user->assignRole($userRole);
+
+            return redirect()->route('user.dashboard');
+        } catch (\Exception $e) {
+            Log::error('Role check error:', [
+                'error' => $e->getMessage(),
+                'user_id' => $user->id
+            ]);
+            return redirect()->route('user.dashboard');
+        }
     })->name('dashboard');
 
     // User Dashboard - Sadece normal kullanıcılar için
@@ -204,7 +230,7 @@ Route::get('storage/ticket-attachments/{year}/{month}/{day}/{filename}', functio
         abort(404);
     }
 
-    return Storage::disk('public')->response($path, null, [
+    return response()->file(Storage::disk('public')->path($path), [
         'Cache-Control' => 'public, max-age=86400',
     ]);
 })->where([
