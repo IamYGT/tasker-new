@@ -183,6 +183,8 @@ export interface UserIban {
     title: string | null;
     is_default: boolean;
     is_active: boolean;
+    name: string;
+    surname: string;
     bank_details: {
         name: string;
         code: string;

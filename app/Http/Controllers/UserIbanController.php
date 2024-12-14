@@ -75,6 +75,8 @@ class UserIbanController extends Controller
                 ],
                 'title' => 'required|string|max:255',
                 'is_default' => 'boolean',
+                'name' => 'required|string|max:255',
+                'surname' => 'required|string|max:255',
             ], [
                 'bank_id.required' => translate('iban.errors.bank_required'),
                 'bank_id.exists' => translate('iban.errors.bank_invalid'),
@@ -82,6 +84,8 @@ class UserIbanController extends Controller
                 'iban.regex' => translate('iban.errors.iban_invalid_format'),
                 'iban.unique' => translate('iban.errors.iban_exists'),
                 'title.required' => translate('iban.errors.title_required'),
+                'name.required' => translate('iban.errors.name_required'),
+                'surname.required' => translate('iban.errors.surname_required'),
             ]);
 
             // Eğer yeni IBAN varsayılan olarak ayarlanacaksa, diğer varsayılan IBAN'ları kaldır
@@ -98,6 +102,8 @@ class UserIbanController extends Controller
                 'title' => $validated['title'],
                 'is_default' => $validated['is_default'] ?? false,
                 'is_active' => true,
+                'name' => $validated['name'],
+                'surname' => $validated['surname'],
             ]);
 
             DB::commit();
@@ -135,6 +141,8 @@ class UserIbanController extends Controller
                 ],
                 'title' => 'required|string|max:255',
                 'is_default' => 'boolean',
+                'name' => 'required|string|max:255',
+                'surname' => 'required|string|max:255',
             ], [
                 'bank_id.required' => translate('iban.errors.bank_required'),
                 'bank_id.exists' => translate('iban.errors.bank_invalid'),
@@ -142,6 +150,8 @@ class UserIbanController extends Controller
                 'iban.regex' => translate('iban.errors.iban_invalid_format'),
                 'iban.unique' => translate('iban.errors.iban_exists'),
                 'title.required' => translate('iban.errors.title_required'),
+                'name.required' => translate('iban.errors.name_required'),
+                'surname.required' => translate('iban.errors.surname_required'),
             ]);
 
             // Eğer yeni IBAN varsayılan olarak ayarlanacaksa, diğer varsayılan IBAN'ları kaldır
@@ -157,6 +167,8 @@ class UserIbanController extends Controller
                 'iban' => $validated['iban'],
                 'title' => $validated['title'],
                 'is_default' => $validated['is_default'] ?? false,
+                'name' => $validated['name'],
+                'surname' => $validated['surname'],
             ]);
 
             DB::commit();

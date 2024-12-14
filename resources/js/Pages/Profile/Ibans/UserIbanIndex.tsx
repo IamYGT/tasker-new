@@ -29,6 +29,8 @@ interface UserIban {
     is_default: boolean;
     is_active: boolean;
     bank_details: Bank;
+    name: string;
+    surname: string;
 }
 
 interface Props extends PageProps {
@@ -105,6 +107,8 @@ export default function UserIbanIndex({ auth, ibans, banks }: Props) {
         iban: '',
         title: '',
         is_default: false,
+        name: '',
+        surname: '',
     });
 
     const handleIbanChange = (value: string) => {
@@ -214,6 +218,8 @@ export default function UserIbanIndex({ auth, ibans, banks }: Props) {
             iban: iban.iban,
             title: iban.title,
             is_default: iban.is_default,
+            name: iban.name,
+            surname: iban.surname,
         });
         setIsModalOpen(true);
     };
@@ -276,7 +282,9 @@ export default function UserIbanIndex({ auth, ibans, banks }: Props) {
             !processing &&
             data.iban.length === 26 &&
             data.bank_id &&
-            data.title
+            data.title &&
+            data.name &&
+            data.surname
         );
     };
 
@@ -389,14 +397,35 @@ export default function UserIbanIndex({ auth, ibans, banks }: Props) {
                                                 </div>
 
                                                 <div className="mb-4">
-                                                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                                                        {iban.title}
-                                                    </span>
+                                                    <div className="flex flex-col space-y-2">
+                                                        <div>
+                                                            <span className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                                                {t('iban.accountTitle')}
+                                                            </span>
+                                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                                {iban.title}
+                                                            </p>
+                                                        </div>
+
+                                                        <div>
+                                                            <span className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                                                {t('iban.accountHolder')}
+                                                            </span>
+                                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                                {iban.name} {iban.surname}
+                                                            </p>
+                                                        </div>
+                                                    </div>
                                                 </div>
 
                                                 <div className="mt-2 space-y-2">
-                                                    <div className="font-mono text-lg tracking-wider text-gray-700 dark:text-gray-300">
-                                                        {formatIBAN(iban.iban)}
+                                                    <div>
+                                                        <span className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                                            {t('iban.number')}
+                                                        </span>
+                                                        <div className="font-mono text-lg tracking-wider text-gray-700 dark:text-gray-300">
+                                                            {formatIBAN(iban.iban)}
+                                                        </div>
                                                     </div>
                                                     <div className="flex justify-end">
                                                         <button
@@ -512,6 +541,30 @@ export default function UserIbanIndex({ auth, ibans, banks }: Props) {
                             onChange={(e) => setData('title', e.target.value)}
                         />
                         <InputError message={errors.title} className="mt-2" />
+                    </div>
+
+                    <div className="mb-4">
+                        <InputLabel htmlFor="name" value={t('iban.name')} />
+                        <TextInput
+                            id="name"
+                            type="text"
+                            className="mt-1 block w-full"
+                            value={data.name}
+                            onChange={(e) => setData('name', e.target.value)}
+                        />
+                        <InputError message={errors.name} className="mt-2" />
+                    </div>
+
+                    <div className="mb-4">
+                        <InputLabel htmlFor="surname" value={t('iban.surname')} />
+                        <TextInput
+                            id="surname"
+                            type="text"
+                            className="mt-1 block w-full"
+                            value={data.surname}
+                            onChange={(e) => setData('surname', e.target.value)}
+                        />
+                        <InputError message={errors.surname} className="mt-2" />
                     </div>
 
                     <div className="mb-4">

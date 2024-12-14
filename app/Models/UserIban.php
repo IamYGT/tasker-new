@@ -15,7 +15,9 @@ class UserIban extends Model
         'iban',
         'title',
         'is_default',
-        'is_active'
+        'is_active',
+        'name',
+        'surname'
     ];
 
     protected $casts = [

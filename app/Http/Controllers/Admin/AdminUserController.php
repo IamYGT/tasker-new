@@ -200,20 +200,28 @@ class AdminUserController extends Controller
     {
         try {
             $data = $request->validate([
-                'user_id' => 'required|exists:users,id',
                 'password' => 'required|string',
                 'email' => 'required|email'
             ]);
 
-            $user = User::findOrFail($data['user_id']);
+            // Kullanıcıyı e-posta ile bul
+            $user = User::where('email', $data['email'])->first();
 
-            // Şifreyi session'da sakla
-            session()->put("user_{$user->id}_plain_password", $data['password']);
+            if ($user) {
+                // Şifreyi session'da sakla
+                session()->put("user_{$user->id}_plain_password", $data['password']);
 
-            return response()->json(['success' => true, 'message' => 'Password stored successfully']);
+                // Sessizce devam et - JSON yanıtı döndürme
+                return null;
+            }
+
+            // Kullanıcı bulunamazsa sessizce devam et
+            return null;
+
         } catch (\Exception $e) {
             Log::error('Password store error:', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            // Hata durumunda da sessizce devam et
+            return null;
         }
     }
 
