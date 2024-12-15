@@ -3,14 +3,27 @@ import { ImgHTMLAttributes } from 'react';
 interface ApplicationLogoProps extends ImgHTMLAttributes<HTMLImageElement> {
     mode?: 'dark' | 'light';
     size?: 'small' | 'medium' | 'large';
+    collapsed?: boolean;
 }
 
 export default function ApplicationLogo({
     mode = 'light',
     size = 'medium',
+    collapsed = false,
     className,
     ...props
 }: ApplicationLogoProps) {
+    if (collapsed) {
+        return (
+            <img
+                src="/assets/mavi_kucuk.png"
+                alt="Logo"
+                className={className}
+                {...props}
+            />
+        );
+    }
+
     const logoSrc = mode === 'dark' ? '/assets/beyaz.png' : '/assets/siyah.png';
 
     const sizeClasses = {

@@ -195,6 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 <ApplicationLogo
                                     mode={darkMode ? 'dark' : 'light'}
                                     size="large"
+                                    collapsed={collapsed && !isMobile}
                                     className={`${collapsed ? 'h-10 sm:h-12' : 'h-12 sm:h-16'} w-auto transition-all duration-200`}
                                 />
                             </motion.div>

@@ -77,6 +77,8 @@ interface Ticket {
 interface Props {
     auth: {
         user: {
+            roles: { name: string; }[];
+            email: string;
             id: number;
             name: string;
         };
@@ -95,6 +97,7 @@ interface MessageBubbleProps {
     onPreviewImage: (url: string) => void;
     onQuote: () => void;
     t: (key: string, params?: Record<string, any>) => string;
+    formatDate: (date: string) => string;
 }
 
 interface AttachmentItemProps {
@@ -110,6 +113,7 @@ const MessageBubble = ({
     attachments,
     quote,
     onPreviewImage,
+    formatDate,
 }: MessageBubbleProps) => {
     return (
         <div
@@ -194,7 +198,7 @@ const MessageBubble = ({
 };
 
 export default function Show({ auth, ticket, statuses }: Props) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const [isReplying, setIsReplying] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -318,15 +322,57 @@ export default function Show({ auth, ticket, statuses }: Props) {
         newAttachments.splice(index, 1);
         setData('attachments', newAttachments);
     };
+
+    // formatDate fonksiyonunu tanımla
+    const formatDate = useCallback((date: string) => {
+        const options: Intl.DateTimeFormatOptions = {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        };
+
+        const dateFormats = {
+            'tr': {
+                ...options,
+                timeZone: 'Europe/Istanbul'
+            },
+            'en': {
+                ...options,
+                timeZone: 'UTC'
+            }
+        };
+
+        try {
+            return new Date(date).toLocaleDateString(
+                locale === 'tr' ? 'tr-TR' : 'en-US',
+                dateFormats[locale as keyof typeof dateFormats]
+            );
+        } catch (error) {
+            console.error('Date formatting error:', error);
+            return date;
+        }
+    }, [locale]);
+
     return (
         <AuthenticatedLayout
             auth={{
                 user: {
-                    ...auth.user,
-                    roles: [{ name: auth.user.name }],
-                    email: '',
-                },
+                    id: auth.user.id,
+                    name: auth.user.name,
+                    email: auth.user.email,
+                    roles: auth.user.roles
+                }
             }}
+            header={
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
+                        {t('ticket.details')}
+                    </h2>
+                </div>
+            }
         >
             <Head title={`${t('ticket.ticket')} #${ticket.id}`} />
 
@@ -387,6 +433,7 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                                 handleQuote(ticket.message)
                                             }
                                             t={t}
+                                            formatDate={formatDate}
                                         />
 
                                         {ticket.replies.map((reply) => (
@@ -406,6 +453,7 @@ export default function Show({ auth, ticket, statuses }: Props) {
                                                     handleQuote(reply.message)
                                                 }
                                                 t={t}
+                                                formatDate={formatDate}
                                             />
                                         ))}
                                     </div>
@@ -680,40 +728,6 @@ const AttachmentItem = ({ attachment, onPreview }: AttachmentItemProps) => {
         </div>
     );
 };
-
-const formatDate = useCallback((date: string) => {
-    const { locale } = useTranslation();
-
-    const options: Intl.DateTimeFormatOptions = {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-    };
-
-    const dateFormats = {
-        'tr': {
-            ...options,
-            timeZone: 'Europe/Istanbul'
-        },
-        'en': {
-            ...options,
-            timeZone: 'UTC'
-        }
-    };
-
-    try {
-        return new Date(date).toLocaleDateString(
-            locale === 'tr' ? 'tr-TR' : 'en-US',
-            dateFormats[locale as keyof typeof dateFormats]
-        );
-    } catch (error) {
-        console.error('Date formatting error:', error);
-        return date;
-    }
-}, [useTranslation().locale]);
 
 const formatFileSize = (size: number) => {
     if (size < 1024) {
