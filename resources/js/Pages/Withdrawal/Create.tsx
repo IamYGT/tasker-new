@@ -1,4 +1,3 @@
-import { CurrencyConverter } from '@/Components/Withdrawal/CurrencyConverter';
 import { WithdrawalMethodSelector } from '@/Components/Withdrawal/WithdrawalMethodSelector';
 import { useTranslation } from '@/Contexts/TranslationContext';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -47,21 +46,14 @@ export default function WithdrawalRequest({
             <Head title={t('withdrawal.request.title')} />
 
             <div className="py-12">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                        <WithdrawalMethodSelector
-                            exchangeRate={exchangeRate}
-                            savedIbans={savedIbans}
-                            banks={banks}
-                            onAmountChange={setAmount}
-                            onProcessingChange={handleProcessingChange}
-                        />
-                        <CurrencyConverter
-                            amount={amount}
-                            exchangeRate={exchangeRate}
-                            t={t}
-                        />
-                    </div>
+                <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
+                    <WithdrawalMethodSelector
+                        exchangeRate={exchangeRate}
+                        savedIbans={savedIbans}
+                        banks={banks}
+                        onAmountChange={setAmount}
+                        onProcessingChange={handleProcessingChange}
+                    />
                 </div>
             </div>
 

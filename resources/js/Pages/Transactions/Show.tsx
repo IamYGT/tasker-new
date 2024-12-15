@@ -4,27 +4,8 @@ import type { TransactionStatus } from '@/types';
 import { formatDate, getStatusColor, parseAmount } from '@/format';
 import { Head, Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
-
-import {
-    FaArrowLeft,
-    FaCalendar,
-    FaClock,
-    FaCreditCard,
-    FaDollarSign,
-    FaExchangeAlt,
-    FaLiraSign,
-    FaMoneyBillWave,
-    FaTicketAlt,
-    FaWallet,
-    FaFileAlt,
-    FaCheckCircle,
-    FaTimesCircle,
-    FaInfoCircle,
-    FaHistory,
-    FaUser,
-    FaBuilding,
-    FaHashtag,
-} from 'react-icons/fa';
+import { FaArrowLeft, FaCalendar, FaClock, FaCreditCard, FaDollarSign, FaExchangeAlt, FaLiraSign, FaMoneyBillWave, FaTicketAlt, FaWallet, FaFileAlt, FaCheckCircle, FaTimesCircle, FaInfoCircle, FaHistory, FaUser, FaBuilding, FaHashtag, FaExternalLinkAlt, FaCopy, FaNetworkWired } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
 interface Props {
     auth: {
@@ -73,6 +54,9 @@ interface Transaction {
         email: string;
         roles?: Array<{ name: string }>;
     };
+    customer_name?: string;
+    customer_surname?: string;
+    customer_meta_id?: string;
 }
 
 // Bank interface'ini ekleyelim
@@ -159,22 +143,94 @@ const getTransactionStatus = (status: string) => {
     }
 };
 
+// Banka detayları için yardımcı fonksiyon
+const renderBankDetails = (transaction: Transaction) => {
+    const { t } = useTranslation();
+    if (transaction.type !== 'bank_withdrawal') return null;
+
+    return (
+        <>
+            {/* Banka detayları render edilecek */}
+        </>
+    );
+};
+
+// Kripto detayları için yardımcı fonksiyon
+const renderCryptoDetails = (transaction: Transaction) => {
+    const { t } = useTranslation();
+    if (transaction.type !== 'crypto_withdrawal' || !transaction.crypto_address) {
+        return null;
+    }
+
+    const handleCopyAddress = async () => {
+        try {
+            await navigator.clipboard.writeText(transaction.crypto_address!);
+            toast.success(t('common.copied'));
+        } catch (err) {
+            toast.error(t('common.copyError'));
+        }
+    };
+
+    return (
+        <>
+            <DetailCard
+                icon={FaWallet}
+                title={t('transaction.cryptoAddress')}
+                value={
+                    <div className="flex items-center space-x-2">
+                        <span className="font-mono text-sm break-all">
+                            {transaction.crypto_address}
+                        </span>
+                        <button
+                            onClick={handleCopyAddress}
+                            className="p-1 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+                        >
+                            <FaCopy className="h-4 w-4" />
+                        </button>
+                        {/* TronScan linki */}
+                        <a
+                            href={`https://tronscan.org/#/address/${transaction.crypto_address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+                        >
+                            <FaExternalLinkAlt className="h-4 w-4" />
+                        </a>
+                    </div>
+                }
+                className="bg-gradient-to-br from-purple-100 to-indigo-200 hover:from-purple-200 hover:to-indigo-300 dark:from-purple-900/30 dark:to-indigo-900/30"
+            />
+
+            {/* Ağ Bilgisi */}
+            {transaction.crypto_network && (
+                <DetailCard
+                    icon={FaNetworkWired}
+                    title={t('transaction.cryptoNetwork')}
+                    value={transaction.crypto_network.toUpperCase()}
+                    className="bg-gradient-to-br from-blue-100 to-cyan-200 hover:from-blue-200 hover:to-cyan-300 dark:from-blue-900/30 dark:to-cyan-900/30"
+                />
+            )}
+
+            {/* İşlem Ücreti */}
+            {transaction.crypto_fee && (
+                <DetailCard
+                    icon={FaMoneyBillWave}
+                    title={t('transaction.cryptoFee')}
+                    value={`${transaction.crypto_fee} USDT`}
+                    className="bg-gradient-to-br from-green-100 to-emerald-200 hover:from-green-200 hover:to-emerald-300 dark:from-green-900/30 dark:to-emerald-900/30"
+                />
+            )}
+        </>
+    );
+};
+
 export default function Show({ auth, transaction, banks }: Props) {
     const { t } = useTranslation();
-
-    console.log('Transaction Data:', {
-        bank_id: transaction.bank_id,
-        type: transaction.type,
-        bank_account: transaction.bank_account,
-        banks: banks
-    });
 
     // bank_id kontrolünü güncelleyelim
     const bank = transaction.type === 'bank_withdrawal' && transaction.bank_id
         ? banks.find((b: Bank) => b.id === transaction.bank_id)
         : null;
-
-    console.log('Found Bank:', bank);
 
     // Tarih formatı için yardımcı fonksiyon
     const formatDateTime = (dateString: string) => {
@@ -246,14 +302,6 @@ export default function Show({ auth, transaction, banks }: Props) {
                                 className="bg-gradient-to-br from-green-100 to-emerald-200 hover:from-green-200 hover:to-emerald-300 dark:from-green-900/30 dark:to-emerald-900/30 [&>div]:text-green-600 dark:[&>div]:text-green-400"
                             />
 
-                            {/* TRY Tutarı */}
-                            <DetailCard
-                                icon={FaLiraSign}
-                                title={t('transaction.amountTRY')}
-                                value={`₺${parseAmount(transaction.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`}
-                                className="bg-gradient-to-br from-blue-100 to-indigo-200 hover:from-blue-200 hover:to-indigo-300 dark:from-blue-900/30 dark:to-indigo-900/30 [&>div]:text-blue-600 dark:[&>div]:text-blue-400"
-                            />
-
                             {/* Banka Bilgileri */}
                             {transaction.bank_account && (
                                 <>
@@ -265,7 +313,7 @@ export default function Show({ auth, transaction, banks }: Props) {
                                     />
                                     <DetailCard
                                         icon={FaCreditCard}
-                                        title={t('transaction.bankAccount')}
+                                        title={t('withdrawal.ibanNumber')}
                                         value={
                                             <span className="font-mono">
                                                 {transaction.bank_account.replace(/(.{4})/g, '$1 ')}
@@ -276,31 +324,30 @@ export default function Show({ auth, transaction, banks }: Props) {
                                 </>
                             )}
 
-                            {/* Kripto Bilgileri */}
-                            {transaction.crypto_address && (
-                                <>
-                                    <DetailCard
-                                        icon={FaWallet}
-                                        title={t('transaction.cryptoAddress')}
-                                        value={
-                                            <span className="font-mono break-all">
-                                                {transaction.crypto_address}
-                                                <div className="mt-1 text-sm text-gray-500">
-                                                    {transaction.crypto_network}
-                                                </div>
-                                            </span>
-                                        }
-                                        className="bg-gradient-to-br from-violet-50 to-purple-100 hover:shadow-purple-100 dark:from-violet-900/20 dark:to-purple-900/20"
-                                    />
-                                    {transaction.crypto_fee && (
-                                        <DetailCard
-                                            icon={FaMoneyBillWave}
-                                            title={t('transaction.cryptoFee')}
-                                            value={`${transaction.crypto_fee} USDT`}
-                                            className="bg-gradient-to-br from-pink-50 to-rose-100 hover:shadow-rose-100 dark:from-pink-900/20 dark:to-rose-900/20"
-                                        />
-                                    )}
-                                </>
+                            {/* Müşteri Bilgileri */}
+                            {(transaction.customer_name || transaction.customer_surname) && (
+                                <DetailCard
+                                    icon={FaUser}
+                                    title={t('withdrawal.accountHolder')}
+                                    value={
+                                        <div className="space-y-1">
+                                            <div className="font-medium">
+                                                {transaction.customer_name} {transaction.customer_surname}
+                                            </div>
+                                        </div>
+                                    }
+                                    className="bg-gradient-to-br from-violet-100 to-purple-200 hover:from-violet-200 hover:to-purple-300 dark:from-violet-900/30 dark:to-purple-900/30 [&>div]:text-purple-600 dark:[&>div]:text-purple-400"
+                                />
+                            )}
+
+                            {/* Müşteri Meta ID */}
+                            {transaction.customer_meta_id && (
+                                <DetailCard
+                                    icon={FaHashtag}
+                                    title={t('withdrawal.customerMetaId')}
+                                    value={transaction.customer_meta_id}
+                                    className="bg-gradient-to-br from-pink-100 to-rose-200 hover:from-pink-200 hover:to-rose-300 dark:from-pink-900/30 dark:to-rose-900/30 [&>div]:text-rose-600 dark:[&>div]:text-rose-400"
+                                />
                             )}
 
                             {/* Tarih Bilgisi */}
@@ -310,6 +357,13 @@ export default function Show({ auth, transaction, banks }: Props) {
                                 value={formatDateTime(transaction.created_at)}
                                 className="bg-gradient-to-br from-teal-100 to-cyan-200 hover:from-teal-200 hover:to-cyan-300 dark:from-teal-900/30 dark:to-cyan-900/30 [&>div]:text-cyan-600 dark:[&>div]:text-cyan-400"
                             />
+
+                            {/* İşlem tipine göre detayları göster */}
+                            {transaction.type === 'bank_withdrawal' ? (
+                                renderBankDetails(transaction)
+                            ) : (
+                                renderCryptoDetails(transaction)
+                            )}
                         </div>
 
                         {/* Destek Talebi Oluştur Butonu */}

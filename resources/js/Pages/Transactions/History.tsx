@@ -26,7 +26,6 @@ import { Link } from '@inertiajs/react';
 
 interface Transaction {
     id: number;
-    amount: string | number;
     amount_usd: string | number;
     exchange_rate: string | number | null;
     type: string;
@@ -37,6 +36,9 @@ interface Transaction {
     reference_id: string;
     created_at: string;
     notes?: string;
+    customer_name?: string;
+    customer_surname?: string;
+    customer_meta_id?: string;
 }
 
 interface Props {
@@ -59,7 +61,6 @@ interface Props {
     };
     stats: {
         total_amount_usd: number;
-        total_amount_try: number;
         pending_count: number;
         completed_count: number;
     };
@@ -140,13 +141,9 @@ const TransactionCard = ({
                         </div>
                     </div>
                     <div className="text-right">
-                        <div className="mb-1 text-lg font-bold text-gray-900 dark:text-gray-100">
+                        <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
                             <FaDollarSign className="mr-1 inline h-4 w-4" />
                             {parseAmount(transaction.amount_usd).toFixed(2)}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                            <FaLiraSign className="mr-1 inline h-3 w-3" />
-                            {parseAmount(transaction.amount).toFixed(2)}
                         </div>
                     </div>
                 </div>
@@ -190,8 +187,7 @@ export default function TransactionHistory({
             transaction.reference_id
                 .toLowerCase()
                 .includes(searchTerm.toLowerCase()) ||
-            transaction.amount_usd.toString().includes(searchTerm) ||
-            transaction.amount.toString().includes(searchTerm);
+            transaction.amount_usd.toString().includes(searchTerm);
 
         const matchesFilter =
             filterType === 'all' ||
@@ -207,7 +203,6 @@ export default function TransactionHistory({
             t('transaction.date'),
             t('transaction.type'),
             t('transaction.amountUSD'),
-            t('transaction.amountTRY'),
             t('transaction.status'),
             t('transaction.referenceId'),
         ];
@@ -219,7 +214,6 @@ export default function TransactionHistory({
                     new Date(tx.created_at).toLocaleDateString(),
                     t(`transaction.type.${tx.type}`),
                     tx.amount_usd,
-                    tx.amount,
                     t(`status.${tx.status}`),
                     tx.reference_id,
                 ].join(','),
@@ -250,7 +244,7 @@ export default function TransactionHistory({
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     {/* İstatistik Kartları */}
-                    <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <motion.div
                             whileHover={{ scale: 1.02 }}
                             className="rounded-xl bg-gradient-to-br from-green-50 to-green-100 p-6 dark:from-green-900/30 dark:to-green-800/30"
@@ -261,33 +255,10 @@ export default function TransactionHistory({
                                         {t('transaction.totalAmountUSD')}
                                     </p>
                                     <p className="mt-2 text-3xl font-bold text-green-700 dark:text-green-300">
-                                        $
-                                        {parseAmount(
-                                            stats.total_amount_usd,
-                                        ).toFixed(2)}
+                                        ${parseAmount(stats.total_amount_usd).toFixed(2)}
                                     </p>
                                 </div>
                                 <FaMoneyBillWave className="h-12 w-12 text-green-500/50" />
-                            </div>
-                        </motion.div>
-
-                        <motion.div
-                            whileHover={{ scale: 1.02 }}
-                            className="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-6 dark:from-blue-900/30 dark:to-blue-800/30"
-                        >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                                        {t('transaction.totalAmountTRY')}
-                                    </p>
-                                    <p className="mt-2 text-3xl font-bold text-blue-700 dark:text-blue-300">
-                                        ₺
-                                        {parseAmount(
-                                            stats.total_amount_try,
-                                        ).toFixed(2)}
-                                    </p>
-                                </div>
-                                <FaChartLine className="h-12 w-12 text-blue-500/50" />
                             </div>
                         </motion.div>
 

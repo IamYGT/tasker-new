@@ -39,8 +39,10 @@ export interface Role {
 
 export interface Transaction {
     history: any;
-    history: any;
     id: number;
+    customer_name?: string;
+    customer_surname?: string;
+    customer_meta_id?: number;
     amount: string | number;
     amount_usd: string | number;
     exchange_rate: string | number | null;

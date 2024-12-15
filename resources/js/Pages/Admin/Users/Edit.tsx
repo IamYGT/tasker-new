@@ -73,7 +73,7 @@ export default function EditUser({ auth, user, languages, secili_dil, availableR
     return (
         <AuthenticatedLayout
             auth={auth}
-          
+
             header={
                 <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                     {t('users.editUser')}
@@ -203,7 +203,7 @@ export default function EditUser({ auth, user, languages, secili_dil, availableR
                                                         checked={data.is_active}
                                                         onChange={(e) => {
                                                             setData('is_active', e.target.checked);
-                                                            console.log('is_active changed:', e.target.checked); // Debug için
+                                                           
                                                         }}
                                                         className="sr-only"
                                                     />
@@ -213,8 +213,8 @@ export default function EditUser({ auth, user, languages, secili_dil, availableR
                                                         shadow-inner
                                                     `}>
                                                         <div className={`
-                                                            absolute left-0.5 top-0.5 
-                                                            bg-white w-6 h-6 rounded-full 
+                                                            absolute left-0.5 top-0.5
+                                                            bg-white w-6 h-6 rounded-full
                                                             shadow-lg transform transition-transform duration-300 ease-in-out
                                                             flex items-center justify-center
                                                             ${data.is_active ? 'translate-x-7' : 'translate-x-0'}
@@ -229,12 +229,12 @@ export default function EditUser({ auth, user, languages, secili_dil, availableR
                                                 </div>
                                                 <span className={`
                                                     ml-3 font-medium text-sm
-                                                    ${data.is_active 
-                                                        ? 'text-green-600 dark:text-green-400' 
+                                                    ${data.is_active
+                                                        ? 'text-green-600 dark:text-green-400'
                                                         : 'text-gray-500 dark:text-gray-400'}
                                                 `}>
-                                                    {data.is_active 
-                                                        ? t('users.statusActive') 
+                                                    {data.is_active
+                                                        ? t('users.statusActive')
                                                         : t('users.statusInactive')}
                                                 </span>
                                             </label>
@@ -243,11 +243,11 @@ export default function EditUser({ auth, user, languages, secili_dil, availableR
                                     <div className="mt-2">
                                         <div className={`
                                             text-sm rounded-md p-2
-                                            ${data.is_active 
-                                                ? 'text-green-700 bg-green-50 dark:bg-green-900/20 dark:text-green-400' 
+                                            ${data.is_active
+                                                ? 'text-green-700 bg-green-50 dark:bg-green-900/20 dark:text-green-400'
                                                 : 'text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-400'}
                                         `}>
-                                            {data.is_active 
+                                            {data.is_active
                                                 ? t('users.activeAccountMessage')
                                                 : t('users.inactiveAccountMessage')}
                                         </div>
@@ -265,7 +265,7 @@ export default function EditUser({ auth, user, languages, secili_dil, availableR
                                     >
                                         {t('common.cancel')}
                                     </motion.button>
-                                    
+
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
@@ -294,4 +294,4 @@ export default function EditUser({ auth, user, languages, secili_dil, availableR
             </motion.div>
         </AuthenticatedLayout>
     );
-} 
+}

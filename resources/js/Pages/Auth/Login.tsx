@@ -43,8 +43,7 @@ const Login: React.FC<LoginProps> = ({
     });
 
     useEffect(() => {
-        console.log('Current locale:', locale);
-        console.log('Translations loaded:', t('login.title'));
+
     }, [locale, t]);
 
     useEffect(() => {

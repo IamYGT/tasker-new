@@ -63,7 +63,10 @@ class Transaction extends Model
         'crypto_address',
         'crypto_network',
         'crypto_fee',
-        'crypto_txid'
+        'crypto_txid',
+        'customer_name',
+        'customer_surname',
+        'customer_meta_id'
     ];
 
     protected $casts = [

@@ -1,7 +1,7 @@
 import { useTranslation } from '@/Contexts/TranslationContext';
-import { useForm } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaCopy, FaInfoCircle, FaMoneyBillWave, FaQrcode } from 'react-icons/fa';
 import { SiTether } from 'react-icons/si';
 import { toast } from 'react-toastify';
@@ -10,7 +10,14 @@ interface FormData {
     amount_usd: string;
     wallet_address: string;
     network: string;
-    type: string;
+    type: 'crypto_withdrawal';
+    exchange_rate: string;
+}
+
+interface FormErrors {
+    amount_usd?: string;
+    wallet_address?: string;
+    network?: string;
 }
 
 interface CryptoWithdrawalFormProps {
@@ -30,38 +37,57 @@ export const CryptoWithdrawalForm = ({
     onProcessingChange,
 }: CryptoWithdrawalFormProps) => {
     const { t } = useTranslation();
-
-    const { data, setData, post, processing, errors } = useForm<FormData>({
+    const [formData, setFormData] = useState<FormData>({
         amount_usd: '',
         wallet_address: '',
         network: 'trc20',
         type: 'crypto_withdrawal',
+        exchange_rate: exchangeRate.toString()
     });
+    const [errors, setErrors] = useState<FormErrors>({});
+    const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
-        onAmountChange(data.amount_usd);
-    }, [data.amount_usd, onAmountChange]);
+        onAmountChange(formData.amount_usd);
+    }, [formData.amount_usd, onAmountChange]);
 
     useEffect(() => {
-        onProcessingChange(processing);
-    }, [processing, onProcessingChange]);
+        onProcessingChange(isProcessing);
+    }, [isProcessing, onProcessingChange]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('withdrawal.store'), {
+        setIsProcessing(true);
+
+        router.post(route('withdrawal.store'), {
+            ...formData,
+            type: 'crypto_withdrawal',
+            exchange_rate: exchangeRate.toString()
+        }, {
+            preserveScroll: true,
             onSuccess: () => {
-                toast.success(t('withdrawal.crypto.success'));
+                setIsProcessing(false);
+                toast.success(t('withdrawal.success'));
             },
-            onError: () => {
-                toast.error(t('withdrawal.crypto.error'));
+            onError: (errors) => {
+                setIsProcessing(false);
+                setErrors(errors);
+                toast.error(t('withdrawal.error'));
             },
         });
+    };
+
+    const handleChange = (field: keyof FormData, value: string) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        if (field === 'amount_usd') {
+            onAmountChange(value);
+        }
     };
 
     const handlePaste = async () => {
         try {
             const text = await navigator.clipboard.readText();
-            setData('wallet_address', text);
+            handleChange('wallet_address', text);
             toast.success(t('withdrawal.crypto.addressPasted'));
         } catch (err) {
             toast.error(t('withdrawal.crypto.pasteError'));
@@ -89,8 +115,8 @@ export const CryptoWithdrawalForm = ({
                                 type="number"
                                 step="0.01"
                                 min="1"
-                                value={data.amount_usd}
-                                onChange={(e) => setData('amount_usd', e.target.value)}
+                                value={formData.amount_usd}
+                                onChange={(e) => handleChange('amount_usd', e.target.value)}
                                 className="block w-full rounded-lg border-gray-300 pl-10 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
                                 required
                             />
@@ -110,11 +136,11 @@ export const CryptoWithdrawalForm = ({
                                 <div
                                     key={network.id}
                                     className={`cursor-pointer rounded-lg border p-4 transition-colors ${
-                                        data.network === network.id
+                                        formData.network === network.id
                                             ? 'border-indigo-500 bg-indigo-50 dark:border-indigo-400 dark:bg-indigo-900/20'
                                             : 'border-gray-200 hover:border-indigo-200 dark:border-gray-700 dark:hover:border-indigo-700'
                                     }`}
-                                    onClick={() => setData('network', network.id)}
+                                    onClick={() => handleChange('network', network.id)}
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-3">
@@ -130,7 +156,7 @@ export const CryptoWithdrawalForm = ({
                                         </div>
                                         <div
                                             className={`h-4 w-4 rounded-full border ${
-                                                data.network === network.id
+                                                formData.network === network.id
                                                     ? 'border-indigo-500 bg-indigo-500'
                                                     : 'border-gray-300'
                                             }`}
@@ -155,8 +181,8 @@ export const CryptoWithdrawalForm = ({
                             </div>
                             <input
                                 type="text"
-                                value={data.wallet_address}
-                                onChange={(e) => setData('wallet_address', e.target.value)}
+                                value={formData.wallet_address}
+                                onChange={(e) => handleChange('wallet_address', e.target.value)}
                                 className="block w-full rounded-lg border-gray-300 pl-10 pr-20 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
                                 placeholder={t('withdrawal.crypto.walletPlaceholder')}
                                 required
@@ -198,10 +224,10 @@ export const CryptoWithdrawalForm = ({
                     <div className="flex justify-end">
                         <button
                             type="submit"
-                            disabled={processing}
+                            disabled={isProcessing}
                             className="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
                         >
-                            {processing ? (
+                            {isProcessing ? (
                                 <>
                                     <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24">
                                         <circle

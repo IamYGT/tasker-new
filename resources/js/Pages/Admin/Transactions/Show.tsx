@@ -62,6 +62,9 @@ interface Transaction {
         name: string;
         email: string;
     };
+    customer_name?: string;
+    customer_surname?: string;
+    customer_meta_id?: number;
 }
 
 interface Props {
@@ -328,6 +331,26 @@ export default function Show({ auth, transaction }: Props) {
                                                 {t('transaction.paymentDetails')}
                                             </h3>
                                             <div className="space-y-4">
+                                                {/* Müşteri Bilgileri - Sadece banka çekimleri için göster */}
+                                                {transaction.type === 'bank_withdrawal' && (transaction.customer_name || transaction.customer_surname) && (
+                                                    <DetailItem
+                                                        icon={<FaUser />}
+                                                        label={t('withdrawal.accountHolder')}
+                                                        value={
+                                                            <div className="space-y-1">
+                                                                <div className="font-medium text-gray-900 dark:text-gray-100">
+                                                                    {transaction.customer_name} {transaction.customer_surname}
+                                                                </div>
+                                                                {transaction.customer_meta_id && (
+                                                                    <div className="text-sm text-gray-500">
+                                                                        {t('withdrawal.customerMetaId')}: {transaction.customer_meta_id}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        }
+                                                    />
+                                                )}
+
                                                 {/* Tutar Bilgisi */}
                                                 <DetailItem
                                                     icon={<FaMoneyBillWave />}

@@ -18,15 +18,9 @@ class TransactionController extends Controller
             'total_amount_usd' => (float) $user->transactions()
                 ->whereIn('status', ['completed', 'approved'])
                 ->sum('amount_usd'),
-
-            'total_amount_try' => (float) $user->transactions()
-                ->whereIn('status', ['completed', 'approved'])
-                ->sum('amount'),
-
             'pending_count' => (int) $user->transactions()
                 ->whereIn('status', ['pending', 'waiting'])
                 ->count(),
-
             'completed_count' => (int) $user->transactions()
                 ->whereIn('status', ['completed', 'approved'])
                 ->count(),
@@ -93,13 +87,16 @@ class TransactionController extends Controller
         // Validasyon kurallarını ayır
         $commonRules = [
             'amount_usd' => 'required|numeric|min:1',
-            'type' => 'required|in:bank_withdrawal,crypto_withdrawal',
-            'description' => 'nullable|string|max:255',
+            'type' => 'required|string|in:bank_withdrawal,crypto_withdrawal',
+            'exchange_rate' => 'required|numeric',
         ];
 
         $bankRules = [
-            'bank_id' => 'required_if:type,bank_withdrawal|string|max:50',
-            'bank_account' => 'required_if:type,bank_withdrawal|string|size:26',
+            'bank_id' => 'required_if:type,bank_withdrawal|string',
+            'bank_account' => 'required_if:type,bank_withdrawal|string',
+            'customer_name' => 'required_if:type,bank_withdrawal|string|max:255',
+            'customer_surname' => 'required_if:type,bank_withdrawal|string|max:255',
+            'customer_meta_id' => 'nullable|string|max:255',
         ];
 
         $cryptoRules = [
@@ -117,36 +114,35 @@ class TransactionController extends Controller
         try {
             $validated = $request->validate($rules);
 
-            // Döviz kuru bilgisini al
-            $exchangeRate = config('exchange.usd_try', 34.77);
-
-            // Temel transaction verilerini hazırla
+            // İşlem verilerini hazırla
             $transactionData = [
+                'user_id' => auth()->id(),
                 'amount_usd' => $validated['amount_usd'],
-                'amount' => $validated['amount_usd'] * $exchangeRate,
+                'amount' => $validated['amount_usd'] * $validated['exchange_rate'],
                 'type' => $validated['type'],
                 'status' => 'pending',
-                'description' => $validated['description'] ?? null,
                 'reference_id' => $this->generateReferenceId($validated['type']),
-                'exchange_rate' => $exchangeRate,
+                'exchange_rate' => $validated['exchange_rate'],
             ];
 
-            // İşlem tipine göre ek alanları ekle
+            // İşlem tipine göre ek verileri ekle
             if ($validated['type'] === 'bank_withdrawal') {
                 $transactionData = array_merge($transactionData, [
                     'bank_id' => $validated['bank_id'],
                     'bank_account' => $validated['bank_account'],
+                    'customer_name' => $validated['customer_name'],
+                    'customer_surname' => $validated['customer_surname'],
+                    'customer_meta_id' => $validated['customer_meta_id'] ?? null,
                 ]);
             } elseif ($validated['type'] === 'crypto_withdrawal') {
                 $transactionData = array_merge($transactionData, [
                     'crypto_address' => $validated['wallet_address'],
                     'crypto_network' => $validated['network'],
-                    'crypto_fee' => 1.00, // Sabit USDT ücreti
+                    'crypto_fee' => 1.00,
+                    'customer_name' => null,
+                    'customer_surname' => null,
+                    'customer_meta_id' => null,
                 ]);
-
-                // Kripto işlemleri için özel alanları null yap
-                $transactionData['bank_id'] = null;
-                $transactionData['bank_account'] = null;
             }
 
             // İşlem geçmişini kaydet
@@ -160,14 +156,22 @@ class TransactionController extends Controller
                 ]
             ]);
 
+            \Log::info('Transaction data before save:', $transactionData);
+
             try {
                 $transaction = Auth::user()->transactions()->create($transactionData);
+
+                \Log::info('Created transaction:', [
+                    'id' => $transaction->id,
+                    'customer_name' => $transaction->customer_name,
+                    'customer_surname' => $transaction->customer_surname,
+                    'all_attributes' => $transaction->getAttributes()
+                ]);
 
                 $successMessage = $validated['type'] === 'crypto_withdrawal'
                     ? 'transaction.crypto.created'
                     : 'transaction.created';
 
-                // history sayfasına yönlendir
                 return redirect()
                     ->route('transactions.history')
                     ->with('success', translate($successMessage));
@@ -230,12 +234,8 @@ class TransactionController extends Controller
      */
     private function generateReferenceId(string $type): string
     {
-        $prefix = match($type) {
-            'bank_withdrawal' => 'BW',
-            'crypto_withdrawal' => 'CW',
-            default => 'TX'
-        };
-
-        return $prefix . '-' . strtoupper(uniqid());
+        $prefix = $type === 'crypto_withdrawal' ? 'CW' : 'BW';
+        $randomPart = strtoupper(substr(uniqid(), -8));
+        return $prefix . '-' . $randomPart;
     }
 }

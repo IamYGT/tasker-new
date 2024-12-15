@@ -19,6 +19,10 @@ interface FormData {
     bank_id: string;
     bank_account: string;
     type: string;
+    customer_name: string;
+    customer_surname: string;
+    customer_meta_id?: string;
+    exchange_rate: string;
 }
 
 interface UserIban {
@@ -28,6 +32,8 @@ interface UserIban {
     title: string | null;
     is_default: boolean;
     is_active: boolean;
+    name: string;
+    surname: string;
     bank_details: {
         name: string;
         code: string;
@@ -89,11 +95,15 @@ export const WithdrawalForm = ({
     const [ibanValid, setIbanValid] = useState<boolean | null>(null);
     const [showIbanFeedback, setShowIbanFeedback] = useState(false);
 
-    const { data, setData, post, processing, errors } = useForm<FormData>({
+    const { data, setData, post, processing, errors } = useForm({
         amount_usd: '',
+        type: 'bank_withdrawal',
         bank_id: '',
         bank_account: '',
-        type: 'bank_withdrawal',
+        customer_name: '',
+        customer_surname: '',
+        customer_meta_id: '',
+        exchange_rate: exchangeRate.toString()
     });
 
     // Amount değişikliklerini parent componente bildir
@@ -134,7 +144,7 @@ export const WithdrawalForm = ({
     };
 
     // IBAN değişikliğini handle et
-    const handleIbanChange = (value: string) => {
+    const handleIbanChange = (value: string, preserveFormData = false) => {
         // TR prefix'ini otomatik ekle
         let formattedValue = value.replace(/[^A-Z0-9]/g, '').toUpperCase();
         if (formattedValue && !formattedValue.startsWith('TR')) {
@@ -162,13 +172,53 @@ export const WithdrawalForm = ({
             setShowIbanFeedback(false);
         }
 
-        setData('bank_account', formattedValue);
+        if (preserveFormData) {
+            // Mevcut form verilerini koruyarak sadece IBAN'ı güncelle
+            setData(currentData => ({
+                ...currentData,
+                bank_account: formattedValue
+            }));
+        } else {
+            // Manuel IBAN girişi için sadece IBAN'ı güncelle
+            setData(currentData => ({
+                ...currentData,
+                bank_account: formattedValue,
+                bank_id: '',
+                customer_name: '',
+                customer_surname: ''
+            }));
+        }
     };
 
-    // Form submit handler'ı ekle
+    // IBAN seçildiğinde çalışacak fonksiyon
+    const handleIbanSelect = (iban: UserIban) => {
+        // Önce form verilerini güncelle
+        setData({
+            ...data,
+            bank_id: iban.bank_id,
+            bank_account: iban.iban,
+            customer_name: iban.name,
+            customer_surname: iban.surname,
+            type: 'bank_withdrawal',
+            exchange_rate: exchangeRate.toString()
+        });
+
+        // IBAN validasyonunu tetikle (true parametresi form verilerini korumak için)
+        handleIbanChange(iban.iban, true);
+    };
+
+    // Form verilerinin değişimini izle
+    useEffect(() => {
+
+    }, [data]);
+
+    // Form submit handler'ı düzelt
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onProcessingChange(true);
+
+        // Form verilerini güncelle ve gönder
+        setData('exchange_rate', exchangeRate.toString());
 
         post(route('withdrawal.store'), {
             onSuccess: () => {
@@ -186,6 +236,120 @@ export const WithdrawalForm = ({
         onProcessingChange(processing);
     }, [processing, onProcessingChange]);
 
+    // Kayıtlı IBAN'lar bölümü
+    const renderSavedIbans = () => {
+        return savedIbans.map((iban) => {
+
+
+            return (
+                <div
+                    key={iban.id}
+                    onClick={() => handleIbanSelect(iban)}
+                    className={`cursor-pointer rounded-lg border p-4 transition-colors ${
+                        data.bank_account === iban.iban
+                            ? 'border-indigo-500 bg-indigo-50 dark:border-indigo-400 dark:bg-indigo-900/20'
+                            : 'border-gray-200 hover:border-indigo-500 dark:border-gray-700'
+                    }`}
+                >
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                            <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900/20">
+                                <FaCreditCard className="h-5 w-4 text-blue-600" />
+                            </div>
+                            <div>
+                                <div className="font-medium text-gray-900 dark:text-gray-100">
+                                    {iban.bank_details.name}
+                                    {iban.is_default && (
+                                        <span className="ml-2 text-xs text-indigo-600 dark:text-indigo-400">
+                                            ({t('common.default')})
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="font-mono text-sm text-gray-500 dark:text-gray-400">
+                                    {formatIBAN(iban.iban)}
+                                </div>
+                                {/* İsim ve soyisim bilgilerini göster */}
+                                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    {iban.name} {iban.surname}
+                                </div>
+                            </div>
+                        </div>
+                        {data.bank_account === iban.iban && (
+                            <FaCheck className="h-5 w-5 text-indigo-600" />
+                        )}
+                    </div>
+                </div>
+            );
+        });
+    };
+
+    // Müşteri bilgileri alanları
+    const renderCustomerFields = () => (
+        <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {t('withdrawal.accountInfo')}
+            </h3>
+
+            {/* Müşteri Meta ID - En üste taşındı */}
+            <div>
+                <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {t('withdrawal.customerMetaId')}
+                    <span className="ml-1 text-xs text-gray-500">({t('common.optional')})</span>
+                </label>
+                <input
+                    type="text"
+                    name="customer_meta_id"
+                    value={data.customer_meta_id}
+                    onChange={e => setData('customer_meta_id', e.target.value)}
+                    className="block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                    placeholder={t('withdrawal.customerMetaIdPlaceholder')}
+                />
+                {errors.customer_meta_id && (
+                    <p className="mt-1 text-sm text-red-600">{errors.customer_meta_id}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                    {t('withdrawal.customerMetaIdHelp')}
+                </p>
+            </div>
+
+            {/* IBAN Sahibi Adı */}
+            <div>
+                <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {t('withdrawal.accountHolderName')}
+                </label>
+                <input
+                    type="text"
+                    name="customer_name"
+                    value={data.customer_name}
+                    onChange={e => setData('customer_name', e.target.value)}
+                    className="block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                    required
+                />
+                {errors.customer_name && (
+                    <p className="mt-1 text-sm text-red-600">{errors.customer_name}</p>
+                )}
+            </div>
+
+            {/* IBAN Sahibi Soyadı */}
+            <div>
+                <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {t('withdrawal.accountHolderSurname')}
+                </label>
+                <input
+                    type="text"
+                    name="customer_surname"
+                    value={data.customer_surname}
+                    onChange={e => setData('customer_surname', e.target.value)}
+                    className="block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                    required
+                />
+                {errors.customer_surname && (
+                    <p className="mt-1 text-sm text-red-600">{errors.customer_surname}</p>
+                )}
+            </div>
+        </div>
+    );
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -196,7 +360,10 @@ export const WithdrawalForm = ({
                 {/* USD Miktar Girişi */}
                 <div>
                     <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {t('withdrawal.amount')}
+                        {t('withdrawal.amount')} (USD)
+                        <span className="ml-2 text-xs font-normal text-amber-600 dark:text-amber-400">
+                            {t('withdrawal.usdOnly')}
+                        </span>
                     </label>
                     <div className="relative">
                         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -208,13 +375,26 @@ export const WithdrawalForm = ({
                             min="1"
                             value={data.amount_usd}
                             onChange={(e) => setData('amount_usd', e.target.value)}
-                            className="block w-full rounded-lg border-gray-300 pl-10 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                            className="block w-full rounded-lg border-gray-300 pl-10 pr-16 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
                             required
+                            placeholder="0.00"
                         />
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">USD</span>
+                        </div>
                     </div>
                     {errors.amount_usd && (
                         <p className="mt-1 text-sm text-red-600">{errors.amount_usd}</p>
                     )}
+                    {/* USD Bilgi Notu */}
+                    <div className="mt-2 rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
+                        <div className="flex items-start">
+                            <FaInfoCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500 dark:text-blue-400" />
+                            <p className="ml-2 text-sm text-blue-700 dark:text-blue-300">
+                                {t('withdrawal.usdOnlyInfo')}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Banka Seçimi */}
@@ -252,52 +432,7 @@ export const WithdrawalForm = ({
                             {t('withdrawal.savedIbans')}
                         </label>
                         <div className="space-y-3">
-                            {savedIbans.map((iban) => (
-                                <div
-                                    key={iban.id}
-                                    onClick={() => {
-                                        setData({
-                                            ...data,
-                                            bank_id: iban.bank_id,
-                                            bank_account: iban.iban,
-                                        });
-                                    }}
-                                    className={`cursor-pointer rounded-lg border p-4 transition-colors ${
-                                        data.bank_account === iban.iban
-                                            ? 'border-indigo-500 bg-indigo-50 dark:border-indigo-400 dark:bg-indigo-900/20'
-                                            : 'border-gray-200 hover:border-indigo-200 dark:border-gray-700 dark:hover:border-indigo-700'
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-3">
-                                            <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900/20">
-                                                <FaCreditCard className="h-5 w-5 text-blue-600" />
-                                            </div>
-                                            <div>
-                                                <div className="font-medium text-gray-900 dark:text-gray-100">
-                                                    {iban.bank_details.name}
-                                                    {iban.is_default && (
-                                                        <span className="ml-2 text-xs text-indigo-600 dark:text-indigo-400">
-                                                            ({t('common.default')})
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="font-mono text-sm text-gray-500 dark:text-gray-400">
-                                                    {formatIBAN(iban.iban)}
-                                                </div>
-                                                {iban.title && (
-                                                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                        {iban.title}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {data.bank_account === iban.iban && (
-                                            <FaCheck className="h-5 w-5 text-indigo-600" />
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+                            {renderSavedIbans()}
                         </div>
                     </div>
                 )}
@@ -365,6 +500,9 @@ export const WithdrawalForm = ({
                         <p className="mt-1 text-sm text-red-600">{errors.bank_account}</p>
                     )}
                 </div>
+
+                {/* Müşteri Bilgileri Bölümü */}
+                {renderCustomerFields()}
 
                 {/* Submit Butonu */}
                 <div className="flex justify-end">
