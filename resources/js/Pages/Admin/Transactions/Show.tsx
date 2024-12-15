@@ -138,8 +138,8 @@ export default function Show({ auth, transaction }: Props) {
             <div key={index} className="relative flex items-start pl-8">
                 <div className={`absolute left-0 flex h-8 w-8 items-center justify-center rounded-full
                     ${item.type === 'status_change' ? 'bg-blue-100 dark:bg-blue-900/20' :
-                      item.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/20' :
-                      'bg-gray-100 dark:bg-gray-700/50'}`}>
+                        item.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/20' :
+                            'bg-gray-100 dark:bg-gray-700/50'}`}>
                     <FaHistory className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                 </div>
 
